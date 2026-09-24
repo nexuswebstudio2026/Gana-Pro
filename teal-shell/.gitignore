@@ -1,16 +1,28 @@
-# Root-level .gitignore
-# The actual Astro project lives in the teal-shell/ subdirectory.
-# These patterns prevent stray build artifacts from being committed
-# at the repository root if a command is accidentally run from here.
-
-node_modules/
+# build output
 dist/
+
+# generated types
 .astro/
-.vercel/
-package.json
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-.env*
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
 .DS_Store
+
+# jetbrains setting folder
 .idea/
+
+# runtime data (users, sessions, reset tokens)
+data/*.json
+!data/.gitkeep
