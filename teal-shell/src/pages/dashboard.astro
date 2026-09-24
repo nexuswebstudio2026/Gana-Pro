@@ -1,0 +1,182 @@
+---
+import { validateSession } from '../lib/session';
+
+// SSR: this page must check cookies at request time
+export const prerender = false;
+
+const token = Astro.cookies.get('auth_session')?.value;
+const session = validateSession(token);
+
+if (!session) {
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+}
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>Dashboard — Gana Pro</title>
+	</head>
+	<body>
+		<div class="bg">
+			<header class="header">
+				<div class="user-info">
+					<div class="avatar">
+						{session.username.charAt(0).toUpperCase()}
+					</div>
+					<div>
+						<span class="username">{session.username}</span>
+						<span class="email">{session.email}</span>
+					</div>
+				</div>
+				<form method="POST" action="/api/logout">
+					<button type="submit" class="btn btn-logout">Cerrar sesión</button>
+				</form>
+			</header>
+
+			<main class="main">
+				<h1>¡Bienvenido, {session.username}!</h1>
+				<p class="subtitle">Has iniciado sesión correctamente.</p>
+
+				<div class="cards">
+					<div class="card">
+						<h3>Proyectos</h3>
+						<p>No tienes proyectos creados todavía.</p>
+					</div>
+					<div class="card">
+						<h3>Perfil</h3>
+						<p>
+							<strong>Usuario:</strong> {session.username}<br />
+							<strong>Email:</strong> {session.email}
+						</p>
+					</div>
+				</div>
+			</main>
+		</div>
+	</body>
+</html>
+
+<style>
+	.bg {
+		min-height: 100vh;
+		background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+		font-family: Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+	}
+
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 24px 48px;
+		background: #ffffff;
+		border-bottom: 1px solid #e5e7eb;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	}
+
+	.user-info {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+
+	.avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background: linear-gradient(83.21deg, #3245ff 0%, #bc52ee 100%);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 20px;
+		font-weight: 700;
+	}
+
+	.username {
+		font-weight: 600;
+		color: #111827;
+		font-size: 15px;
+	}
+
+	.email {
+		font-size: 13px;
+		color: #6b7280;
+	}
+
+	.btn-logout {
+		padding: 10px 20px;
+		background: #f3f4f6;
+		color: #374151;
+		border: 1px solid #d1d5db;
+		border-radius: 8px;
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-logout:hover {
+		background: #e5e7eb;
+	}
+
+	.main {
+		padding: 48px;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
+	.main h1 {
+		font-size: 32px;
+		color: #111827;
+		margin: 0 0 8px 0;
+	}
+
+	.subtitle {
+		color: #6b7280;
+		font-size: 16px;
+		margin: 0 0 32px 0;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 24px;
+	}
+
+	.card {
+		background: #ffffff;
+		border: 1px solid #e5e7eb;
+		border-radius: 12px;
+		padding: 24px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+
+	.card h3 {
+		font-size: 16px;
+		font-weight: 600;
+		color: #374151;
+		margin: 0 0 8px 0;
+	}
+
+	.card p {
+		font-size: 14px;
+		color: #6b7280;
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	@media (max-width: 640px) {
+		.header {
+			padding: 16px 24px;
+		}
+		.main {
+			padding: 24px;
+		}
+		.main h1 {
+			font-size: 24px;
+		}
+	}
+</style>

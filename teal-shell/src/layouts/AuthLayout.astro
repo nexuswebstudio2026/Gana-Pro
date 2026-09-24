@@ -1,0 +1,89 @@
+---
+interface Props {
+	title: string;
+	subtitle?: string;
+}
+
+const { title, subtitle } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{title} — Gana Pro</title>
+	</head>
+	<body>
+		<div class="bg">
+			<div class="card">
+				<div class="brand">
+					<svg width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg"
+						><path
+							fill="url(#grad)"
+							d="M24 0C10.742 0 0 10.742 0 24s10.742 24 24 24 24-10.742 24-24S37.258 0 24 0z"
+						></path><defs>
+							<linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+								<stop offset="0%" stop-color="#3245ff"></stop>
+								<stop offset="100%" stop-color="#bc52ee"></stop>
+							</linearGradient>
+						</defs></svg>
+					<h2>Gana Pro</h2>
+				</div>
+				{subtitle && <p class="subtitle">{subtitle}</p>}
+				<slot />
+			</div>
+		</div>
+	</body>
+</html>
+
+<style>
+	.bg {
+		min-height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 24px;
+		background: linear-gradient(135deg, #0f0c29 0%, #302b62 45%, #24243e 100%);
+		font-family: Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+	}
+
+	.card {
+		background: #ffffff;
+		border-radius: 20px;
+		padding: 48px;
+		width: 100%;
+		max-width: 432px;
+		box-shadow:
+			0 20px 60px rgba(0, 0, 0, 0.35),
+			inset 0 1px 0 rgba(255, 255, 255, 0.2);
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 8px;
+	}
+
+	.brand h2 {
+		font-size: 28px;
+		font-weight: 700;
+		margin: 0;
+		color: #111827;
+	}
+
+	.subtitle {
+		color: #6b7280;
+		font-size: 14px;
+		line-height: 1.6;
+		margin: 0 0 24px 0;
+	}
+
+	@media (max-width: 480px) {
+		.card {
+			padding: 32px 24px;
+		}
+	}
+</style>
