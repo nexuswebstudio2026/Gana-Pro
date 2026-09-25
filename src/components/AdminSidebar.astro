@@ -1,4 +1,6 @@
 ---
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/dashboard';
+const isActive = (path: string) => currentPath === path;
 ---
 
 <button class="sidebar-mobile-toggle" type="button" data-sidebar-toggle aria-controls="admin-sidebar" aria-expanded="false" aria-label="Abrir menú de administración">
@@ -7,37 +9,72 @@
 
 <aside class="admin-sidebar" id="admin-sidebar" aria-label="Navegación del panel de administración">
 	<nav class="sidebar-nav" aria-label="Secciones del panel">
-		<a class="sidebar-link active" href="/dashboard" data-nav-link aria-current="page">
+		<a
+			class:list={['sidebar-link', { active: isActive('/dashboard') }]}
+			href="/dashboard"
+			data-nav-link
+			aria-current={isActive('/dashboard') ? 'page' : undefined}
+		>
 			<span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
 		</a>
 
 		<div class="nav-group">
 			<span class="nav-group-title">Gana Pro</span>
-			<a class="sidebar-link nested" href="/dashboard#organigrama-global" data-nav-link>
+			<a
+				class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/organigrama-global') }]}
+				href="/dashboard/organigrama-global"
+				data-nav-link
+				aria-current={isActive('/dashboard/organigrama-global') ? 'page' : undefined}
+			>
 				<span class="nav-icon" aria-hidden="true">⌘</span><span>Organigrama Global de Usuarios</span>
 			</a>
 		</div>
 
-		<a class="sidebar-link" href="/dashboard#usuarios-registrados" data-nav-link>
+		<a
+			class:list={['sidebar-link', { active: isActive('/dashboard/usuarios-registrados') }]}
+			href="/dashboard/usuarios-registrados"
+			data-nav-link
+			aria-current={isActive('/dashboard/usuarios-registrados') ? 'page' : undefined}
+		>
 			<span class="nav-icon" aria-hidden="true">♙</span><span>Usuarios Registrados</span>
 		</a>
 
 		<div class="nav-group">
 			<span class="nav-group-title">Contabilidad</span>
-			<a class="sidebar-link nested" href="/dashboard#ingresos" data-nav-link>
+			<a
+				class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/ingresos') }]}
+				href="/dashboard/ingresos"
+				data-nav-link
+				aria-current={isActive('/dashboard/ingresos') ? 'page' : undefined}
+			>
 				<span class="nav-icon" aria-hidden="true">＋</span><span>Ingresos</span>
 			</a>
-			<a class="sidebar-link nested" href="/dashboard#gastos" data-nav-link>
+			<a
+				class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/gastos') }]}
+				href="/dashboard/gastos"
+				data-nav-link
+				aria-current={isActive('/dashboard/gastos') ? 'page' : undefined}
+			>
 				<span class="nav-icon" aria-hidden="true">－</span><span>Gastos</span>
 			</a>
 		</div>
 
 		<div class="nav-group">
 			<span class="nav-group-title">Configuración</span>
-			<a class="sidebar-link nested" href="/dashboard#negocio" data-nav-link>
+			<a
+				class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/negocio') }]}
+				href="/dashboard/negocio"
+				data-nav-link
+				aria-current={isActive('/dashboard/negocio') ? 'page' : undefined}
+			>
 				<span class="nav-icon" aria-hidden="true">▣</span><span>Negocio</span>
 			</a>
-			<a class="sidebar-link nested" href="/dashboard#usuario" data-nav-link>
+			<a
+				class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/usuario') }]}
+				href="/dashboard/usuario"
+				data-nav-link
+				aria-current={isActive('/dashboard/usuario') ? 'page' : undefined}
+			>
 				<span class="nav-icon" aria-hidden="true">♙</span><span>Usuario</span>
 			</a>
 		</div>

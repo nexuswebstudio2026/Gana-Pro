@@ -1,0 +1,27 @@
+---
+import UserOrgNode from './UserOrgNode.astro';
+import type { OrganizationNode } from '../lib/user-hierarchy';
+
+interface Props {
+	node: OrganizationNode;
+	root?: boolean;
+}
+
+const { node, root = false } = Astro.props;
+---
+
+<li class:list={['org-branch', { 'org-root': root }]}>
+	<article class:list={['org-node', { 'org-node-root': root }]}>
+		<span class="org-avatar" aria-hidden="true">{root ? 'GP' : node.position}</span>
+		<div class="org-copy">
+			<strong>{node.name}</strong>
+			<span>{root ? 'Raíz de la organización' : `Registro #${node.position}`}</span>
+		</div>
+	</article>
+
+	{node.children.length > 0 && (
+		<ul class="org-children">
+			{node.children.map((child) => <UserOrgNode node={child} />)}
+		</ul>
+	)}
+</li>
