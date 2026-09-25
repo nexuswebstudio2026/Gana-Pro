@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHmac } from 'node:crypto';
 import type { APIContext } from 'astro';
 import { readJSON, writeJSON } from './store';
 
@@ -6,52 +6,83 @@ export interface Session {
 	token: string;
 	username: string;
 	email: string;
+	role?: string;
 	expiresAt: number; // Unix timestamp in ms
 }
 
-/** Number of seconds a session token remains valid. */
+/** Number of milliseconds a session token remains valid. */
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /** Name of the cookie used to store the session token. */
 export const SESSION_COOKIE = 'auth_session';
 
+const SECRET = process.env.GOOGLE_PRIVATE_KEY || 'gana-pro-fallback-secret-2026';
+
+function sign(payload: string): string {
+	return createHmac('sha256', SECRET).update(payload).digest('hex');
+}
+
 /**
- * Generate a cryptographically random session token.
+ * Generate a cryptographically random session token (or signed payload).
  */
 function generateToken(): string {
 	return randomBytes(32).toString('hex');
 }
 
+/** In-memory fallback if filesystem is read-only (like Vercel Lambda) */
+const memorySessions = new Map<string, Session>();
+
 /**
  * Read all sessions from the data store.
  */
 function getSessions(): Session[] {
-	return readJSON<Session[]>('sessions.json', []);
+	try {
+		return readJSON<Session[]>('sessions.json', []);
+	} catch {
+		return Array.from(memorySessions.values());
+	}
 }
 
 /**
  * Persist sessions to the data store.
  */
 function saveSessions(sessions: Session[]): void {
-	writeJSON('sessions.json', sessions);
+	try {
+		writeJSON('sessions.json', sessions);
+	} catch {
+		// Ignore write errors in read-only serverless filesystems
+	}
+	memorySessions.clear();
+	for (const s of sessions) {
+		memorySessions.set(s.token, s);
+	}
 }
 
 /**
- * Create a new session for the given user and return the token.
+ * Create a new signed session token that works stateless in serverless environments.
  */
-export function createSession(username: string, email: string): string {
-	const token = generateToken();
-	const sessions = getSessions();
-	// Remove any existing sessions for this user
-	const filtered = sessions.filter((s) => s.username !== username);
-	filtered.push({
-		token,
-		username,
-		email,
-		expiresAt: Date.now() + SESSION_DURATION,
-	});
-	saveSessions(filtered);
-	return token;
+export function createSession(username: string, email: string, role = 'User'): string {
+	const expiresAt = Date.now() + SESSION_DURATION;
+	const payload = Buffer.from(JSON.stringify({ username, email, role, expiresAt })).toString('base64url');
+	const signature = sign(payload);
+	const signedToken = `${payload}.${signature}`;
+
+	try {
+		const sessions = getSessions();
+		const filtered = sessions.filter((s) => s.username !== username);
+		filtered.push({
+			token: signedToken,
+			username,
+			email,
+			role,
+			expiresAt,
+		});
+		saveSessions(filtered);
+	} catch {
+		// Fallback ok
+	}
+
+	return signedToken;
 }
 
 /**
@@ -60,17 +91,40 @@ export function createSession(username: string, email: string): string {
 export function validateSession(token: string | undefined): Session | null {
 	if (!token) return null;
 
-	const sessions = getSessions();
-	const now = Date.now();
-
-	// Clean up expired sessions
-	const valid = sessions.filter((s) => s.expiresAt > now);
-	if (valid.length !== sessions.length) {
-		saveSessions(valid);
+	// 1. Try stateless validation first (works across Vercel serverless instances)
+	if (token.includes('.')) {
+		const [payloadStr, signature] = token.split('.');
+		if (payloadStr && signature) {
+			const expectedSig = sign(payloadStr);
+			if (expectedSig === signature) {
+				try {
+					const data = JSON.parse(Buffer.from(payloadStr, 'base64url').toString('utf-8'));
+					if (data.expiresAt > Date.now()) {
+						return {
+							token,
+							username: data.username,
+							email: data.email,
+							role: data.role,
+							expiresAt: data.expiresAt,
+						};
+					}
+				} catch {
+					// invalid payload
+				}
+			}
+		}
 	}
 
-	const session = valid.find((s) => s.token === token);
-	return session ?? null;
+	// 2. Fallback to stateful check
+	try {
+		const sessions = getSessions();
+		const now = Date.now();
+		const valid = sessions.filter((s) => s.expiresAt > now);
+		const session = valid.find((s) => s.token === token);
+		return session ?? null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -78,9 +132,13 @@ export function validateSession(token: string | undefined): Session | null {
  */
 export function destroySession(token: string | undefined): void {
 	if (!token) return;
-	const sessions = getSessions();
-	const filtered = sessions.filter((s) => s.token !== token);
-	saveSessions(filtered);
+	try {
+		const sessions = getSessions();
+		const filtered = sessions.filter((s) => s.token !== token);
+		saveSessions(filtered);
+	} catch {
+		// ignore
+	}
 }
 
 /**
@@ -91,7 +149,7 @@ export function setSessionCookie(Astro: APIContext, token: string): void {
 	Astro.cookies.set(SESSION_COOKIE, token, {
 		path: '/',
 		httpOnly: true,
-		secure: false, // Set to true in production with HTTPS
+		secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax',
 		expires,
 	});

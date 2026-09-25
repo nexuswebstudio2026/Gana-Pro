@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { hashPassword } from '../../lib/crypto';
 import { readJSON, writeJSON } from '../../lib/store';
+import { getGoogleSheetUsers, appendGoogleSheetUser } from '../../lib/sheets';
 import type { User } from '../../lib/types';
 
 // API routes must be server-rendered, not prerendered as static
@@ -27,24 +28,58 @@ export const POST: APIRoute = async (Astro) => {
 			return Astro.redirect('/register?error=' + encodeURIComponent('La contraseña debe tener al menos 6 caracteres.'), 303);
 		}
 
-		const users = readJSON<User[]>('users.json', []);
+		// Check for duplicates in Google Sheets
+		let sheetUsers: User[] = [];
+		try {
+			sheetUsers = await getGoogleSheetUsers();
+		} catch (sheetErr) {
+			console.error('Error fetching users from Google Sheet:', sheetErr);
+		}
 
-		// Check for duplicates
-		if (users.some((u) => u.username === username)) {
+		// Also check local json users if any
+		let localUsers: User[] = [];
+		try {
+			localUsers = readJSON<User[]>('users.json', []);
+		} catch {
+			localUsers = [];
+		}
+
+		const allUsers = [...sheetUsers, ...localUsers];
+
+		if (allUsers.some((u) => u.username?.toLowerCase() === username.toLowerCase())) {
 			return Astro.redirect('/register?error=' + encodeURIComponent('El nombre de usuario ya está en uso.'), 303);
 		}
-		if (users.some((u) => u.email === email)) {
+		if (allUsers.some((u) => u.email?.toLowerCase() === email)) {
 			return Astro.redirect('/register?error=' + encodeURIComponent('El correo electrónico ya está registrado.'), 303);
 		}
 
-		// --- Create user ---
-		const newUser: User = {
-			username,
-			email,
-			password: hashPassword(password),
-		};
-		users.push(newUser);
-		writeJSON('users.json', users);
+		// --- Hash password and save ---
+		const passwordHash = hashPassword(password);
+
+		// 1. Guardar en Google Sheets
+		try {
+			await appendGoogleSheetUser({
+				username,
+				email,
+				passwordHash,
+			});
+		} catch (sheetSaveErr) {
+			console.error('Error al guardar usuario en Google Sheet:', sheetSaveErr);
+			return Astro.redirect('/register?error=' + encodeURIComponent('No se pudo guardar el registro en Google Sheets. Intente de nuevo más tarde.'), 303);
+		}
+
+		// 2. Backup opcional en JSON local
+		try {
+			const newUser: User = {
+				username,
+				email,
+				password: passwordHash,
+			};
+			localUsers.push(newUser);
+			writeJSON('users.json', localUsers);
+		} catch {
+			// Ignore local store error on serverless environments
+		}
 
 		// Redirect to login on success
 		return Astro.redirect('/login?registered=1', 303);

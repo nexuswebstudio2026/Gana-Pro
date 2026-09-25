@@ -17,11 +17,21 @@ export function hashPassword(password: string): string {
 }
 
 /**
- * Verify a plain-text password against a stored `salt:hash` string.
+ * Verify a plain-text password against a stored string.
+ * Supports standard `salt:hash` (PBKDF2) format and fallback for plain text if applicable.
  */
 export function verifyPassword(password: string, stored: string): boolean {
-	const [salt, hash] = stored.split(':');
-	if (!salt || !hash) return false;
-	const verifyHash = pbkdf2Sync(password, salt, ITERATIONS, 64, 'sha256').toString('hex');
-	return hash === verifyHash;
+	if (!stored) return false;
+
+	// Check if it's salt:hash format
+	if (stored.includes(':')) {
+		const [salt, hash] = stored.split(':');
+		if (salt && hash) {
+			const verifyHash = pbkdf2Sync(password, salt, ITERATIONS, 64, 'sha256').toString('hex');
+			if (hash === verifyHash) return true;
+		}
+	}
+
+	// Fallback to direct comparison (in case stored as plain text)
+	return password === stored;
 }

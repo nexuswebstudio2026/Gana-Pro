@@ -1,0 +1,105 @@
+---
+---
+
+<button class="sidebar-mobile-toggle" type="button" data-sidebar-toggle aria-controls="admin-sidebar" aria-expanded="false" aria-label="Abrir menú de administración">
+	<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+</button>
+
+<aside class="admin-sidebar" id="admin-sidebar" aria-label="Navegación del panel de administración">
+	<nav class="sidebar-nav" aria-label="Secciones del panel">
+		<a class="sidebar-link active" href="/dashboard" data-nav-link aria-current="page">
+			<span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
+		</a>
+
+		<div class="nav-group">
+			<span class="nav-group-title">Gana Pro</span>
+			<a class="sidebar-link nested" href="/dashboard#organigrama-global" data-nav-link>
+				<span class="nav-icon" aria-hidden="true">⌘</span><span>Organigrama Global de Usuarios</span>
+			</a>
+		</div>
+
+		<a class="sidebar-link" href="/dashboard#usuarios-registrados" data-nav-link>
+			<span class="nav-icon" aria-hidden="true">♙</span><span>Usuarios Registrados</span>
+		</a>
+
+		<div class="nav-group">
+			<span class="nav-group-title">Contabilidad</span>
+			<a class="sidebar-link nested" href="/dashboard#ingresos" data-nav-link>
+				<span class="nav-icon" aria-hidden="true">＋</span><span>Ingresos</span>
+			</a>
+			<a class="sidebar-link nested" href="/dashboard#gastos" data-nav-link>
+				<span class="nav-icon" aria-hidden="true">－</span><span>Gastos</span>
+			</a>
+		</div>
+
+		<div class="nav-group">
+			<span class="nav-group-title">Configuración</span>
+			<a class="sidebar-link nested" href="/dashboard#negocio" data-nav-link>
+				<span class="nav-icon" aria-hidden="true">▣</span><span>Negocio</span>
+			</a>
+			<a class="sidebar-link nested" href="/dashboard#usuario" data-nav-link>
+				<span class="nav-icon" aria-hidden="true">♙</span><span>Usuario</span>
+			</a>
+		</div>
+	</nav>
+</aside>
+<div class="sidebar-backdrop" data-sidebar-backdrop></div>
+
+<script>
+	const sidebar = document.getElementById('admin-sidebar');
+	const toggle = document.querySelector('[data-sidebar-toggle]');
+	const backdrop = document.querySelector('[data-sidebar-backdrop]');
+	const setSidebar = (open: boolean) => {
+		toggle?.classList.toggle('is-hidden', open);
+		sidebar?.classList.toggle('is-open', open);
+		backdrop?.classList.toggle('is-visible', open);
+		toggle?.setAttribute('aria-expanded', String(open));
+	};
+	toggle?.addEventListener('click', () => setSidebar(!sidebar?.classList.contains('is-open')));
+	backdrop?.addEventListener('click', () => setSidebar(false));
+	sidebar?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setSidebar(false)));
+	document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setSidebar(false); });
+</script>
+
+<style>
+	.admin-sidebar {
+		width: 280px;
+		height: 100vh;
+		min-height: 100vh;
+		box-sizing: border-box;
+		padding: 18px 12px;
+		background: var(--bg-surface);
+		border-right: 1px solid var(--gold-border);
+		backdrop-filter: blur(18px);
+		-webkit-backdrop-filter: blur(18px);
+		position: sticky;
+		top: 0;
+		z-index: 60;
+	}
+	.sidebar-nav {
+		height: 100%;
+		padding: 0;
+		overflow-y: auto;
+		scrollbar-width: none;
+	}
+	.sidebar-nav::-webkit-scrollbar { display: none; }
+	.nav-group { margin-top: 18px; }
+	.nav-group:first-of-type { margin-top: 0; }
+	.nav-group-title { display: block; padding: 0 12px 8px; color: var(--gold-primary); font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+	.sidebar-link { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; color: var(--text-secondary); font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
+	.sidebar-link:hover { color: var(--text-primary); background: rgba(212, 175, 55, 0.08); border-color: var(--gold-border); transform: translateX(2px); }
+	.sidebar-link.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.14); border-color: var(--gold-border); }
+	.sidebar-link.nested { min-height: 40px; padding-left: 18px; font-size: 12px; font-weight: 500; }
+	.nav-icon { width: 22px; flex: 0 0 22px; display: grid; place-items: center; color: currentColor; font-size: 19px; line-height: 1; }
+	.sidebar-mobile-toggle, .sidebar-backdrop { display: none; }
+
+	@media (max-width: 1024px) {
+		.admin-sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, calc(100vw - 36px)); transform: translateX(-105%); transition: transform 0.25s ease; box-shadow: 18px 0 45px rgba(0, 0, 0, 0.28); }
+		.admin-sidebar.is-open { transform: translateX(0); }
+		.sidebar-mobile-toggle { display: grid; place-items: center; position: fixed; top: 16px; left: 16px; z-index: 70; width: 42px; height: 42px; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg-surface); color: var(--gold-primary); cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); transition: opacity 0.2s ease, transform 0.2s ease; }
+		.sidebar-mobile-toggle svg { width: 21px; height: 21px; }
+		.sidebar-mobile-toggle.is-hidden { opacity: 0; pointer-events: none; transform: translateY(-8px); }
+		.sidebar-backdrop { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(2, 7, 18, 0.62); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+		.sidebar-backdrop.is-visible { opacity: 1; pointer-events: auto; }
+	}
+</style>

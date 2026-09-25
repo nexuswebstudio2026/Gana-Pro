@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { readJSON, writeJSON } from '../../lib/store';
+import { getGoogleSheetUsers } from '../../lib/sheets';
 import { randomBytes } from 'node:crypto';
 import type { User } from '../../lib/types';
 
@@ -24,8 +25,22 @@ export const POST: APIRoute = async (Astro) => {
 			return Astro.redirect('/forgot-password?error=' + encodeURIComponent('Debes ingresar tu correo electrónico.'), 303);
 		}
 
-		const users = readJSON<User[]>('users.json', []);
-		const user = users.find((u) => u.email === email);
+		let sheetUsers: User[] = [];
+		try {
+			sheetUsers = await getGoogleSheetUsers();
+		} catch (e) {
+			console.error('Error fetching sheet users in forgot-password:', e);
+		}
+
+		let localUsers: User[] = [];
+		try {
+			localUsers = readJSON<User[]>('users.json', []);
+		} catch {
+			localUsers = [];
+		}
+
+		const allUsers = [...sheetUsers, ...localUsers];
+		const user = allUsers.find((u) => u.email?.toLowerCase() === email);
 
 		// Always return success to avoid revealing whether the email exists
 		if (user) {
@@ -44,3 +59,4 @@ export const POST: APIRoute = async (Astro) => {
 		return new Response('ERROR: ' + msg, { status: 500 });
 	}
 };
+
