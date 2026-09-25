@@ -1,23 +1,185 @@
 <!doctype html>
-<html lang="en">
+<html lang="es" data-theme="dark">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<meta name="description" content="GANA PRO — Plataforma de Élite y Alta Rentabilidad. Excelencia, Estrategia e Innovación de Lujo." />
+		<title>{Astro.props.title ? `${Astro.props.title} — GANA PRO` : 'GANA PRO — Plataforma de Élite & Lujo'}</title>
+		
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+		
+		<script is:inline>
+			const savedTheme = localStorage.getItem('gana_theme');
+			if (savedTheme) {
+				document.documentElement.setAttribute('data-theme', savedTheme);
+			} else {
+				document.documentElement.setAttribute('data-theme', 'dark');
+			}
+		</script>
 	</head>
 	<body>
 		<slot />
 	</body>
 </html>
 
-<style>
-	html,
-	body {
+<style is:global>
+	:root {
+		--bg-primary: #f8fafc;
+		--bg-secondary: #ffffff;
+		--bg-tertiary: #f1f5f9;
+		--bg-card: rgba(255, 255, 255, 0.92);
+		--bg-card-border: rgba(203, 161, 53, 0.28);
+		--bg-header: rgba(255, 255, 255, 0.88);
+		--text-primary: #0a1128;
+		--text-secondary: #334155;
+		--text-muted: #64748b;
+
+		--gold-primary: #b8860b;
+		--gold-hover: #d4af37;
+		--gold-gradient: linear-gradient(135deg, #cba135 0%, #fae69e 50%, #a47618 100%);
+		--gold-text-gradient: linear-gradient(135deg, #a47618 0%, #d4af37 50%, #85581A 100%);
+		--gold-glow: 0 10px 30px rgba(184, 134, 11, 0.2);
+		--gold-border: rgba(203, 161, 53, 0.35);
+
+		--blue-deep: #030b1e;
+		--blue-navy: #0f172a;
+		--card-shadow: 0 20px 40px -15px rgba(10, 17, 40, 0.08), 0 0 1px 1px rgba(212, 175, 55, 0.2);
+		--font-serif: 'Cinzel', serif, Georgia;
+		--font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+	}
+
+	[data-theme="dark"] {
+		--bg-primary: #020712;
+		--bg-secondary: #071026;
+		--bg-tertiary: #0c1838;
+		--bg-card: rgba(8, 18, 44, 0.78);
+		--bg-card-border: rgba(212, 175, 55, 0.32);
+		--bg-header: rgba(2, 7, 18, 0.85);
+		--text-primary: #f8fafc;
+		--text-secondary: #cbd5e1;
+		--text-muted: #94a3b8;
+
+		--gold-primary: #d4af37;
+		--gold-hover: #f7d770;
+		--gold-gradient: linear-gradient(135deg, #d4af37 0%, #fff099 35%, #b5831d 70%, #fbd14b 100%);
+		--gold-text-gradient: linear-gradient(135deg, #fff2a3 0%, #d4af37 50%, #e6a817 100%);
+		--gold-glow: 0 10px 40px rgba(212, 175, 55, 0.38);
+		--gold-border: rgba(212, 175, 55, 0.45);
+
+		--blue-deep: #020617;
+		--blue-navy: #091533;
+		--card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 25px rgba(212, 175, 55, 0.15);
+	}
+
+	*, *::before, *::after {
+		box-sizing: border-box;
 		margin: 0;
-		width: 100%;
-		height: 100%;
+		padding: 0;
+	}
+
+	html {
+		scroll-behavior: smooth;
+		font-family: var(--font-sans);
+		background-color: var(--bg-primary);
+		color: var(--text-primary);
+		transition: background-color 0.35s ease, color 0.35s ease;
+		min-height: 100%;
+	}
+
+	body {
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		overflow-x: hidden;
+		background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.2) 0%, transparent 60%);
+	}
+
+	.font-cinzel {
+		font-family: var(--font-serif);
+	}
+
+	.gold-gradient-text {
+		background: var(--gold-text-gradient);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		display: inline-block;
+	}
+
+	.gold-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		background: var(--gold-gradient);
+		color: #030712;
+		font-weight: 700;
+		font-family: var(--font-sans);
+		font-size: 0.95rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		padding: 14px 28px;
+		border-radius: 9999px;
+		text-decoration: none;
+		border: 1px solid rgba(255, 235, 150, 0.6);
+		box-shadow: var(--gold-glow);
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		cursor: pointer;
+	}
+
+	.gold-button:hover {
+		transform: translateY(-2px) scale(1.02);
+		box-shadow: 0 15px 35px rgba(212, 175, 55, 0.45);
+	}
+
+	.ghost-gold-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		background: rgba(212, 175, 55, 0.08);
+		color: var(--gold-primary);
+		font-weight: 600;
+		font-size: 0.95rem;
+		letter-spacing: 0.04em;
+		padding: 14px 28px;
+		border-radius: 9999px;
+		text-decoration: none;
+		border: 1px solid var(--gold-border);
+		backdrop-filter: blur(12px);
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		cursor: pointer;
+	}
+
+	.ghost-gold-button:hover {
+		background: rgba(212, 175, 55, 0.18);
+		border-color: var(--gold-primary);
+		color: var(--text-primary);
+		transform: translateY(-2px);
+	}
+
+	.luxury-card {
+		background: var(--bg-card);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid var(--bg-card-border);
+		border-radius: 20px;
+		box-shadow: var(--card-shadow);
+		transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+	}
+
+	.luxury-card:hover {
+		border-color: var(--gold-primary);
+		transform: translateY(-4px);
+	}
+
+	::selection {
+		background: var(--gold-primary);
+		color: #030712;
 	}
 </style>
+

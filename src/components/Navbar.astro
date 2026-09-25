@@ -1,0 +1,193 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+	title?: string;
+}
+
+const token = Astro.cookies.get('auth_session')?.value;
+const isLoggedIn = Boolean(token);
+---
+
+<header class="navbar">
+	<div class="nav-container">
+		<a href="/" class="brand">
+			<div class="logo-shield">
+				<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+					<path d="m9 12 2 2 4-4" stroke-width="2.2"></path>
+				</svg>
+			</div>
+			<div class="brand-text">
+				<span class="brand-title font-cinzel">GANA <span class="gold-gradient-text">PRO</span></span>
+				<span class="brand-tag">ELITE & LUXURY</span>
+			</div>
+		</a>
+
+		<nav class="nav-links">
+			<a href="/#servicios" class="nav-link">Servicios</a>
+			<a href="/#ventajas" class="nav-link">Exclusividad</a>
+			<a href="/#rendimiento" class="nav-link">Rendimiento</a>
+			<a href="/#membresia" class="nav-link">Membresía</a>
+		</nav>
+
+		<div class="nav-actions">
+			<ThemeToggle />
+			{isLoggedIn ? (
+				<a href="/dashboard" class="gold-button btn-sm">Mi Portal</a>
+			) : (
+				<div class="auth-group">
+					<a href="/login" class="login-link">Acceso</a>
+					<a href="/register" class="gold-button btn-sm">Membresía VIP</a>
+				</div>
+			)}
+		</div>
+	</div>
+</header>
+
+<style>
+	.navbar {
+		position: sticky;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 100;
+		background: var(--bg-header);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-bottom: 1px solid var(--gold-border);
+		box-shadow: var(--header-shadow);
+		transition: all 0.3s ease;
+	}
+
+	.nav-container {
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: 16px 28px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 20px;
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		text-decoration: none;
+	}
+
+	.logo-shield {
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(10, 25, 49, 0.6) 100%);
+		border: 1px solid var(--gold-primary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--gold-primary);
+		box-shadow: 0 0 15px rgba(212, 175, 55, 0.25);
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.brand:hover .logo-shield {
+		transform: scale(1.05) rotate(4deg);
+		box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
+	}
+
+	.brand-text {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.brand-title {
+		font-size: 1.35rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		color: var(--text-primary);
+		line-height: 1.1;
+	}
+
+	.brand-tag {
+		font-size: 0.65rem;
+		letter-spacing: 0.25em;
+		color: var(--gold-primary);
+		font-weight: 700;
+	}
+
+	.nav-links {
+		display: flex;
+		align-items: center;
+		gap: 32px;
+	}
+
+	.nav-link {
+		color: var(--text-secondary);
+		text-decoration: none;
+		font-size: 0.92rem;
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		position: relative;
+		transition: color 0.25s ease;
+	}
+
+	.nav-link::after {
+		content: '';
+		position: absolute;
+		bottom: -6px;
+		left: 0;
+		width: 0%;
+		height: 2px;
+		background: var(--gold-primary);
+		transition: width 0.3s ease;
+	}
+
+	.nav-link:hover {
+		color: var(--gold-primary);
+	}
+
+	.nav-link:hover::after {
+		width: 100%;
+	}
+
+	.nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+	}
+
+	.auth-group {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+
+	.login-link {
+		color: var(--text-primary);
+		text-decoration: none;
+		font-size: 0.92rem;
+		font-weight: 600;
+		padding: 8px 14px;
+		border-radius: 8px;
+		transition: all 0.2s ease;
+	}
+
+	.login-link:hover {
+		color: var(--gold-primary);
+	}
+
+	.btn-sm {
+		padding: 10px 22px;
+		font-size: 0.85rem;
+	}
+
+	@media (max-width: 860px) {
+		.nav-links {
+			display: none;
+		}
+		.nav-container {
+			padding: 14px 20px;
+		}
+	}
+</style>
