@@ -1,0 +1,57 @@
+---
+// Logo.astro - Marca de GANA PRO: escudo geométrico con estrella de cinco puntas.
+// Un solo componente para mantener el diseño consistente en toda la aplicación.
+interface Props {
+	size?: number;
+	/** Usa el color del tema actual (currentColor) en lugar del dorado. */
+	inheritColor?: boolean;
+	class?: string;
+}
+
+const { size = 28, inheritColor = false, class: className = '' } = Astro.props;
+const gid = `gp-gold-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<svg
+	class={className}
+	width={size}
+	height={size}
+	viewBox="0 0 64 64"
+	fill="none"
+	role="img"
+	aria-label="GANA PRO"
+>
+	{!inheritColor && (
+		<defs>
+			<linearGradient id={gid} x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+				<stop offset="0%" stop-color="#F7E79B" />
+				<stop offset="45%" stop-color="#D4AF37" />
+				<stop offset="100%" stop-color="#A67C15" />
+			</linearGradient>
+		</defs>
+	)}
+
+	<!-- Escudo: contorno limpio con punta inferior -->
+	<path
+		d="M32 3 L58 12 V33 C58 46 47 55 32 61 C17 55 6 46 6 33 V12 Z"
+		stroke={inheritColor ? 'currentColor' : `url(#${gid})`}
+		stroke-width="3"
+		stroke-linejoin="round"
+		fill="none"
+	/>
+
+	<!-- Estrella de cinco puntas: el símbolo de élite -->
+	<path
+		d="M32 16 L35.9 27.1 L47.5 28 L38.2 35.3 L41.2 46.5 L32 40.2 L22.8 46.5 L25.8 35.3 L16.5 28 L28.1 27.1 Z"
+		fill={inheritColor ? 'currentColor' : `url(#${gid})`}
+	/>
+
+	<!-- Base: línea de apoyo bajo la estrella -->
+	<path
+		d="M21 52 H43"
+		stroke={inheritColor ? 'currentColor' : `url(#${gid})`}
+		stroke-width="2.5"
+		stroke-linecap="round"
+		opacity="0.65"
+	/>
+</svg>

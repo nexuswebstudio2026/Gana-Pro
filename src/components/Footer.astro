@@ -1,5 +1,5 @@
 ---
-// Footer.astro - Pie de página distinguido y de lujo
+import Logo from './Logo.astro';
 ---
 
 <footer class="footer">
@@ -7,10 +7,7 @@
 		<div class="footer-top">
 			<div class="footer-brand">
 				<div class="logo-shield">
-					<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-						<path d="m9 12 2 2 4-4" stroke-width="2.2"></path>
-					</svg>
+					<Logo size={26} />
 				</div>
 				<span class="brand-title font-cinzel">GANA <span class="gold-gradient-text">PRO</span></span>
 				<p class="brand-desc">
@@ -44,12 +41,10 @@
 		</div>
 
 		<div class="footer-bottom">
-			<p>© 2026 GANA PRO Inc. Todos los derechos reservados. Excelencia y Distinción Global.</p>
-			<div class="bottom-links">
-				<a href="#">Términos de Prestigio</a>
-				<span>•</span>
-				<a href="#">Privacidad de Élite</a>
-			</div>
+			<p>© 2026 GANA PRO Inc. Todos los derechos reservados.</p>
+			<p class="credit">
+				Creado por <strong>Nexus Web Studio</strong>
+			</p>
 		</div>
 	</div>
 </footer>
@@ -151,20 +146,16 @@
 		gap: 16px;
 	}
 
-	.bottom-links {
+	.credit {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 7px;
 	}
 
-	.bottom-links a {
-		color: var(--text-muted);
-		text-decoration: none;
-		transition: color 0.2s;
-	}
-
-	.bottom-links a:hover {
+	.credit strong {
 		color: var(--gold-primary);
+		font-weight: 700;
+		letter-spacing: 0.04em;
 	}
 
 	@media (max-width: 860px) {
@@ -222,13 +213,9 @@
 
 		.footer-bottom {
 			padding-top: 22px;
+			flex-direction: column;
 			gap: 10px;
-		}
-
-		.bottom-links {
-			flex-wrap: wrap;
-			justify-content: center;
-			gap: 10px;
+			text-align: center;
 		}
 	}
 </style>

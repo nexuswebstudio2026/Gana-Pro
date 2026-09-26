@@ -1,5 +1,6 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import Logo from './Logo.astro';
 import AdminSidebar from './AdminSidebar.astro';
 import type { Session } from '../lib/session';
 
@@ -20,6 +21,10 @@ const roleLabel = session.role || 'Admin';
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="alternate icon" href="/favicon.ico" sizes="64x64" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+		<meta name="theme-color" content="#020712" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -36,10 +41,7 @@ const roleLabel = session.role || 'Admin';
 				<header class="header">
 					<div class="brand">
 						<div class="logo-shield">
-							<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-								<path d="m9 12 2 2 4-4"></path>
-							</svg>
+							<Logo size={22} />
 						</div>
 						<a href="/dashboard" class="brand-name font-cinzel">GANA <span class="gold-gradient-text">PRO</span></a>
 					</div>

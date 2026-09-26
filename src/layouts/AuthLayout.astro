@@ -1,5 +1,6 @@
 ---
 import ThemeToggle from '../components/ThemeToggle.astro';
+import Logo from '../components/Logo.astro';
 
 interface Props {
 	title: string;
@@ -15,6 +16,14 @@ const { title, subtitle } = Astro.props;
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="alternate icon" href="/favicon.ico" sizes="64x64" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+		<meta name="theme-color" content="#020712" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="GANA PRO" />
+		<meta name="mobile-web-app-capable" content="yes" />
 		<title>{title} — GANA PRO</title>
 		
 		<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,10 +55,7 @@ const { title, subtitle } = Astro.props;
 			<div class="auth-card luxury-card">
 				<div class="brand">
 					<div class="logo-shield">
-						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-							<path d="m9 12 2 2 4-4"></path>
-						</svg>
+						<Logo size={24} />
 					</div>
 					<h2 class="font-cinzel">GANA <span class="gold-gradient-text">PRO</span></h2>
 				</div>
