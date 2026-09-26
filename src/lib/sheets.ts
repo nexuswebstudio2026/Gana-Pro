@@ -3,7 +3,7 @@ import type { User } from './types';
 import fs from 'node:fs';
 import path from 'node:path';
 
-function getEnvValue(key: string): string | undefined {
+export function getEnvValue(key: string): string | undefined {
 	if (process.env[key]) return process.env[key];
 	try {
 		const envPath = path.resolve(process.cwd(), '.env');
@@ -31,7 +31,12 @@ const SHEET_TAB = getEnvValue('GOOGLE_SHEET_TAB') || 'Usuarios';
 const SERVICE_ACCOUNT_EMAIL = getEnvValue('GOOGLE_SERVICE_ACCOUNT_EMAIL');
 const PRIVATE_KEY = getEnvValue('GOOGLE_PRIVATE_KEY')?.replace(/\\n/g, '\n');
 
-function getSheetsClient() {
+/** Scope necesario solo para Google Sheets. */
+export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+/** Scope necesario para crear archivos en Google Drive. */
+export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
+export function getSheetsClient() {
 	if (!SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
 		throw new Error('Las credenciales de Google Service Account no están configuradas.');
 	}
@@ -39,10 +44,29 @@ function getSheetsClient() {
 	const auth = new google.auth.JWT({
 		email: SERVICE_ACCOUNT_EMAIL,
 		key: PRIVATE_KEY,
-		scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+		scopes: [SHEETS_SCOPE],
 	});
 
 	return google.sheets({ version: 'v4', auth });
+}
+
+/**
+ * Cliente de Google Drive para subir imágenes de testimonios.
+ * Requiere el scope `drive.file` y que la Service Account tenga
+ * acceso de editor a la carpeta de destino.
+ */
+export function getDriveClient() {
+	if (!SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
+		throw new Error('Las credenciales de Google Service Account no están configuradas.');
+	}
+
+	const auth = new google.auth.JWT({
+		email: SERVICE_ACCOUNT_EMAIL,
+		key: PRIVATE_KEY,
+		scopes: [DRIVE_SCOPE],
+	});
+
+	return google.drive({ version: 'v3', auth });
 }
 
 

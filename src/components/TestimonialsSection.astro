@@ -1,0 +1,611 @@
+---
+import { getTestimonials, averageRating } from '../lib/testimonials';
+import type { Session } from '../lib/session';
+
+interface Props {
+	session: Session | null;
+}
+
+const { session } = Astro.props;
+
+const ok = Astro.url.searchParams.get('ok');
+const error = Astro.url.searchParams.get('error');
+
+// Los testimonios se cargan desde Google Sheets; si falla, la página sigue funcionando
+let testimonials: Awaited<ReturnType<typeof getTestimonials>> = [];
+let loadError = false;
+try {
+	testimonials = await getTestimonials();
+} catch (e) {
+	loadError = true;
+	console.error('Error al cargar testimonios:', e);
+}
+
+const average = averageRating(testimonials);
+const totalRatings = testimonials.filter((t) => t.rating > 0).length;
+
+function formatDate(value: string): string {
+	if (!value) return '';
+	const parsed = new Date(value);
+	return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('es-ES');
+}
+---
+
+<section class="section testimonials-section" id="testimonios" aria-labelledby="testimonials-title">
+	<div class="section-container">
+		<div class="section-header">
+			<span class="section-badge font-cinzel">VOCES DE LA COMUNIDAD</span>
+			<h2 class="section-title font-cinzel" id="testimonials-title">
+				Testimonios <span class="gold-gradient-text">y Valoraciones</span>
+			</h2>
+			<p class="section-subtitle">
+				Los miembros registrados valoran la metodología de 1 a 5 estrellas y comparten su experiencia. Las
+				puntuaciones se muestran sin filtrar, incluyendo las negativas.
+			</p>
+		</div>
+
+		{totalRatings > 0 && (
+			<div class="rating-summary luxury-card">
+				<div class="rating-big">
+					<span class="rating-average font-cinzel">{average.toFixed(1)}</span>
+					<div class="rating-stars" aria-hidden="true">
+						{[1, 2, 3, 4, 5].map((n) => (
+							<span class:list={['star', { filled: n <= Math.round(average) }]}>★</span>
+						))}
+					</div>
+				</div>
+				<div class="rating-meta">
+					<strong>{totalRatings}</strong> valoración{totalRatings === 1 ? '' : 'es'} registrada
+					{totalRatings === 1 ? '' : 's'}
+					<br />
+					<span class="rating-hint">Puntuación media de la metodología</span>
+				</div>
+			</div>
+		)}
+
+		{ok && (
+			<div class="alert alert-ok" role="status">
+				¡Gracias! Tu testimonio y tu valoración han sido publicados.
+			</div>
+		)}
+		{error && (
+			<div class="alert alert-error" role="alert">
+				{error}
+			</div>
+		)}
+		{loadError && (
+			<div class="alert alert-error" role="alert">
+				No se pudieron cargar los testimonios en este momento.
+			</div>
+		)}
+
+		<div class="testimonials-layout">
+			<div class="luxury-card form-card">
+				<h3 class="form-title font-cinzel">Comparte tu Experiencia</h3>
+				{session ? (
+					<form method="POST" action="/api/testimonials" enctype="multipart/form-data" class="tform">
+						<div class="field">
+							<label for="rating">Valoración de la metodología</label>
+							<div class="star-picker">
+								<span class="star-picker-label">Selecciona de 1 a 5 estrellas</span>
+								<div class="star-options" role="radiogroup" aria-label="Valoración de la metodología">
+									{[1, 2, 3, 4, 5].map((n) => (
+										<label class="star-option">
+											<input type="radio" name="rating" value={n} required={n === 1} />
+											<span class="star-option-mark">★</span>
+											<span class="sr-only">{n} estrella{n === 1 ? '' : 's'}</span>
+										</label>
+									))}
+								</div>
+							</div>
+						</div>
+
+						<div class="field">
+							<label for="comment">Tu testimonio</label>
+							<textarea
+								id="comment"
+								name="comment"
+								rows="5"
+								required
+								minlength="10"
+								maxlength="1200"
+								placeholder="¿Qué te ha parecido la metodología? Sé honesto: tu valoración ayuda a otros miembros."
+							></textarea>
+						</div>
+
+						<div class="field">
+							<label for="image">Imagen (opcional)</label>
+							<input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,image/gif" />
+							<span class="field-hint">JPG, PNG, WEBP o GIF. Máximo 5 MB.</span>
+						</div>
+
+						<button type="submit" class="gold-button btn-full">Publicar Testimonio</button>
+						<p class="form-note">
+							Publicando como <strong>{session.username}</strong>. Tu valoración se mostrará tal cual, sea
+							positiva o negativa.
+						</p>
+					</form>
+				) : (
+					<div class="login-prompt">
+						<p>
+							<strong>Inicia sesión</strong> para valorar la metodología y publicar tu testimonio con
+							imagen.
+						</p>
+						<div class="login-actions">
+							<a href="/login" class="gold-button">Iniciar Sesión</a>
+							<a href="/register" class="ghost-gold-button">Crear Cuenta</a>
+						</div>
+					</div>
+				)}
+			</div>
+			<div class="testimonials-list">
+				{testimonials.length === 0 ? (
+					<div class="luxury-card empty-state">
+						<p>Aún no hay testimonios publicados. Sé el primero en valorar la metodología.</p>
+					</div>
+				) : (
+					testimonials.map((t) => (
+						<article class="luxury-card testimonial-card">
+							<div class="testimonial-head">
+								<div class="testimonial-author">
+									<span class="author-avatar" aria-hidden="true">
+										{t.username ? t.username.charAt(0).toUpperCase() : '?'}
+									</span>
+									<div>
+										<strong>{t.username || 'Miembro'}</strong>
+										{t.level && <span class="author-level">Nivel {t.level}</span>}
+									</div>
+								</div>
+								<div class="testimonial-rating">
+									<span class="sr-only">{t.rating} de 5 estrellas</span>
+									{[1, 2, 3, 4, 5].map((n) => (
+										<span class:list={['star', { filled: n <= t.rating }]} aria-hidden="true">★</span>
+									))}
+								</div>
+							</div>
+
+							<p class="testimonial-comment">{t.comment}</p>
+
+							{t.imageUrl && (
+								<a href={t.imageUrl} target="_blank" rel="noopener noreferrer" class="testimonial-image">
+									<img src={t.imageUrl} alt={`Imagen del testimonio de ${t.username}`} loading="lazy" />
+								</a>
+							)}
+
+							{t.date && <span class="testimonial-date">{formatDate(t.date)}</span>}
+						</article>
+					))
+				)}
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.section {
+		padding: 85px 24px;
+	}
+
+	.section-container {
+		max-width: 1240px;
+		margin: 0 auto;
+	}
+
+	.section-header {
+		text-align: center;
+		margin-bottom: 50px;
+	}
+
+	.section-badge {
+		font-size: 0.75rem;
+		letter-spacing: 0.2em;
+		font-weight: 700;
+		color: var(--gold-primary);
+		text-transform: uppercase;
+		display: inline-block;
+		margin-bottom: 12px;
+	}
+
+	.section-title {
+		font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+		font-weight: 800;
+		margin-bottom: 16px;
+	}
+
+	.section-subtitle {
+		font-size: 1.05rem;
+		color: var(--text-muted);
+		max-width: 620px;
+		margin: 0 auto;
+		line-height: 1.6;
+	}
+
+	/* Solo para lectores de pantalla */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	/* ---- Resumen de valoración ---- */
+	.rating-summary {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 28px;
+		padding: 24px 30px;
+		margin-bottom: 36px;
+	}
+
+	.rating-big {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
+
+	.rating-average {
+		font-size: 2.6rem;
+		font-weight: 900;
+		color: var(--gold-primary);
+		line-height: 1;
+	}
+
+	.rating-stars,
+	.testimonial-rating {
+		display: inline-flex;
+		gap: 3px;
+	}
+
+	.star {
+		color: rgba(212, 175, 55, 0.25);
+		font-size: 1.15rem;
+		line-height: 1;
+	}
+
+	.star.filled {
+		color: var(--gold-primary);
+	}
+
+	.rating-meta {
+		font-size: 0.9rem;
+		color: var(--text-muted);
+		line-height: 1.6;
+	}
+
+	.rating-meta strong {
+		color: var(--text-primary);
+		font-size: 1.1rem;
+	}
+
+	.rating-hint {
+		font-size: 0.82rem;
+	}
+
+	/* ---- Avisos ---- */
+	.alert {
+		padding: 13px 18px;
+		border-radius: 12px;
+		font-size: 0.92rem;
+		margin-bottom: 22px;
+		line-height: 1.5;
+	}
+
+	.alert-ok {
+		background: rgba(16, 185, 129, 0.12);
+		border: 1px solid rgba(16, 185, 129, 0.35);
+		color: #10b981;
+	}
+
+	.alert-error {
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.35);
+		color: #ef4444;
+	}
+
+	/* ---- Disposición ---- */
+	.testimonials-layout {
+		display: grid;
+		grid-template-columns: 1fr 1.2fr;
+		gap: 32px;
+		align-items: start;
+	}
+
+	/* ---- Formulario ---- */
+	.form-card {
+		padding: 34px 30px;
+		position: sticky;
+		top: 110px;
+	}
+
+	.form-title {
+		font-size: 1.3rem;
+		font-weight: 800;
+		margin-bottom: 22px;
+	}
+
+	.tform {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.field label {
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--text-secondary);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.field textarea,
+	.field input[type='file'] {
+		padding: 13px 15px;
+		background: rgba(15, 23, 42, 0.05);
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		font-size: 0.95rem;
+		font-family: inherit;
+		color: var(--text-primary);
+		width: 100%;
+		box-sizing: border-box;
+		transition: border-color 0.25s ease, box-shadow 0.25s ease;
+	}
+
+	:global([data-theme='dark']) .field textarea,
+	:global([data-theme='dark']) .field input[type='file'] {
+		background: rgba(4, 11, 28, 0.6);
+	}
+
+	.field textarea:focus,
+	.field input[type='file']:focus {
+		outline: none;
+		border-color: var(--gold-primary);
+		box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+	}
+
+	.field textarea {
+		resize: vertical;
+		min-height: 110px;
+		line-height: 1.6;
+	}
+
+	.field-hint {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+
+	.btn-full {
+		width: 100%;
+		padding: 14px;
+		font-size: 0.95rem;
+	}
+
+	.form-note {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+		line-height: 1.5;
+		text-align: center;
+	}
+
+	/* ---- Selector de estrellas ---- */
+	.star-picker {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.star-picker-label {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+	}
+
+	.star-options {
+		display: flex;
+		gap: 6px;
+	}
+
+	.star-option {
+		cursor: pointer;
+		line-height: 1;
+	}
+
+	.star-option input {
+		position: absolute;
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	.star-option-mark {
+		display: block;
+		font-size: 2rem;
+		color: rgba(212, 175, 55, 0.28);
+		transition: color 0.2s ease, transform 0.2s ease;
+		padding: 0 2px;
+	}
+
+	/* Resaltar al pasar el cursor */
+	.star-option:hover .star-option-mark,
+	.star-option:hover ~ .star-option .star-option-mark {
+		color: var(--gold-primary);
+	}
+
+	.star-option:hover .star-option-mark {
+		transform: scale(1.12);
+	}
+
+	.star-option:focus-within .star-option-mark {
+		outline: 2px solid var(--gold-primary);
+		outline-offset: 3px;
+		border-radius: 4px;
+	}
+
+	/* ---- Lista de testimonios ---- */
+	.testimonials-list {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	.testimonial-card {
+		padding: 24px 26px;
+	}
+
+	.testimonial-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 14px;
+		margin-bottom: 14px;
+		flex-wrap: wrap;
+	}
+
+	.testimonial-author {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.author-avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		background: rgba(212, 175, 55, 0.15);
+		border: 1px solid var(--gold-border);
+		color: var(--gold-primary);
+		display: grid;
+		place-items: center;
+		font-weight: 800;
+		font-size: 1rem;
+		flex-shrink: 0;
+	}
+
+	.testimonial-author strong {
+		display: block;
+		font-size: 0.95rem;
+		color: var(--text-primary);
+	}
+
+	.author-level {
+		font-size: 0.75rem;
+		color: var(--gold-primary);
+		font-weight: 600;
+	}
+
+	.testimonial-comment {
+		font-size: 0.95rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 14px;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.testimonial-image {
+		display: block;
+		margin-bottom: 14px;
+		border-radius: 12px;
+		overflow: hidden;
+		border: 1px solid var(--gold-border);
+	}
+
+	.testimonial-image img {
+		display: block;
+		width: 100%;
+		height: auto;
+		max-height: 320px;
+		object-fit: cover;
+		transition: transform 0.3s ease;
+	}
+
+	.testimonial-image:hover img {
+		transform: scale(1.03);
+	}
+
+	.testimonial-date {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+
+	/* ---- Estado vacío / login ---- */
+	.empty-state {
+		padding: 40px 30px;
+		text-align: center;
+		color: var(--text-muted);
+	}
+
+	.login-prompt {
+		text-align: center;
+		color: var(--text-secondary);
+		line-height: 1.7;
+	}
+
+	.login-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-top: 22px;
+	}
+
+	/* ============ RESPONSIVE ============ */
+	@media (max-width: 900px) {
+		.testimonials-layout {
+			grid-template-columns: 1fr;
+		}
+
+		/* En una sola columna el sticky molesta */
+		.form-card {
+			position: static;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.section {
+			padding: 52px 18px;
+		}
+
+		.section-header {
+			margin-bottom: 34px;
+		}
+
+		.rating-summary {
+			flex-direction: column;
+			gap: 12px;
+			padding: 22px 18px;
+			margin-bottom: 28px;
+		}
+
+		.rating-average {
+			font-size: 2.1rem;
+		}
+
+		.form-card {
+			padding: 26px 20px;
+		}
+
+		/* Las estrellas se mantienen en fila: son el control principal */
+		.star-option-mark {
+			font-size: 1.7rem;
+		}
+
+		.testimonial-card {
+			padding: 20px 18px;
+		}
+
+		.testimonial-image img {
+			max-height: 220px;
+		}
+	}
+</style>

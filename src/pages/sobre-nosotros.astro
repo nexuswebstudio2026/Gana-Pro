@@ -16,11 +16,11 @@ export const prerender = false;
 				<div class="section-header">
 					<span class="section-badge font-cinzel">QUIÉNES SOMOS</span>
 					<h1 class="section-title font-cinzel">
-						El Estándar <span class="gold-gradient-text">Supremo del Prestigio</span>
+						Por Qué Existe <span class="gold-gradient-text">GANA PRO</span>
 					</h1>
 					<p class="section-subtitle">
-						No somos un banco común ni una aplicación ordinaria. Somos una infraestructura tecnológica de élite
-						concebida para quienes buscan el pináculo de la elegancia y la confidencialidad absoluta.
+						Una plataforma creada para que cualquier persona pueda acceder a estrategias de ingreso
+						estructuradas, con reglas claras y sin depender de quién te las recomendaron.
 					</p>
 				</div>
 			</div>
@@ -30,28 +30,56 @@ export const prerender = false;
 			<div class="section-container">
 				<div class="about-grid">
 					<div class="about-content">
-						<h2 class="block-title font-cinzel">Nuestra <span class="gold-gradient-text">Identidad</span></h2>
+						<h2 class="block-title font-cinzel">El <span class="gold-gradient-text">Problema</span></h2>
 						<p class="block-text">
-							<strong>GANA PRO</strong> nació con una misión clara: acercar la gestión de patrimonio de clase
-							institucional a un grupo mucho más amplio de inversores y líderes. Combinamos tecnología
-							financiera avanzada con una experiencia de usuario diseñada con el mismo cuidado que un tallest
-							suizo.
+							Las vías para generar ingresos rara vez son transparentes. Quien empieza no sabe cuánto va a
+							ganar, en cuánto tiempo ni bajo qué condiciones. La información suele estar en manos de
+							quien la vende, no de quien la necesita.
 						</p>
 						<p class="block-text">
-							Desde sus inicios, nuestro enfoque ha sido innegociable: la transparencia. Cada movimiento de
-							capital es trazable, cada rendimiento se reporta con datos verificables y cada usuario cuenta con
-							acceso directo a su propio panel de control.
+							Además, las oportunidades de inversión de calidad han quedado reservadas para patrimonios
+							grandes o para unos pocos que saben moverse. Quien no tiene contactos ni capital
+							históricamente alto tiene, en la práctica, las mismas opciones que el resto.
 						</p>
 					</div>
 					<div class="about-content">
-						<h2 class="block-title font-cinzel">Nuestra <span class="gold-gradient-text">Misión</span></h2>
+						<h2 class="block-title font-cinzel">La <span class="gold-gradient-text">Propuesta</span></h2>
 						<p class="block-text">
-							Democratizar el acceso a estrategias de inversión de alto rendimiento, eliminando las barreras de
-							capital que históricamente han reservado estos instrumentos a un puñado de instituciones.
+							GANA PRO nace para cerrar esa brecha. Centralizamos en un solo lugar la metodología de
+							ingreso, las reglas de cada nivel y el detalle de cuánto se aporta y cuánto se recibe en
+							cada paso.
 						</p>
 						<p class="block-text">
-							Queremos que cada miembro de GANA PRO tenga las mismas herramientas, la misma visibilidad y el
-							mismo nivel de acompañamiento que antes solo tenían los patrimonios más exclusivos del mundo.
+							Cualquier miembro registrado puede publicar su experiencia y valorar la metodología de 1 a 5
+							estrellas, incluidas las valoraciones negativas. La media se muestra sin filtrar.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-container">
+				<div class="pillars-grid">
+					<div class="luxury-card pillar">
+						<h3 class="pillar-title font-cinzel">Transparencia</h3>
+						<p class="pillar-text">
+							Todas las cifras de la metodología están publicadas, incluidos los porcentajes que se
+							retienen en cada nivel y el importe que no sale de la estructura.
+						</p>
+					</div>
+					<div class="luxury-card pillar">
+						<h3 class="pillar-title font-cinzel">Accesibilidad</h3>
+						<p class="pillar-text">
+							No se requiere experiencia previa en inversiones. El proceso está documentado paso a paso
+							para que cualquiera pueda entenderlo antes de decidirse.
+						</p>
+					</div>
+					<div class="luxury-card pillar">
+						<h3 class="pillar-title font-cinzel">Voz de los miembros</h3>
+						<p class="pillar-text">
+							Los testimonios y las valoraciones los escriben usuarios registrados, sin edición de su
+							contenido. Nadie cobra por dejar una opinión.
 						</p>
 					</div>
 				</div>
@@ -62,11 +90,14 @@ export const prerender = false;
 			<div class="section-container">
 				<div class="luxury-card cta-box">
 					<div class="cta-content">
-						<h2 class="cta-title font-cinzel">Solicita una Asesoría Privada</h2>
-						<p class="cta-desc">Un asesor especializado evaluará tu perfil y diseñará una estrategia a tu medida.</p>
+						<h2 class="cta-title font-cinzel">Conoce la Metodología por Ti Mismo</h2>
+						<p class="cta-desc">
+							Consulta todas las cifras, los niveles y el flujo de dinero antes de decidir. También puedes
+							leer lo que dicen los miembros registrados.
+						</p>
 						<div class="cta-btns">
-							<a href="/contacto" class="gold-button">Contactar Ahora</a>
-							<a href="/gana-dinero" class="ghost-gold-button">Ver Vías de Ingreso</a>
+							<a href="/gana-dinero" class="gold-button">Ver la Metodología</a>
+							<a href="/#testimonios" class="ghost-gold-button">Leer Testimonios</a>
 						</div>
 					</div>
 				</div>
@@ -150,6 +181,30 @@ export const prerender = false;
 		color: var(--text-primary);
 	}
 
+	/* ---- Pilares ---- */
+	.pillars-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 26px;
+	}
+
+	.pillar {
+		padding: 32px 28px;
+	}
+
+	.pillar-title {
+		font-size: 1.2rem;
+		font-weight: 800;
+		color: var(--gold-primary);
+		margin-bottom: 14px;
+	}
+
+	.pillar-text {
+		font-size: 0.95rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+	}
+
 	.cta-box {
 		padding: 60px 30px;
 		text-align: center;
@@ -186,6 +241,10 @@ export const prerender = false;
 		.about-grid {
 			grid-template-columns: 1fr;
 			gap: 36px;
+		}
+		.pillars-grid {
+			grid-template-columns: 1fr;
+			gap: 18px;
 		}
 	}
 
