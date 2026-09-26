@@ -17,20 +17,6 @@ import Logo from './Logo.astro';
 
 			<div class="footer-nav">
 				<div class="nav-col">
-					<h4 class="col-title font-cinzel">Ecosistema</h4>
-					<a href="/#servicios">Inversiones & Activos</a>
-					<a href="/#rendimiento">Analítica Cuántica</a>
-					<a href="/#ventajas">Bóveda Privada</a>
-					<a href="/#membresia">Membresía Black</a>
-				</div>
-				<div class="nav-col">
-					<h4 class="col-title font-cinzel">Seguridad</h4>
-					<a href="/login">Acceso Blindado</a>
-					<a href="/register">Registro Verificado</a>
-					<a href="#">Cifrado SHA-256 PBKDF2</a>
-					<a href="#">Protocolos Suizos</a>
-				</div>
-				<div class="nav-col">
 					<h4 class="col-title font-cinzel">La Plataforma</h4>
 					<a href="/gana-dinero">Gana Dinero</a>
 					<a href="/sobre-nosotros">Sobre Nosotros</a>
@@ -41,9 +27,12 @@ import Logo from './Logo.astro';
 		</div>
 
 		<div class="footer-bottom">
-			<p>© 2026 GANA PRO Inc. Todos los derechos reservados.</p>
-			<p class="credit">
-				Creado por <strong>Nexus Web Studio</strong>
+			<p class="copyright">
+				© 2026 <a href="/" class="site-link">Gana Pro</a> - <a
+					href="https://nexuswebstudio.vercel.app/"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="studio-link">Nexus Web Studio</a> &nbsp;Todos los derechos reservados.
 			</p>
 		</div>
 	</div>
@@ -65,7 +54,8 @@ import Logo from './Logo.astro';
 
 	.footer-top {
 		display: grid;
-		grid-template-columns: 1.5fr 2fr;
+		/* Marca a la izquierda, columna de enlaces a la derecha */
+		grid-template-columns: 1.2fr 1fr;
 		gap: 60px;
 		padding-bottom: 50px;
 		border-bottom: 1px solid rgba(212, 175, 55, 0.15);
@@ -102,10 +92,12 @@ import Logo from './Logo.astro';
 		max-width: 420px;
 	}
 
+	/* Una sola columna de enlaces: ocupa menos espacio y mantiene la jerarquía */
 	.footer-nav {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: 1fr;
 		gap: 30px;
+		justify-items: start;
 	}
 
 	.col-title {
@@ -146,16 +138,18 @@ import Logo from './Logo.astro';
 		gap: 16px;
 	}
 
-	.credit {
-		display: flex;
-		align-items: center;
-		gap: 7px;
-	}
-
-	.credit strong {
+	.copyright a {
 		color: var(--gold-primary);
 		font-weight: 700;
 		letter-spacing: 0.04em;
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+		transition: color 0.2s ease, border-color 0.2s ease;
+	}
+
+	.copyright a:hover {
+		color: var(--gold-hover);
+		border-bottom-color: var(--gold-primary);
 	}
 
 	@media (max-width: 860px) {
@@ -163,15 +157,9 @@ import Logo from './Logo.astro';
 			grid-template-columns: 1fr;
 			gap: 40px;
 		}
-		.footer-nav {
-			grid-template-columns: 1fr 1fr;
-		}
 	}
 
 	@media (max-width: 520px) {
-		.footer-nav {
-			grid-template-columns: 1fr;
-		}
 		.footer-bottom {
 			flex-direction: column;
 			text-align: center;
