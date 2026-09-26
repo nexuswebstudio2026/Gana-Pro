@@ -244,4 +244,61 @@
 			grid-template-columns: 1fr;
 		}
 	}
+
+	/* ============ MÓVIL ============ */
+	@media (max-width: 640px) {
+		.section {
+			padding: 56px 18px;
+		}
+
+		.adv-grid {
+			gap: 38px;
+		}
+
+		.adv-desc {
+			margin-bottom: 28px;
+			line-height: 1.7;
+		}
+
+		.features-list {
+			gap: 20px;
+		}
+
+		.feature-item {
+			gap: 12px;
+		}
+
+		.check-box {
+			width: 28px;
+			height: 28px;
+		}
+
+		.feature-item h4 {
+			font-size: 1rem;
+		}
+
+		/* La tarjeta de la bóveda tiene padding y cifras grandes */
+		.vault-card {
+			padding: 24px 20px;
+		}
+
+		.vault-amount {
+			font-size: 2rem;
+		}
+
+		.vault-bars {
+			height: 86px;
+			gap: 8px;
+		}
+
+		/* El pie pasa a apilarse para no comprimir los textos */
+		.vault-footer {
+			flex-direction: column;
+			gap: 14px;
+		}
+
+		.text-right {
+			text-align: left;
+		}
+	}
 </style>

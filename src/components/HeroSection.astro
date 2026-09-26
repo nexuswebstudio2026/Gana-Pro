@@ -197,4 +197,50 @@
 			grid-template-columns: 1fr;
 		}
 	}
+
+	/* ============ MÓVIL ============ */
+	@media (max-width: 640px) {
+		.hero-section {
+			padding: 52px 18px 46px;
+		}
+
+		.hero-desc {
+			margin-bottom: 30px;
+		}
+
+		/* Los CTA pasan a ocupar todo el ancho para ser cómodo al tocar */
+		.hero-actions {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 14px;
+			margin-bottom: 42px;
+		}
+
+		.hero-actions a {
+			width: 100%;
+		}
+
+		.stats-grid {
+			padding: 22px 14px;
+		}
+
+		.stat-number {
+			font-size: 1.7rem;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.hero-section {
+			padding: 40px 14px 36px;
+		}
+
+		.badge-text {
+			font-size: 0.62rem;
+			letter-spacing: 0.12em;
+		}
+
+		.stat-number {
+			font-size: 1.5rem;
+		}
+	}
 </style>

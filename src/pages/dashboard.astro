@@ -431,4 +431,34 @@ const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
 		.welcome-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
 		.details-grid { grid-template-columns: 1fr; }
 	}
+
+	/* ============ MÓVIL PEQUEÑO ============ */
+	@media (max-width: 520px) {
+		/* El chip de usuario + toggle + salir no caben en una fila */
+		.header-actions { gap: 10px; }
+		.user-meta { display: none; }
+		.user-chip { padding: 5px; }
+		.brand-name { font-size: 1.1rem; }
+		.btn-logout { padding: 8px 12px; }
+		.btn-logout span { display: none; }
+
+		.main-content { padding: 16px; gap: 20px; }
+		.welcome-banner { padding: 22px 18px; }
+		.welcome-banner h1 { font-size: 1.5rem; }
+
+		/* minmax(240px) desborda en pantallas de 320px */
+		.stats-grid { grid-template-columns: 1fr; gap: 14px; }
+		.stat-card { padding: 18px; gap: 14px; }
+		.stat-value { font-size: 1.2rem; }
+
+		.detail-card { padding: 20px 16px; }
+		.detail-title { font-size: 1.05rem; }
+
+		/* Las filas de datos se apilan para evitar desbordes */
+		.info-row {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 4px;
+		}
+	}
 </style>

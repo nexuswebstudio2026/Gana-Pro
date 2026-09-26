@@ -138,7 +138,63 @@
 	.cta-btns { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
 
 	@media (max-width: 900px) {
-		.membership-grid { grid-template-columns: 1fr; }
-		.tier-featured { transform: none; }
+		.membership-grid {
+			grid-template-columns: 1fr;
+		}
+		.tier-featured {
+			transform: none;
+		}
+	}
+
+	/* ============ MÓVIL ============ */
+	@media (max-width: 640px) {
+		.section {
+			padding: 56px 18px;
+		}
+
+		.section-header {
+			margin-bottom: 36px;
+		}
+
+		.tier-card {
+			padding: 32px 22px;
+		}
+
+		/* La etiqueta "NIVEL MÁXIMO" no debe salirse en pantallas estrechas */
+		.featured-ribbon {
+			font-size: 0.62rem;
+			letter-spacing: 0.1em;
+			padding: 4px 10px;
+		}
+
+		.tier-price {
+			margin-bottom: 22px;
+		}
+
+		.tier-price .val {
+			font-size: 2.2rem;
+		}
+
+		.tier-list {
+			gap: 12px;
+			margin-bottom: 28px;
+		}
+
+		.cta-box {
+			padding: 40px 20px;
+		}
+
+		.cta-desc {
+			margin-bottom: 26px;
+		}
+
+		/* Los botones del CTA se apilan a ancho completo */
+		.cta-btns {
+			flex-direction: column;
+		}
+
+		.cta-btns a {
+			width: 100%;
+		}
 	}
 </style>

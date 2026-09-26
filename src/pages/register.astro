@@ -167,4 +167,27 @@ const error = Astro.url.searchParams.get('error');
 	.gold-link:hover {
 		text-decoration: underline;
 	}
+
+	/* ============ MÓVIL ============ */
+	@media (max-width: 480px) {
+		/* Las etiquetas largas del registro necesitan más espacio */
+		.field label {
+			font-size: 12.5px;
+			line-height: 1.4;
+		}
+
+		.btn-full {
+			padding: 14px 12px;
+			font-size: 0.85rem;
+		}
+
+		.msg {
+			padding: 11px 13px;
+			font-size: 13px;
+		}
+
+		.form {
+			gap: 16px;
+		}
+	}
 </style>

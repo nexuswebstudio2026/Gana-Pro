@@ -1,0 +1,238 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+// SSR: la página usa el Navbar, que lee la cookie de sesión
+export const prerender = false;
+---
+
+<Layout title="Sobre Nosotros">
+	<Navbar />
+
+	<main class="main-content">
+		<section class="section page-hero">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">QUIÉNES SOMOS</span>
+					<h1 class="section-title font-cinzel">
+						El Estándar <span class="gold-gradient-text">Supremo del Prestigio</span>
+					</h1>
+					<p class="section-subtitle">
+						No somos un banco común ni una aplicación ordinaria. Somos una infraestructura tecnológica de élite
+						concebida para quienes buscan el pináculo de la elegancia y la confidencialidad absoluta.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-container">
+				<div class="about-grid">
+					<div class="about-content">
+						<h2 class="block-title font-cinzel">Nuestra <span class="gold-gradient-text">Identidad</span></h2>
+						<p class="block-text">
+							<strong>GANA PRO</strong> nació con una misión clara: acercar la gestión de patrimonio de clase
+							institucional a un grupo mucho más amplio de inversores y líderes. Combinamos tecnología
+							financiera avanzada con una experiencia de usuario diseñada con el mismo cuidado que un tallest
+							suizo.
+						</p>
+						<p class="block-text">
+							Desde sus inicios, nuestro enfoque ha sido innegociable: la transparencia. Cada movimiento de
+							capital es trazable, cada rendimiento se reporta con datos verificables y cada usuario cuenta con
+							acceso directo a su propio panel de control.
+						</p>
+					</div>
+					<div class="about-content">
+						<h2 class="block-title font-cinzel">Nuestra <span class="gold-gradient-text">Misión</span></h2>
+						<p class="block-text">
+							Democratizar el acceso a estrategias de inversión de alto rendimiento, eliminando las barreras de
+							capital que históricamente han reservado estos instrumentos a un puñado de instituciones.
+						</p>
+						<p class="block-text">
+							Queremos que cada miembro de GANA PRO tenga las mismas herramientas, la misma visibilidad y el
+							mismo nivel de acompañamiento que antes solo tenían los patrimonios más exclusivos del mundo.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-container">
+				<div class="luxury-card cta-box">
+					<div class="cta-content">
+						<h2 class="cta-title font-cinzel">Solicita una Asesoría Privada</h2>
+						<p class="cta-desc">Un asesor especializado evaluará tu perfil y diseñará una estrategia a tu medida.</p>
+						<div class="cta-btns">
+							<a href="/contacto" class="gold-button">Contactar Ahora</a>
+							<a href="/gana-dinero" class="ghost-gold-button">Ver Vías de Ingreso</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<Footer />
+</Layout>
+
+<style>
+	.main-content {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.section {
+		padding: 85px 24px;
+	}
+
+	.section-container {
+		max-width: 1240px;
+		margin: 0 auto;
+	}
+
+	.section-header {
+		text-align: center;
+		margin-bottom: 55px;
+	}
+
+	.section-badge {
+		font-size: 0.75rem;
+		letter-spacing: 0.2em;
+		font-weight: 700;
+		color: var(--gold-primary);
+		text-transform: uppercase;
+		display: inline-block;
+		margin-bottom: 12px;
+	}
+
+	.section-title {
+		font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+		font-weight: 800;
+		margin-bottom: 16px;
+		line-height: 1.2;
+	}
+
+	.section-subtitle {
+		font-size: 1.05rem;
+		color: var(--text-muted);
+		max-width: 620px;
+		margin: 0 auto;
+		line-height: 1.6;
+	}
+
+	.page-hero {
+		padding-top: 70px;
+		padding-bottom: 20px;
+	}
+
+	.about-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 50px;
+	}
+
+	.block-title {
+		font-size: clamp(1.5rem, 2.5vw, 2rem);
+		font-weight: 800;
+		margin-bottom: 20px;
+	}
+
+	.block-text {
+		font-size: 1rem;
+		color: var(--text-secondary);
+		line-height: 1.8;
+		margin-bottom: 18px;
+	}
+
+	.block-text strong {
+		color: var(--text-primary);
+	}
+
+	.cta-box {
+		padding: 60px 30px;
+		text-align: center;
+		background: radial-gradient(circle at center, rgba(30, 58, 138, 0.25) 0%, var(--bg-card) 75%);
+		border: 1px solid var(--gold-border);
+	}
+
+	.cta-content {
+		max-width: 680px;
+		margin: 0 auto;
+	}
+
+	.cta-title {
+		font-size: clamp(2rem, 3.5vw, 2.7rem);
+		font-weight: 800;
+		margin-bottom: 16px;
+	}
+
+	.cta-desc {
+		font-size: 1.05rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 34px;
+	}
+
+	.cta-btns {
+		display: flex;
+		justify-content: center;
+		gap: 20px;
+		flex-wrap: wrap;
+	}
+
+	@media (max-width: 900px) {
+		.about-grid {
+			grid-template-columns: 1fr;
+			gap: 36px;
+		}
+	}
+
+	/* ============ MÓVIL ============ */
+	@media (max-width: 640px) {
+		.section {
+			padding: 52px 18px;
+		}
+
+		.section-header {
+			margin-bottom: 34px;
+		}
+
+		.page-hero {
+			padding-top: 44px;
+			padding-bottom: 10px;
+		}
+
+		.about-grid {
+			gap: 30px;
+		}
+
+		.block-text {
+			font-size: 0.97rem;
+			line-height: 1.75;
+		}
+
+		.cta-box {
+			padding: 38px 20px;
+		}
+
+		.cta-desc {
+			margin-bottom: 26px;
+		}
+
+		.cta-btns {
+			flex-direction: column;
+		}
+
+		.cta-btns a {
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.section {
+			padding: 42px 14px;
+		}
+	}
+</style>

@@ -24,11 +24,11 @@ const isLoggedIn = Boolean(token);
 			</div>
 		</a>
 
-		<nav class="nav-links">
-			<a href="/#servicios" class="nav-link">Servicios</a>
-			<a href="/#ventajas" class="nav-link">Exclusividad</a>
-			<a href="/#rendimiento" class="nav-link">Rendimiento</a>
-			<a href="/#membresia" class="nav-link">Membresía</a>
+		<nav class="nav-links" id="primary-nav" aria-label="Navegación principal">
+			<a href="/" class="nav-link" aria-current="page">Inicio</a>
+			<a href="/gana-dinero" class="nav-link">Gana Dinero</a>
+			<a href="/sobre-nosotros" class="nav-link">Sobre Nosotros</a>
+			<a href="/contacto" class="nav-link">Contacto</a>
 		</nav>
 
 		<div class="nav-actions">
@@ -36,14 +36,53 @@ const isLoggedIn = Boolean(token);
 			{isLoggedIn ? (
 				<a href="/dashboard" class="gold-button btn-sm">Mi Portal</a>
 			) : (
-				<div class="auth-group">
-					<a href="/login" class="login-link">Acceso</a>
-					<a href="/register" class="gold-button btn-sm">Membresía VIP</a>
-				</div>
+				<a href="/login" class="gold-button btn-sm">Acceso</a>
 			)}
 		</div>
+
+		<button
+			class="nav-toggle"
+			type="button"
+			data-nav-toggle
+			aria-controls="primary-nav"
+			aria-expanded="false"
+			aria-label="Abrir menú de navegación"
+		>
+			<span class="nav-toggle-bar" aria-hidden="true"></span>
+			<span class="nav-toggle-bar" aria-hidden="true"></span>
+			<span class="nav-toggle-bar" aria-hidden="true"></span>
+		</button>
 	</div>
+	<div class="nav-backdrop" data-nav-backdrop hidden></div>
 </header>
+
+<script>
+	const navToggle = document.querySelector<HTMLElement>('[data-nav-toggle]');
+	const navPanel = document.getElementById('primary-nav');
+	const navBackdrop = document.querySelector<HTMLElement>('[data-nav-backdrop]');
+
+	const setMenu = (open: boolean) => {
+		navToggle?.classList.toggle('is-open', open);
+		navPanel?.classList.toggle('is-open', open);
+		navToggle?.setAttribute('aria-expanded', String(open));
+		navToggle?.setAttribute('aria-label', open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
+		if (navBackdrop) navBackdrop.hidden = !open;
+		document.documentElement.classList.toggle('nav-open', open);
+	};
+
+	navToggle?.addEventListener('click', () => {
+		setMenu(!navPanel?.classList.contains('is-open'));
+	});
+	navBackdrop?.addEventListener('click', () => setMenu(false));
+	navPanel?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setMenu(false)));
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') setMenu(false);
+	});
+	// Al volver a escritorio, asegurar que el panel quede cerrado
+	window.matchMedia('(min-width: 901px)').addEventListener('change', (event) => {
+		if (event.matches) setMenu(false);
+	});
+</script>
 
 <style>
 	.navbar {
@@ -157,24 +196,9 @@ const isLoggedIn = Boolean(token);
 		gap: 20px;
 	}
 
-	.auth-group {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-	}
-
-	.login-link {
-		color: var(--text-primary);
-		text-decoration: none;
-		font-size: 0.92rem;
-		font-weight: 600;
-		padding: 8px 14px;
-		border-radius: 8px;
-		transition: all 0.2s ease;
-	}
-
-	.login-link:hover {
-		color: var(--gold-primary);
+	.nav-toggle,
+	.nav-backdrop {
+		display: none;
 	}
 
 	.btn-sm {
@@ -182,12 +206,202 @@ const isLoggedIn = Boolean(token);
 		font-size: 0.85rem;
 	}
 
-	@media (max-width: 860px) {
+	/* ============ TABLET Y MÓVIL ============ */
+	@media (max-width: 900px) {
+		.nav-container {
+			padding: 12px 18px;
+			gap: 12px;
+		}
+
+		/* El panel de navegación se convierte en un desplegable */
 		.nav-links {
+			position: absolute;
+			top: 100%;
+			left: 0;
+			right: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0;
+			padding: 8px 18px 18px;
+			background: var(--bg-header);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border-bottom: 1px solid var(--gold-border);
+			box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+			/* Oculto por defecto; se despliega con .is-open */
+			opacity: 0;
+			visibility: hidden;
+			transform: translateY(-8px);
+			transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+		}
+
+		.nav-links.is-open {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+		}
+
+		.nav-link {
+			padding: 14px 4px;
+			font-size: 1rem;
+			font-weight: 600;
+			border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+		}
+
+		/* En móvil la subrayado inferior estorba: usar indicator a la izquierda */
+		.nav-link::after {
 			display: none;
 		}
+
+		.nav-link[aria-current='page'] {
+			color: var(--gold-primary);
+		}
+
+		.nav-link[aria-current='page']::before {
+			content: '';
+			position: absolute;
+			left: -10px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 3px;
+			height: 20px;
+			border-radius: 3px;
+			background: var(--gold-primary);
+		}
+
+		.nav-actions {
+			margin-left: auto;
+			gap: 12px;
+		}
+
+		/* Botón hamburguesa */
+		.nav-toggle {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			gap: 5px;
+			width: 44px;
+			height: 44px;
+			flex: 0 0 44px;
+			padding: 0;
+			background: rgba(212, 175, 55, 0.1);
+			border: 1px solid var(--gold-border);
+			border-radius: 12px;
+			cursor: pointer;
+			transition: background 0.25s ease, border-color 0.25s ease;
+		}
+
+		.nav-toggle:hover,
+		.nav-toggle.is-open {
+			background: rgba(212, 175, 55, 0.22);
+			border-color: var(--gold-primary);
+		}
+
+		.nav-toggle-bar {
+			display: block;
+			width: 20px;
+			height: 2px;
+			border-radius: 2px;
+			background: var(--gold-primary);
+			transition: transform 0.28s ease, opacity 0.2s ease;
+		}
+
+		/* Animación a "X" */
+		.nav-toggle.is-open .nav-toggle-bar:nth-child(1) {
+			transform: translateY(7px) rotate(45deg);
+		}
+		.nav-toggle.is-open .nav-toggle-bar:nth-child(2) {
+			opacity: 0;
+		}
+		.nav-toggle.is-open .nav-toggle-bar:nth-child(3) {
+			transform: translateY(-7px) rotate(-45deg);
+		}
+
+		.nav-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 90;
+			background: rgba(2, 7, 18, 0.55);
+			opacity: 0;
+			transition: opacity 0.25s ease;
+		}
+
+		.nav-backdrop[hidden] {
+			display: none;
+		}
+
+		/* Evita scroll del fondo mientras el menú está abierto */
+		:global(html.nav-open) {
+			overflow: hidden;
+		}
+	}
+
+	/* ============ MÓVILES PEQUEÑOS ============ */
+	@media (max-width: 480px) {
 		.nav-container {
-			padding: 14px 20px;
+			padding: 10px 14px;
+			gap: 8px;
+		}
+
+		/* La marca compite por espacio con los botones: reducir */
+		.logo-shield {
+			width: 38px;
+			height: 38px;
+			border-radius: 10px;
+		}
+
+		.brand {
+			gap: 10px;
+		}
+
+		.brand-title {
+			font-size: 1.05rem;
+			letter-spacing: 0.08em;
+		}
+
+		.brand-tag {
+			display: none;
+		}
+
+		.nav-actions {
+			gap: 8px;
+		}
+
+		.nav-actions :global(.theme-toggle-btn) {
+			width: 40px;
+			height: 40px;
+		}
+
+		.btn-sm {
+			padding: 9px 16px;
+			font-size: 0.78rem;
+		}
+
+		.nav-toggle {
+			width: 40px;
+			height: 40px;
+			flex-basis: 40px;
+		}
+	}
+
+	/* ============ PANTALLAS MUY PEQUEÑAS (320px) ============ */
+	@media (max-width: 360px) {
+		/* El botón dorado y el logo no caben: priorizamos el CTA */
+		.brand-title {
+			font-size: 0.95rem;
+		}
+
+		.logo-shield {
+			width: 34px;
+			height: 34px;
+		}
+
+		.btn-sm {
+			padding: 8px 12px;
+			font-size: 0.72rem;
 		}
 	}
 </style>
