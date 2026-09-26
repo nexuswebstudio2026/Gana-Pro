@@ -75,6 +75,161 @@ export const prerender = false;
 					</div>
 				</div>
 
+				<!-- Estructura jerárquica y distribución real -->
+				<div class="luxury-card tree-box">
+					<h3 class="cycle-title font-cinzel">La Estructura Jerárquica</h3>
+					<p class="cycle-intro">
+						La regla es única y se repite sin excepción: <strong class="accent">cada posición superior sostiene
+						exactamente 5 posiciones inferiores</strong>, y cada una de ellas sostiene 5 más, hasta cerrar
+						las seis posiciones de la constelación.
+					</p>
+
+					<div class="tree-list" role="list">
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 1</span>
+							<span class="tree-bar" style="--w: 100%"></span>
+							<span class="tree-count">3.125</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 2</span>
+							<span class="tree-bar" style="--w: 62%"></span>
+							<span class="tree-count">625</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 3</span>
+							<span class="tree-bar" style="--w: 32%"></span>
+							<span class="tree-count">125</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 4</span>
+							<span class="tree-bar" style="--w: 16%"></span>
+							<span class="tree-count">25</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 5</span>
+							<span class="tree-bar" style="--w: 8%"></span>
+							<span class="tree-count">5</span>
+						</div>
+						<div class="tree-row tree-row-top" role="listitem">
+							<span class="tree-label font-cinzel">GANA PRO</span>
+							<span class="tree-bar" style="--w: 4%"></span>
+							<span class="tree-count">1</span>
+						</div>
+					</div>
+
+					<div class="tree-stats">
+						<div class="tree-stat">
+							<span class="tree-stat-value font-cinzel">3.906</span>
+							<span class="tree-stat-label">Posiciones totales</span>
+						</div>
+						<div class="tree-stat">
+							<span class="tree-stat-value font-cinzel">80 %</span>
+							<span class="tree-stat-label">Ocupan el Nivel 1</span>
+						</div>
+						<div class="tree-stat">
+							<span class="tree-stat-value font-cinzel">3.905</span>
+							<span class="tree-stat-label">Personas bajo el máximo</span>
+						</div>
+					</div>
+
+					<div class="risk-note">
+						<h4 class="risk-title font-cinzel">Lectura Honesta de las Cifras</h4>
+						<p>
+							Una constelación completa requiere <strong class="accent">3.906 personas</strong>. De ellas,
+							<strong class="accent">3.125 están en la base</strong> y aportan los $15.000 que sostienen a
+							los niveles superiores: la base representa el
+							<strong class="accent">80 % de toda la estructura</strong> y aporta los
+							<strong class="accent">$46.875.000</strong>. Para alcanzar el rango GANA PRO
+							existen 3.905 posiciones por debajo.
+						</p>
+						<p>
+							La estructura solo se completa mediante la captación continuada de nuevos participantes. El
+							rendimiento de cada posición depende por completo del número de personas que consiga
+							incorporar por debajo, sin garantía de completarla.
+						</p>
+					</div>
+				</div>
+
+				<!-- Flujo de fondos -->
+				<div class="luxury-card flow-box">
+					<h3 class="cycle-title font-cinzel">El Flujo de Fondos</h3>
+					<p class="cycle-intro">
+						Cada nivel reenvía a su superior el 50 % de lo que recibe. El importe retenido por cada posición
+						constituye su utilidad antes del impuesto de plataforma.
+					</p>
+
+					<div class="flow-table" role="table" aria-label="Flujo de fondos por nivel">
+						<div class="flow-row flow-head" role="row">
+							<span role="columnheader">Nivel</span>
+							<span role="columnheader">Envía</span>
+							<span role="columnheader">Recibe</span>
+							<span role="columnheader">Retiene</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N1 → N2</span>
+							<span role="cell" data-label="Envía">$15.000</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$75.000</span>
+							<span role="cell" data-label="Retiene">—</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N2 → N3</span>
+							<span role="cell" data-label="Envía">$37.500</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$187.500</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$37.500</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N3 → N4</span>
+							<span role="cell" data-label="Envía">$93.750</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$468.750</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$93.750</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N4 → N5</span>
+							<span role="cell" data-label="Envía">$234.375</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$1.171.875</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$234.375</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N5 → GANA PRO</span>
+							<span role="cell" data-label="Envía">$410.000</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$2.050.000</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$761.875</span>
+						</div>
+					</div>
+
+					<div class="tax-box">
+						<h4 class="tax-title font-cinzel">Impuesto de Plataforma</h4>
+						<p>
+							El Nivel 5 obtiene una utilidad neta de <strong class="accent">$761.875</strong> antes de
+							impuestos. Sobre esa cifra se aplica el <strong class="accent">5 %</strong> de comisión de uso
+							de la plataforma, equivalente a <strong class="accent">$38.093,75</strong> por posición.
+						</p>
+						<p class="tax-note">
+							A diferencia de los niveles inferiores, el Nivel 5 no reenvía el 50 %: retiene el 65 % de lo
+							que recibe y destina $410.000 al rango superior.
+						</p>
+					</div>
+
+					<div class="risk-note">
+						<h4 class="risk-title font-cinzel">Reparto Real del Dinero de la Base</h4>
+						<p>
+							De los <strong class="accent">$46.875.000</strong> que aporta la base, la distribución
+							completa es: Nivel 2 se queda <strong class="accent">$23.437.500</strong> (50 %), Nivel 3
+							<strong class="accent">$11.718.750</strong> (25 %), Nivel 4
+							<strong class="accent">$5.859.375</strong> (12,5 %), Nivel 5
+							<strong class="accent">$3.809.375</strong> (8,1 %) y el rango GANA PRO
+							<strong class="accent">$2.050.000</strong> (4,4 %).
+						</p>
+						<p>
+							El <strong class="accent">95,6 % del dinero</strong> captado por la estructura se queda en los
+							niveles inferiores. El rango superior recibe menos del 5 %. Un participante en el Nivel 1 que
+							logra llegar al Nivel 2 obtiene una utilidad de $37.500 frente a los $15.000 que aportó: una
+							rentabilidad del <strong class="accent">150 %</strong> que solo se alcanza captando a 5
+							personas. Quien no completa su grupo de 5 no recibe nada y pierde los $15.000.
+						</p>
+					</div>
+				</div>
+
 				<!-- Ciclo de confirmación -->
 				<div class="luxury-card cycle-box">
 					<h3 class="cycle-title font-cinzel">El Ciclo de Confirmación</h3>
@@ -96,7 +251,8 @@ export const prerender = false;
 								<h4 class="cycle-name font-cinzel">Aporte</h4>
 								<p>
 									Cada una de las 5 posiciones de Nivel 1 envía un aporte de
-									<strong class="accent">$10.000</strong> a su posición de Nivel 2 correspondiente.
+									<strong class="accent">$15.000</strong> a su posición de Nivel 2 correspondiente, que
+									recibe un total de <strong class="accent">$75.000</strong>.
 								</p>
 							</div>
 						</li>
@@ -431,6 +587,223 @@ export const prerender = false;
 		text-align: center;
 	}
 
+	/* ---- Estructura jerárquica ---- */
+	.tree-box {
+		padding: 48px 42px;
+		margin-bottom: 46px;
+	}
+
+	.tree-list {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin: 34px 0 36px;
+	}
+
+	.tree-row {
+		display: grid;
+		grid-template-columns: 96px 1fr 72px;
+		align-items: center;
+		gap: 16px;
+	}
+
+	.tree-label {
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: var(--text-secondary);
+		letter-spacing: 0.04em;
+		text-align: right;
+	}
+
+	/* La barra es proporcional al número de posiciones de cada nivel */
+	.tree-bar {
+		height: 26px;
+		width: var(--w);
+		min-width: 8px;
+		border-radius: 4px;
+		background: linear-gradient(90deg, rgba(212, 175, 55, 0.55), var(--gold-primary));
+	}
+
+	.tree-count {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tree-row-top .tree-label,
+	.tree-row-top .tree-count {
+		color: var(--gold-primary);
+	}
+
+	.tree-row-top .tree-bar {
+		background: var(--gold-gradient);
+		box-shadow: 0 0 16px rgba(212, 175, 55, 0.55);
+	}
+
+	/* ---- Cifras clave ---- */
+	.tree-stats {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 18px;
+		padding: 26px 0;
+		border-top: 1px solid var(--gold-border);
+		border-bottom: 1px solid var(--gold-border);
+	}
+
+	.tree-stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 6px;
+	}
+
+	.tree-stat-value {
+		font-size: 1.9rem;
+		font-weight: 900;
+		color: var(--gold-primary);
+		line-height: 1.1;
+	}
+
+	.tree-stat-label {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+		font-weight: 600;
+		letter-spacing: 0.03em;
+	}
+
+	/* ---- Nota de riesgo ---- */
+	.risk-note {
+		margin-top: 32px;
+		padding: 26px 28px;
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		border-left: 3px solid #ef4444;
+		border-radius: 12px;
+		background: rgba(239, 68, 68, 0.06);
+	}
+
+	.risk-title {
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: #ef4444;
+		margin-bottom: 14px;
+	}
+
+	.risk-note p {
+		font-size: 0.92rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 12px;
+	}
+
+	.risk-note p:last-child {
+		margin-bottom: 0;
+	}
+
+	/* En la nota de riesgo el dorado se reserva para los datos duros */
+	.risk-note .accent {
+		color: var(--text-primary);
+	}
+
+	/* ---- Flujo de fondos ---- */
+	.flow-box {
+		padding: 48px 42px;
+		margin-bottom: 46px;
+	}
+
+	.flow-table {
+		display: flex;
+		flex-direction: column;
+		margin: 30px 0 34px;
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		overflow: hidden;
+	}
+
+	.flow-row {
+		display: grid;
+		grid-template-columns: 1.4fr 1fr 1fr 1fr;
+		align-items: center;
+		gap: 12px;
+		padding: 14px 20px;
+		border-bottom: 1px solid var(--gold-border);
+		font-size: 0.95rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.flow-row:last-child {
+		border-bottom: none;
+	}
+
+	/* Cabecera */
+	.flow-head {
+		background: rgba(212, 175, 55, 0.1);
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
+	}
+
+	.flow-head span:not(:first-child) {
+		text-align: right;
+	}
+
+	.flow-level {
+		font-weight: 700;
+		color: var(--text-primary);
+		font-size: 0.92rem;
+	}
+
+	.flow-row span:not(:first-child) {
+		text-align: right;
+		color: var(--text-secondary);
+	}
+
+	.flow-row .flow-in {
+		color: var(--text-primary);
+		font-weight: 600;
+	}
+
+	.flow-row .flow-keep {
+		color: var(--gold-primary);
+		font-weight: 700;
+	}
+
+	/* ---- Impuesto de plataforma ---- */
+	.tax-box {
+		padding: 24px 26px;
+		border: 1px solid var(--gold-border);
+		border-left: 3px solid var(--gold-primary);
+		border-radius: 12px;
+		background: rgba(212, 175, 55, 0.06);
+		margin-bottom: 30px;
+	}
+
+	.tax-title {
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--gold-primary);
+		margin-bottom: 12px;
+	}
+
+	.tax-box p {
+		font-size: 0.92rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 10px;
+	}
+
+	.tax-box p:last-child {
+		margin-bottom: 0;
+	}
+
+	.tax-note {
+		font-size: 0.88rem !important;
+		color: var(--text-muted) !important;
+	}
+
 	.paths-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -576,6 +949,30 @@ export const prerender = false;
 		.cycle-box {
 			padding: 40px 28px;
 		}
+		.tree-box {
+			padding: 40px 28px;
+		}
+		.flow-box {
+			padding: 40px 28px;
+		}
+		.flow-row {
+			grid-template-columns: 1.3fr 1fr 1fr 1fr;
+			padding: 12px 16px;
+			font-size: 0.88rem;
+		}
+		.tree-stats {
+			grid-template-columns: 1fr;
+			gap: 20px;
+		}
+		.tree-stat {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: baseline;
+			text-align: left;
+		}
+		.tree-stat-value {
+			font-size: 1.5rem;
+		}
 	}
 
 	/* ============ MÓVIL ============ */
@@ -662,6 +1059,90 @@ export const prerender = false;
 		.cycle-note {
 			margin-top: 26px;
 			padding-top: 20px;
+		}
+
+		/* ---- Estructura jerárquica en móvil ---- */
+		.tree-box {
+			padding: 30px 20px;
+			margin-bottom: 32px;
+		}
+
+		.tree-list {
+			gap: 10px;
+			margin: 26px 0 28px;
+		}
+
+		/* La etiqueta se alinea a la izquierda para ganar ancho */
+		.tree-row {
+			grid-template-columns: 64px 1fr 56px;
+			gap: 10px;
+		}
+
+		.tree-label {
+			font-size: 0.78rem;
+			text-align: left;
+		}
+
+		.tree-bar {
+			height: 20px;
+		}
+
+		.tree-count {
+			font-size: 0.85rem;
+		}
+
+		.tree-stats {
+			padding: 20px 0;
+		}
+
+		.risk-note {
+			padding: 20px 18px;
+		}
+
+		/* ---- Flujo de fondos en móvil: la tabla se apila ---- */
+		.flow-box {
+			padding: 30px 20px;
+			margin-bottom: 32px;
+		}
+
+		/* Ocultamos la cabecera: cada celda se rotula con data-label */
+		.flow-head {
+			display: none;
+		}
+
+		.flow-row {
+			grid-template-columns: 1fr 1fr;
+			gap: 6px 12px;
+			padding: 14px 16px;
+		}
+
+		.flow-level {
+			grid-column: 1 / -1;
+			padding-bottom: 6px;
+			margin-bottom: 4px;
+			border-bottom: 1px solid var(--gold-border);
+			font-size: 0.95rem;
+		}
+
+		.flow-row span:not(:first-child) {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 8px;
+			text-align: left;
+		}
+
+		.flow-row span:not(:first-child)::before {
+			content: attr(data-label);
+			font-size: 0.72rem;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: var(--text-muted);
+		}
+
+		.tax-box {
+			padding: 20px 18px;
 		}
 
 		.steps-list {
