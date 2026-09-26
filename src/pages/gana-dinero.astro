@@ -35,7 +35,7 @@ export const prerender = false;
 						Sistema <span class="gold-gradient-text">Constelación</span>
 					</h2>
 					<p class="section-subtitle">
-						Una estructura jerárquica de seis niveles donde cada posición se sostiene sobre cinco posiciones
+						Una estructura jerárquica de cinco niveles donde cada posición se sostiene sobre cinco posiciones
 						inferiores. El avance no depende del azar: depende de la confirmación de los aportes de tu
 						estructura.
 					</p>
@@ -63,15 +63,13 @@ export const prerender = false;
 						<h3 class="level-name font-cinzel">Nivel 4</h3>
 						<p class="level-desc">Ascendente por validación de la Base 3. Aloja 5 posiciones de Nivel 3.</p>
 					</div>
-					<div class="luxury-card level-card">
+					<div class="luxury-card level-card level-final">
 						<span class="level-num font-cinzel">05</span>
 						<h3 class="level-name font-cinzel">Nivel 5</h3>
-						<p class="level-desc">Última posición operativa. Aloja 5 posiciones de Nivel 4.</p>
-					</div>
-					<div class="luxury-card level-card level-final">
-						<span class="level-num font-cinzel">06</span>
-						<h3 class="level-name font-cinzel">GANA PRO</h3>
-						<p class="level-desc">Destino del Nivel 5. Coronación de la constelación completa.</p>
+						<p class="level-desc">
+							Último nivel del ciclo. Aloja 5 posiciones de Nivel 4, envía el 35 % de lo que recibe a
+							GANA PRO y retiene el 65 % menos el impuesto de plataforma.
+						</p>
 					</div>
 				</div>
 
@@ -81,7 +79,7 @@ export const prerender = false;
 					<p class="cycle-intro">
 						La regla es única y se repite sin excepción: <strong class="accent">cada posición superior sostiene
 						exactamente 5 posiciones inferiores</strong>, y cada una de ellas sostiene 5 más, hasta cerrar
-						las seis posiciones de la constelación.
+						las cinco posiciones de la constelación.
 					</p>
 
 					<div class="tree-list" role="list">
@@ -105,19 +103,13 @@ export const prerender = false;
 							<span class="tree-bar" style="--w: 16%"></span>
 							<span class="tree-count">25</span>
 						</div>
-						<div class="tree-row" role="listitem">
+						<div class="tree-row tree-row-top" role="listitem">
 							<span class="tree-label font-cinzel">Nivel 5</span>
 							<span class="tree-bar" style="--w: 8%"></span>
 							<span class="tree-count">5</span>
 						</div>
-						<div class="tree-row tree-row-top" role="listitem">
-							<span class="tree-label font-cinzel">GANA PRO</span>
-							<span class="tree-bar" style="--w: 4%"></span>
-							<span class="tree-count">1</span>
-						</div>
 					</div>
-
-					<div class="tree-stats">
+						<div class="tree-stats">
 						<div class="tree-stat">
 							<span class="tree-stat-value font-cinzel">3.906</span>
 							<span class="tree-stat-label">Posiciones totales</span>
@@ -127,8 +119,8 @@ export const prerender = false;
 							<span class="tree-stat-label">Ocupan el Nivel 1</span>
 						</div>
 						<div class="tree-stat">
-							<span class="tree-stat-value font-cinzel">3.905</span>
-							<span class="tree-stat-label">Personas bajo el máximo</span>
+							<span class="tree-stat-value font-cinzel">5</span>
+							<span class="tree-stat-label">Niveles en la constelación</span>
 						</div>
 					</div>
 
@@ -139,8 +131,8 @@ export const prerender = false;
 							<strong class="accent">3.125 están en la base</strong> y aportan los $15.000 que sostienen a
 							los niveles superiores: la base representa el
 							<strong class="accent">80 % de toda la estructura</strong> y aporta los
-							<strong class="accent">$46.875.000</strong>. Para alcanzar el rango GANA PRO
-							existen 3.905 posiciones por debajo.
+							<strong class="accent">$46.875.000</strong>. Para alcanzar el Nivel 5 existen 3.901
+							posiciones por debajo.
 						</p>
 						<p>
 							La estructura solo se completa mediante la captación continuada de nuevos participantes. El
@@ -154,8 +146,8 @@ export const prerender = false;
 				<div class="luxury-card flow-box">
 					<h3 class="cycle-title font-cinzel">El Flujo de Fondos</h3>
 					<p class="cycle-intro">
-						Cada nivel reenvía a su superior el 50 % de lo que recibe. El importe retenido por cada posición
-						constituye su utilidad antes del impuesto de plataforma.
+						Los niveles 2, 3 y 4 reenvían a su superior el 50 % de lo que reciben. El Nivel 5 rompe la regla:
+						entrega el 35 % a GANA PRO y retiene el 65 % antes del impuesto de plataforma.
 					</p>
 
 					<div class="flow-table" role="table" aria-label="Flujo de fondos por nivel">
@@ -198,34 +190,44 @@ export const prerender = false;
 					</div>
 
 					<div class="tax-box">
-						<h4 class="tax-title font-cinzel">Impuesto de Plataforma</h4>
+						<h4 class="tax-title font-cinzel">Cierre del Ciclo e Impuesto de Plataforma</h4>
 						<p>
-							El Nivel 5 obtiene una utilidad neta de <strong class="accent">$761.875</strong> antes de
-							impuestos. Sobre esa cifra se aplica el <strong class="accent">5 %</strong> de comisión de uso
-							de la plataforma, equivalente a <strong class="accent">$38.093,75</strong> por posición.
+							El Nivel 5 es el último escalón. Cada posición recibe
+							<strong class="accent">$1.171.875</strong> de sus 5 posiciones de Nivel 4 y destina
+							<strong class="accent">$410.000</strong> a GANA PRO, el <strong class="accent">35 %</strong> de
+							lo recibido. A diferencia de los niveles 2, 3 y 4, que reenvían el 50 %, el Nivel 5 retiene el
+							<strong class="accent">65 %</strong>: <strong class="accent">$761.875</strong>.
+						</p>
+						<p>
+							Sobre ese 65 % retenido se aplica el <strong class="accent">5 %</strong> de impuesto por uso de
+							la plataforma, equivalente a <strong class="accent">$38.093,75</strong>. La utilidad neta
+							del Nivel 5 es de <strong class="accent">$723.781,25</strong> por posición.
 						</p>
 						<p class="tax-note">
-							A diferencia de los niveles inferiores, el Nivel 5 no reenvía el 50 %: retiene el 65 % de lo
-							que recibe y destina $410.000 al rango superior.
+							Los cinco Nivel 5 destinan $410.000 cada uno, de modo que GANA PRO percibe
+							<strong class="accent">$2.050.000</strong> por constelación completa.
 						</p>
 					</div>
 
 					<div class="risk-note">
 						<h4 class="risk-title font-cinzel">Reparto Real del Dinero de la Base</h4>
 						<p>
-							De los <strong class="accent">$46.875.000</strong> que aporta la base, la distribución
-							completa es: Nivel 2 se queda <strong class="accent">$23.437.500</strong> (50 %), Nivel 3
+							De los <strong class="accent">$46.875.000</strong> que aporta la base, la distribución es:
+							Nivel 2 se queda <strong class="accent">$23.437.500</strong> (50 %), Nivel 3
 							<strong class="accent">$11.718.750</strong> (25 %), Nivel 4
 							<strong class="accent">$5.859.375</strong> (12,5 %), Nivel 5
-							<strong class="accent">$3.809.375</strong> (8,1 %) y el rango GANA PRO
+							<strong class="accent">$3.809.375</strong> (8,1 %) y GANA PRO
 							<strong class="accent">$2.050.000</strong> (4,4 %).
 						</p>
 						<p>
 							El <strong class="accent">95,6 % del dinero</strong> captado por la estructura se queda en los
-							niveles inferiores. El rango superior recibe menos del 5 %. Un participante en el Nivel 1 que
-							logra llegar al Nivel 2 obtiene una utilidad de $37.500 frente a los $15.000 que aportó: una
-							rentabilidad del <strong class="accent">150 %</strong> que solo se alcanza captando a 5
-							personas. Quien no completa su grupo de 5 no recibe nada y pierde los $15.000.
+							niveles de participantes; GANA PRO percibe el 4,4 % restante. El Nivel 5 es la única posición
+							que retiene más de la mitad: gana <strong class="accent">$723.781,25</strong> netos frente a
+							los $37.500 de un Nivel 2, pero para alcanzarlo necesita
+							<strong class="accent">3.901 personas</strong> por debajo. Un participante en el Nivel 1 que
+							logra llegar al Nivel 2 obtiene <strong class="accent">$37.500</strong> frente a los $15.000
+							que aportó: una rentabilidad del <strong class="accent">150 %</strong> que solo se alcanza
+							captando a 5 personas. Quien no completa su grupo de 5 no recibe nada y pierde los $15.000.
 						</p>
 					</div>
 				</div>
@@ -279,7 +281,9 @@ export const prerender = false;
 					</ol>
 					<p class="cycle-note">
 						La confirmación de la Base 2 habilita el ascenso a Nivel 3. El mismo principio se repite de forma
-						idéntica entre los niveles 2, 3, 4 y 5, hasta completar la constelación.
+						idéntica entre los niveles 2, 3 y 4. Al llegar al <strong class="accent">Nivel 5</strong> el ciclo
+						se cierra: el Nivel 5 envía el 35 % a GANA PRO y retiene el 65 % restante, sobre el que se aplica
+						el impuesto de plataforma.
 					</p>
 				</div>
 			</div>
@@ -470,8 +474,9 @@ export const prerender = false;
 
 	.levels-grid {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 24px;
+		/* 5 tarjetas: 3 columnas dejaría una fila huérfana de 2 */
+		grid-template-columns: repeat(5, 1fr);
+		gap: 20px;
 		margin-bottom: 46px;
 	}
 
@@ -484,7 +489,7 @@ export const prerender = false;
 		border-top: 2px solid var(--gold-border);
 	}
 
-	/* El Nivel 6 (GANA PRO) se destaca como destino */
+	/* El Nivel 5 se destaca como cúspide de la constelación */
 	.level-final {
 		border-color: var(--gold-primary);
 		background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, var(--bg-card) 55%);
@@ -928,6 +933,14 @@ export const prerender = false;
 		justify-content: center;
 		gap: 20px;
 		flex-wrap: wrap;
+	}
+
+	/* 5 columnas en tablet se apelmazan: 3 queda equilibrado */
+	@media (max-width: 1100px) {
+		.levels-grid {
+			grid-template-columns: repeat(3, 1fr);
+			gap: 18px;
+		}
 	}
 
 	@media (max-width: 900px) {
