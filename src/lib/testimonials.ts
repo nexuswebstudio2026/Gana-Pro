@@ -4,6 +4,9 @@ import { saveFile, saveTestimonialImage, type StoredImage } from './image-storag
 /** Carpeta (en el almacén) donde se guardan los documentos de identidad. */
 export const DOCUMENTS_FOLDER = 'documentos';
 
+/** Carpeta donde se guardan los RUT emitidos por la DIAN. */
+export const RUTS_FOLDER = 'rut';
+
 /** Tipos de archivo admitidos para el documento de identidad. */
 export const ALLOWED_DOCUMENT_TYPES = [
 	'image/jpeg',
@@ -21,6 +24,17 @@ export const DOCUMENT_STATUS = {
 	aprobado: 'Aprobado',
 	rechazado: 'Rechazado',
 } as const;
+
+/** El NIT solo admite dígitos y debe tener entre 6 y 20. */
+const NIT_PATTERN = /^\d{6,20}$/;
+
+/**
+ * Indica si un NIT tiene un formato válido: solo números, entre 6 y 20 dígitos.
+ * Lo usan el envío de documentos del miembro y el panel de administración.
+ */
+export function esNitValido(nit: string): boolean {
+	return NIT_PATTERN.test(nit);
+}
 
 /**
  * Sube el documento de identidad de un usuario y devuelve la referencia
@@ -40,6 +54,23 @@ export async function uploadIdentityDocument(
 	const stampedName = `documento_${safeUser || 'user'}_${Date.now()}.${extension}`;
 
 	return saveFile(DOCUMENTS_FOLDER, stampedName, buffer, mimeType);
+}
+
+/**
+ * Sube el RUT (Registro Único Tributario) emitido por la DIAN.
+ * Se guarda en una carpeta aparte para no confundirlo con la identidad.
+ */
+export async function uploadRutDocument(
+	username: string,
+	fileName: string,
+	buffer: Buffer,
+	mimeType: string
+): Promise<StoredImage> {
+	const extension = (fileName.split('.').pop() || 'pdf').toLowerCase();
+	const safeUser = username.replace(/[^a-zA-Z0-9_-]/g, '');
+	const stampedName = `rut_${safeUser || 'user'}_${Date.now()}.${extension}`;
+
+	return saveFile(RUTS_FOLDER, stampedName, buffer, mimeType);
 }
 
 import { toZonedIso } from './datetime';

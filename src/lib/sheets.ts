@@ -125,6 +125,11 @@ export async function getGoogleSheetUsers(): Promise<User[]> {
 		const idxEstadoDoc = headers.findIndex(h => h.includes('estado') && h.includes('doc'));
 		const idxLinkDoc = headers.findIndex(h => h.includes('enlace') && h.includes('doc'));
 		const idxEscaneadoDoc = headers.findIndex(h => h.includes('escaneado'));
+		const idxNit = headers.findIndex(h => h === 'nit' || h.includes('nit'));
+		const idxEscaneadoRut = headers.findIndex(
+			h => (h.includes('escaneado') || h.includes('archivo') || h.includes('nombre')) && h.includes('rut')
+		);
+		const idxLinkRut = headers.findIndex(h => h.includes('enlace') && h.includes('rut'));
 
 		const users: User[] = [];
 		for (let i = headerRowIndex + 1; i < rows.length; i++) {
@@ -155,6 +160,9 @@ export async function getGoogleSheetUsers(): Promise<User[]> {
 				documentStatus: idxEstadoDoc !== -1 ? row[idxEstadoDoc] : '',
 				documentLink: idxLinkDoc !== -1 ? row[idxLinkDoc] : '',
 				scannedDocument: idxEscaneadoDoc !== -1 ? row[idxEscaneadoDoc] : '',
+				nit: idxNit !== -1 ? row[idxNit] : '',
+				scannedRut: idxEscaneadoRut !== -1 ? row[idxEscaneadoRut] : '',
+				rutLink: idxLinkRut !== -1 ? row[idxLinkRut] : '',
 			});
 		}
 		return users;
@@ -233,6 +241,12 @@ export interface UserDocumentFields {
 	documentStatus?: string;
 	documentLink?: string;
 	scannedDocument?: string;
+	/** Número de Identificación Tributaria. */
+	nit?: string;
+	/** Nombre del archivo del RUT. */
+	scannedRut?: string;
+	/** Enlace al archivo del RUT. */
+	rutLink?: string;
 }
 
 /**
@@ -328,6 +342,12 @@ export async function updateSheetUserDocument(
 	const idxStatus = headers.findIndex((h) => h.includes('estado') && h.includes('doc'));
 	const idxLink = headers.findIndex((h) => h.includes('enlace') && h.includes('doc'));
 	const idxScanned = headers.findIndex((h) => h.includes('escaneado'));
+	const idxNit = headers.findIndex((h) => h === 'nit' || h.includes('nit'));
+	const idxRutFile = headers.findIndex(
+		(h) =>
+			(h.includes('escaneado') || h.includes('archivo') || h.includes('nombre')) && h.includes('rut')
+	);
+	const idxRutLink = headers.findIndex((h) => h.includes('enlace') && h.includes('rut'));
 
 	if (idxUser === -1) return false;
 
@@ -349,6 +369,11 @@ export async function updateSheetUserDocument(
 		updates.push({ col: idxLink, value: fields.documentLink });
 	if (fields.scannedDocument !== undefined && idxScanned !== -1)
 		updates.push({ col: idxScanned, value: fields.scannedDocument });
+	if (fields.nit !== undefined && idxNit !== -1) updates.push({ col: idxNit, value: fields.nit });
+	if (fields.scannedRut !== undefined && idxRutFile !== -1)
+		updates.push({ col: idxRutFile, value: fields.scannedRut });
+	if (fields.rutLink !== undefined && idxRutLink !== -1)
+		updates.push({ col: idxRutLink, value: fields.rutLink });
 
 	for (const u of updates) {
 		await sheets.spreadsheets.values.update({
@@ -360,6 +385,72 @@ export async function updateSheetUserDocument(
 	}
 
 	return updates.length > 0;
+}
+
+/**
+ * Columnas que necesita la pestaña de usuarios para guardar el NIT y el RUT.
+ *
+ * `match` usa los mismos criterios que la lectura (`getGoogleSheetUsers`), para
+ * no crear una columna que ya exista con otro nombre (p. ej. "RUT escaneado").
+ */
+export const USER_DOCUMENT_COLUMNS: { header: string; match: (normalized: string) => boolean }[] = [
+	{ header: 'NIT', match: (h) => h === 'nit' || h.includes('nit') },
+	{
+		header: 'Escaneado RUT',
+		match: (h) =>
+			(h.includes('escaneado') || h.includes('archivo') || h.includes('nombre')) && h.includes('rut'),
+	},
+	{ header: 'Enlace RUT', match: (h) => h.includes('enlace') && h.includes('rut') },
+];
+
+/**
+ * Garantiza que la pestaña de usuarios tenga las columnas de NIT y RUT.
+ *
+ * Solo se añaden las que falten, al final de la fila de encabezados, para no
+ * alterar el orden de las columnas que ya usa el administrador. Devuelve `true`
+ * si tuvo que crear alguna.
+ */
+export async function ensureUserDocumentColumns(): Promise<boolean> {
+	const sheets = getSheetsClient();
+
+	const res = await sheets.spreadsheets.values.get({
+		spreadsheetId: SHEET_ID,
+		range: `${SHEET_TAB}!A1:AZ50`,
+	});
+	const rows = res.data.values || [];
+	if (rows.length === 0) return false;
+
+	// Igual que en `getGoogleSheetUsers`: la fila 1 puede estar vacía, así que
+	// los encabezados se localizan por contenido.
+	let headerRow = -1;
+	for (let i = 0; i < rows.length; i++) {
+		const normalized = rows[i].map((c: unknown) => normalizeHeader(String(c)));
+		if (
+			normalized.includes('usuario') &&
+			(normalized.includes('contrasena') || normalized.includes('email'))
+		) {
+			headerRow = i;
+			break;
+		}
+	}
+	if (headerRow === -1) return false;
+
+	const headers = rows[headerRow].map((h: unknown) => normalizeHeader(String(h)));
+	const missing = USER_DOCUMENT_COLUMNS.filter((col) => !headers.some((h) => col.match(h))).map(
+		(col) => col.header
+	);
+	if (missing.length === 0) return false;
+
+	// Se escriben después de la última columna con datos: Google recorta las
+	// celdas vacías del final de cada fila.
+	await sheets.spreadsheets.values.update({
+		spreadsheetId: SHEET_ID,
+		range: `${SHEET_TAB}!${columnLetter(headers.length)}${headerRow + 1}`,
+		valueInputOption: 'RAW',
+		requestBody: { values: [[...missing]] },
+	});
+
+	return true;
 }
 
 /** Convierte un índice de columna (0-based) en letra (0 -> A, 26 -> AA). */

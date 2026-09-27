@@ -151,7 +151,7 @@ function documentStatusOf(user: User): string {
 					<h2>Usuarios registrados</h2>
 					<p>
 						{sheetUsers.length} usuarios en total · {withDocument.length} con documento cargado ·
-						{pendingDocuments.length} pendientes de revisar.
+						{pendingDocuments.length} pendientes de revisar · {sheetUsers.filter((u) => (u.rutLink || '').trim() !== '').length} con RUT.
 					</p>
 				</div>
 			</div>
@@ -172,7 +172,7 @@ function documentStatusOf(user: User): string {
 							<tr>
 								<th>Usuario</th>
 								<th>Nivel</th>
-								<th>Documento</th>
+								<th>Documento de identidad / NIT / RUT</th>
 								<th>Estado</th>
 								<th>Acciones</th>
 							</tr>
@@ -181,14 +181,21 @@ function documentStatusOf(user: User): string {
 							{sheetUsers.map((u) => {
 								const status = documentStatusOf(u);
 								const hasDoc = (u.documentLink || '').trim() !== '';
+								const hasRut = (u.rutLink || '').trim() !== '';
+								const rutPdf = (u.scannedRut || '').toLowerCase().endsWith('.pdf');
+								const nit = (u.nit || '').trim();
+
 								return (
 									<tr>
 										<td>
 											<strong>{u.username}</strong>
 											<small>{u.email}</small>
 										</td>
-										<td>{u.level || '1'}</td>
-										<td>
+								<td>{u.level || '1'}</td>
+								<td>
+									<div class="doc-cell">
+										<span class="doc-line">
+											<span class="doc-kind">Identidad</span>
 											{hasDoc ? (
 												<a
 													href={u.documentLink}
@@ -201,8 +208,33 @@ function documentStatusOf(user: User): string {
 											) : (
 												<span class="muted">Sin subir</span>
 											)}
-											{u.documentNumber && <small>N.º {u.documentNumber}</small>}
-										</td>
+										</span>
+										{(u.documentNumber || u.documentType) && (
+											<small class="doc-ref">
+												N.º {u.documentNumber}{u.documentType ? ` · ${u.documentType}` : ''}
+											</small>
+										)}
+									<span class="doc-line">
+										<span class="doc-kind">NIT</span>
+										{nit ? <small class="nit-tag">{nit}</small> : <span class="muted">Sin registrar</span>}
+									</span>
+									<span class="doc-line">
+										<span class="doc-kind">RUT DIAN</span>
+										{hasRut ? (
+											<a
+												href={u.rutLink}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="doc-link rut-link"
+											>
+												{rutPdf ? 'Ver RUT (PDF)' : 'Ver RUT'}
+											</a>
+										) : (
+											<span class="muted">Sin subir</span>
+										)}
+									</span>
+								</div>
+								</td>
 										<td>
 											<span class:list={['status-pill', {
 												ok: status === DOCUMENT_STATUS.aprobado,
@@ -233,6 +265,37 @@ function documentStatusOf(user: User): string {
 													</form>
 												</>
 											)}
+										<form
+											method="POST"
+											action="/api/admin/documents"
+											enctype="multipart/form-data"
+											class="doc-admin-form"
+										>
+											<input type="hidden" name="username" value={u.username} />
+											<span class="doc-admin-title">NIT / RUT (DIAN)</span>
+											<input
+												type="text"
+												name="nit"
+												value={nit}
+												placeholder="NIT: 900123456"
+												inputmode="numeric"
+												minlength="6"
+												maxlength="20"
+												pattern="[0-9]*"
+												title="Solo números, entre 6 y 20 dígitos"
+												aria-label={`NIT de ${u.username}`}
+												class="nit-input"
+											/>
+											<input
+												type="file"
+												name="rut"
+												accept="image/jpeg,image/png,image/webp,application/pdf"
+												aria-label={`RUT emitido por la DIAN de ${u.username}`}
+												class="rut-input"
+											/>
+											<p class="doc-hint">RUT en JPG, PNG, WEBP o PDF (máximo 5 MB).</p>
+											<button type="submit" class="btn-save">Guardar NIT y RUT</button>
+										</form>
 										</td>
 									</tr>
 								);
@@ -282,7 +345,7 @@ function documentStatusOf(user: User): string {
 		width: 100%;
 		border-collapse: collapse;
 		font-size: 14px;
-		min-width: 760px;
+		min-width: 900px;
 	}
 
 	.users-table th {
@@ -328,6 +391,24 @@ function documentStatusOf(user: User): string {
 
 	.doc-link:hover { border-bottom-color: var(--gold-primary); }
 
+	.rut-link {
+		display: inline-block;
+		margin-top: 4px;
+		color: #6ea8fe;
+		border-bottom-color: rgba(110, 168, 254, 0.4);
+	}
+	.rut-link:hover { border-bottom-color: #6ea8fe; }
+	.nit-tag {
+		display: inline-block;
+		margin-bottom: 4px;
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: rgba(212, 175, 55, 0.12);
+		color: var(--gold-primary);
+		font-weight: 700;
+		letter-spacing: 0.02em;
+	}
+
 	.muted { color: var(--text-muted); font-size: 13px; }
 
 	.status-pill {
@@ -372,6 +453,22 @@ function documentStatusOf(user: User): string {
 
 	.doc-alert.ok { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.35); color: #10b981; }
 	.doc-alert.ko { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.35); color: #f87171; }
+
+	/* ============ NIT Y RUT (DIAN) POR USUARIO ============ */
+	.doc-cell { display: flex; flex-direction: column; gap: 7px; }
+	.doc-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.doc-kind { min-width: 64px; color: var(--gold-primary); font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+	.users-table .doc-ref { margin-top: 0; }
+
+	.doc-admin-form { display: flex; flex-direction: column; gap: 7px; min-width: 210px; padding: 10px; border: 1px dashed var(--gold-border); border-radius: 10px; background: rgba(212, 175, 55, 0.05); }
+	.doc-admin-title { color: var(--gold-primary); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+	.nit-input { width: 100%; padding: 8px 10px; border: 1px solid var(--gold-border); border-radius: 8px; background: rgba(255, 255, 255, 0.04); color: var(--text-primary); font-family: inherit; font-size: 13px; }
+	.nit-input:focus { outline: none; border-color: var(--gold-primary); }
+	.rut-input { width: 100%; font-size: 11.5px; color: var(--text-secondary); }
+	.rut-input::file-selector-button { margin-right: 8px; padding: 6px 10px; border: 1px solid var(--gold-border); border-radius: 8px; background: rgba(212, 175, 55, 0.12); color: var(--gold-primary); font-size: 11.5px; font-weight: 700; cursor: pointer; }
+	.btn-save { padding: 8px 12px; border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 8px; background: rgba(212, 175, 55, 0.16); color: var(--gold-primary); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+	.btn-save:hover { filter: brightness(1.2); }
+	.doc-hint { margin: 0; color: var(--text-secondary); font-size: 11px; line-height: 1.45; }
 
 
 	@media (max-width: 768px) {

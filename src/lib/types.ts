@@ -36,5 +36,11 @@ export interface User {
 	documentStatus?: string;
 	documentLink?: string;
 	scannedDocument?: string;
+	/** Número de Identificación Tributaria (DIAN). */
+	nit?: string;
+	/** Nombre del archivo del RUT emitido por la DIAN. */
+	scannedRut?: string;
+	/** Enlace al archivo del RUT. */
+	rutLink?: string;
 	registeredAt?: string;
 }

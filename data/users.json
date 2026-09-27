@@ -1,17 +1,24 @@
 [
-    {
-        "username":  "ana",
-        "email":  "ana@mail.com",
-        "password":  "687f986703a8bf3b2c24a56f0c4312e8:b4a72e92aac5de57d50d782c4dffdb31712834249338102d34ba2e0eccb0207b5ed7ef58e324d565816f656303ff5de55f0c7cd5fbc88ed22ec47b5cccaffcae"
-    },
-    {
-        "username":  "Ankamo",
-        "email":  "camilovidal.1704@gmail.com",
-        "password":  "4363997fde6bf3e543bbf6ec0dce4cfe:d095720cd952747606da0a4542a970e5bfac9ce91639623be465b289b768c4d1fdfbb596bc0a1730d220577c305dab0f1962123c89be73aba0bf86a089b4472b"
-    },
-    {
-        "username":  "FelipeMono",
-        "email":  "felipe@gmail.com",
-        "password":  "0505dcd789d5c2bb8b0762bed32c904d:39deb2eceba798ae128bd9de5544db9a022ba0a4f6378a1131b8372472f496580c71e1501bee031411b43ff19345588c7aca81bdfa34a9540686f11a0256d36f"
-    }
+  {
+    "username": "ana",
+    "email": "ana@mail.com",
+    "password": "687f986703a8bf3b2c24a56f0c4312e8:b4a72e92aac5de57d50d782c4dffdb31712834249338102d34ba2e0eccb0207b5ed7ef58e324d565816f656303ff5de55f0c7cd5fbc88ed22ec47b5cccaffcae"
+  },
+  {
+    "username": "Ankamo",
+    "email": "camilovidal.1704@gmail.com",
+    "password": "4363997fde6bf3e543bbf6ec0dce4cfe:d095720cd952747606da0a4542a970e5bfac9ce91639623be465b289b768c4d1fdfbb596bc0a1730d220577c305dab0f1962123c89be73aba0bf86a089b4472b"
+  },
+  {
+    "username": "FelipeMono",
+    "email": "felipe@gmail.com",
+    "password": "0505dcd789d5c2bb8b0762bed32c904d:39deb2eceba798ae128bd9de5544db9a022ba0a4f6378a1131b8372472f496580c71e1501bee031411b43ff19345588c7aca81bdfa34a9540686f11a0256d36f"
+  },
+  {
+    "username": "NitTmp",
+    "email": "nittmp@correo.com",
+    "password": "2636635f695463251ed705e753207319:efc188839043132e7054ecca1dc14bd76f80645f63487f57f4ebd06a7e5132a9870b204775048e43c29fd6234bd711dc66c5cb8cf41f257f9a2285947cde9b26",
+    "referralCode": "",
+    "ownCode": "NitTmp"
+  }
 ]

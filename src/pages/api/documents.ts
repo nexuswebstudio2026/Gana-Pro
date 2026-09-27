@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
 import { validateSession } from '../../lib/session';
-import { updateSheetUserDocument } from '../../lib/sheets';
+import { ensureUserDocumentColumns, updateSheetUserDocument } from '../../lib/sheets';
 import {
 	uploadIdentityDocument,
+	uploadRutDocument,
+	esNitValido,
 	ALLOWED_DOCUMENT_TYPES,
 	MAX_DOCUMENT_BYTES,
 	DOCUMENT_STATUS,
@@ -27,6 +29,11 @@ export const POST: APIRoute = async (Astro) => {
 		const file = formData.get('documento');
 		const documentType = String(formData.get('tipoDocumento') || '').trim();
 		const documentNumber = String(formData.get('numeroDocumento') || '').trim();
+		const nit = String(formData.get('nit') || '').trim();
+		const rutFile = formData.get('rut');
+
+		// El RUT es opcional: si no se adjunta, solo se procesa el documento.
+		const tieneRut = rutFile instanceof File && rutFile.size > 0;
 
 		if (!(file instanceof File) || file.size === 0) {
 			return fail('Selecciona un archivo para subir.');
@@ -39,6 +46,21 @@ export const POST: APIRoute = async (Astro) => {
 		}
 		if (documentNumber.length < 5) {
 			return fail('Escribe el número de documento (mínimo 5 caracteres).');
+		}
+		if (!nit) {
+			return fail('Escribe tu NIT.');
+		}
+		if (!esNitValido(nit)) {
+			return fail('El NIT solo admite números, entre 6 y 20 dígitos.');
+		}
+		if (tieneRut) {
+			const tipoRut = (rutFile as File).type;
+			if (!ALLOWED_DOCUMENT_TYPES.includes(tipoRut as (typeof ALLOWED_DOCUMENT_TYPES)[number])) {
+				return fail('El RUT debe ser JPG, PNG, WEBP o PDF.');
+			}
+			if ((rutFile as File).size > MAX_DOCUMENT_BYTES) {
+				return fail('El RUT supera el límite de 5 MB.');
+			}
 		}
 
 		const buffer = Buffer.from(await file.arrayBuffer());
@@ -64,6 +86,34 @@ export const POST: APIRoute = async (Astro) => {
 			);
 		}
 
+		// El RUT se guarda aparte; si falla, el documento principal no se pierde.
+		let rutLink = '';
+		let scannedRut = '';
+		if (tieneRut) {
+			try {
+				const f = rutFile as File;
+				const rutBuffer = Buffer.from(await f.arrayBuffer());
+				const storedRut = await uploadRutDocument(session.username, f.name, rutBuffer, f.type);
+				rutLink = storedRut.url;
+				scannedRut = f.name;
+			} catch (err) {
+				console.error('Error al subir el RUT:', err);
+				return Astro.redirect(
+					'/dashboard?doc=error&msg=' +
+						encodeURIComponent('El documento se guardó, pero el RUT no pudo subirse. Inténtalo de nuevo.'),
+					303
+				);
+			}
+		}
+
+		// La hoja debe tener las columnas de NIT y RUT antes de escribir: si
+		// faltan, se crean aquí para que la carga del RUT no se pierda.
+		try {
+			await ensureUserDocumentColumns();
+		} catch (err) {
+			console.error('No se pudieron preparar las columnas de NIT/RUT:', err);
+		}
+
 		const updated = await updateSheetUserDocument(session.username, {
 			documentType: documentType || 'Cédula',
 			documentNumber,
@@ -71,6 +121,8 @@ export const POST: APIRoute = async (Astro) => {
 			documentStatus: DOCUMENT_STATUS.pendiente,
 			documentLink: stored.url,
 			scannedDocument: file.name,
+			nit,
+			...(tieneRut ? { rutLink, scannedRut } : {}),
 		});
 
 		if (!updated) {
