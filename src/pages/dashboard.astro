@@ -1,6 +1,7 @@
 ---
 import { validateSession } from '../lib/session';
 import { getGoogleSheetUsers } from '../lib/sheets';
+import { getReferralStats, COMMISSION_PER_REFERRAL, formatCOP } from '../lib/referrals';
 import type { User } from '../lib/types';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import AdminSidebar from '../components/AdminSidebar.astro';
@@ -32,6 +33,25 @@ try {
 
 const effectiveRole = (userDetail?.role || session.role || '').trim().toLowerCase();
 const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
+
+// Red de referidos: código propio, cuántos han entrado y la comisión acumulada
+let referrals = {
+	ownCode: userDetail?.ownCode || session.username,
+	referred: [] as User[],
+	count: 0,
+	commission: 0,
+	shareUrl: '',
+};
+if (userDetail) {
+	try {
+		referrals = await getReferralStats(userDetail, Astro.url.origin);
+	} catch (e) {
+		console.error('Error al calcular la red de referidos:', e);
+	}
+} else {
+	referrals.shareUrl = `${Astro.url.origin}/register?ref=${encodeURIComponent(referrals.ownCode)}`;
+}
+const referralLink = referrals.shareUrl || `${Astro.url.origin}/register?ref=${encodeURIComponent(referrals.ownCode)}`;
 ---
 
 <!doctype html>
@@ -171,6 +191,56 @@ const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
 						</div>
 					</div>
 				</div>
+				<div class="luxury-card referral-box">
+					<h3 class="detail-title font-cinzel">Mi Red de Referidos</h3>
+					<p class="referral-lead">
+						Comparte tu enlace. Cada persona que se registre con tu código suma
+						<strong>{formatCOP(COMMISSION_PER_REFERRAL)}</strong> de una sola vez a tu comisión, sin
+						exigirte a ti nada más.
+					</p>
+
+					<div class="referral-codes">
+						<div class="referral-code-item">
+							<span class="referral-label">Tu código de referido</span>
+							<code class="referral-code">{referrals.ownCode}</code>
+						</div>
+						<div class="referral-code-item">
+							<span class="referral-label">Tu enlace de invitación</span>
+							<code class="referral-link">{referralLink}</code>
+						</div>
+					</div>
+
+					<div class="referral-totals">
+						<div class="referral-total">
+							<span class="referral-total-value font-cinzel">{referrals.count}</span>
+							<span class="referral-total-label">Referidos registrados</span>
+						</div>
+						<div class="referral-total">
+							<span class="referral-total-value font-cinzel gold-gradient-text">{formatCOP(referrals.commission)}</span>
+							<span class="referral-total-label">Comisión acumulada (pago único)</span>
+						</div>
+					</div>
+
+					{referrals.count > 0 ? (
+						<ul class="referred-list">
+							{referrals.referred.map((u) => (
+								<li>
+									<span class="referred-avatar" aria-hidden="true">
+										{(u.username || '?').charAt(0).toUpperCase()}
+									</span>
+									<span class="referred-name">{u.username}</span>
+									<span class="referred-commission">{formatCOP(COMMISSION_PER_REFERRAL)}</span>
+								</li>
+							))}
+						</ul>
+					) : (
+						<p class="referral-empty">
+							Todavía no tienes referidos. Comparte tu enlace para empezar a acumular tu primera comisión de
+							{formatCOP(COMMISSION_PER_REFERRAL)}.
+						</p>
+					)}
+				</div>
+
 				<div class="details-grid">
 					<div class="detail-card luxury-card">
 						<h3 class="detail-title font-cinzel">Información de la Cuenta</h3>
@@ -405,6 +475,150 @@ const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
 	.detail-card { padding: 28px; }
 	.detail-title { margin: 0 0 20px 0; font-size: 1.2rem; border-bottom: 1px solid var(--gold-border); padding-bottom: 12px; }
 	.info-list { display: flex; flex-direction: column; gap: 16px; }
+	/* ============ RED DE REFERIDOS ============ */
+	.referral-box {
+		padding: 28px;
+		margin-bottom: 24px;
+	}
+
+	.referral-lead {
+		color: var(--text-secondary);
+		font-size: 14.5px;
+		line-height: 1.6;
+		margin-bottom: 20px;
+	}
+
+	.referral-lead strong {
+		color: var(--gold-primary);
+	}
+
+	.referral-codes {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 14px;
+		margin-bottom: 20px;
+	}
+
+	.referral-code-item {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 14px 16px;
+		background: rgba(212, 175, 55, 0.08);
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		min-width: 0;
+	}
+
+	.referral-label {
+		font-size: 12px;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--text-muted);
+	}
+
+	.referral-code,
+	.referral-link {
+		font-family: monospace;
+		font-size: 14px;
+		color: var(--gold-primary);
+		word-break: break-all;
+		overflow-wrap: anywhere;
+	}
+
+	.referral-totals {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 14px;
+		margin-bottom: 18px;
+	}
+
+	.referral-total {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 16px;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		text-align: center;
+	}
+
+	.referral-total-value {
+		font-size: 1.6rem;
+		font-weight: 800;
+		color: var(--text-primary);
+	}
+
+	.referral-total-label {
+		font-size: 12.5px;
+		color: var(--text-muted);
+	}
+
+	.referred-list {
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.referred-list li {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 14px;
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px solid rgba(212, 175, 55, 0.18);
+		border-radius: 10px;
+	}
+
+	.referred-avatar {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(212, 175, 55, 0.15);
+		border: 1px solid var(--gold-border);
+		color: var(--gold-primary);
+		font-weight: 700;
+		font-size: 13px;
+		flex-shrink: 0;
+	}
+
+	.referred-name {
+		flex: 1;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.referred-commission {
+		font-size: 13.5px;
+		font-weight: 700;
+		color: var(--gold-primary);
+	}
+
+	.referral-empty {
+		color: var(--text-muted);
+		font-size: 14px;
+		padding: 16px;
+		border: 1px dashed var(--gold-border);
+		border-radius: 12px;
+		text-align: center;
+	}
+
+	@media (max-width: 768px) {
+		.referral-codes,
+		.referral-totals {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	.info-row {
 		display: flex;
 		justify-content: space-between;

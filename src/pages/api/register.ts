@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { hashPassword } from '../../lib/crypto';
 import { readJSON, writeJSON } from '../../lib/store';
 import { getGoogleSheetUsers, appendGoogleSheetUser } from '../../lib/sheets';
+import { findReferrerByCode, ownCodeOf } from '../../lib/referrals';
 import type { User } from '../../lib/types';
 
 // API routes must be server-rendered, not prerendered as static
@@ -16,6 +17,7 @@ export const POST: APIRoute = async (Astro) => {
 		const email = params.get('email')?.trim().toLowerCase() ?? '';
 		const password = params.get('password') ?? '';
 		const passwordConfirm = params.get('passwordConfirm') ?? '';
+		const referralInput = params.get('ref')?.trim() ?? '';
 
 		// --- Validation ---
 		if (!username || !email || !password) {
@@ -53,6 +55,32 @@ export const POST: APIRoute = async (Astro) => {
 			return Astro.redirect('/register?error=' + encodeURIComponent('El correo electrónico ya está registrado.'), 303);
 		}
 
+		// --- Código de referido (opcional) ---
+		// Si viene informado debe existir: así el usuario sabe de inmediato
+		// que su código no es válido en lugar de creer que seguardó la comisión.
+		let referralCode = '';
+		if (referralInput) {
+			const referrer = await findReferrerByCode(referralInput);
+			if (!referrer) {
+				return Astro.redirect(
+					'/register?error=' +
+						encodeURIComponent('El código de referido no es válido. Verifícalo o regístrate sin él.'),
+					303
+				);
+			}
+			// No se permite autoreferirse
+			if (
+				referrer.username?.toLowerCase() === username.toLowerCase() ||
+				referrer.email?.toLowerCase() === email
+			) {
+				return Astro.redirect(
+					'/register?error=' + encodeURIComponent('No puedes usar tu propio código de referido.'),
+					303
+				);
+			}
+			referralCode = ownCodeOf(referrer) || referrer.username || referralInput;
+		}
+
 		// --- Hash password and save ---
 		const passwordHash = hashPassword(password);
 
@@ -62,6 +90,7 @@ export const POST: APIRoute = async (Astro) => {
 				username,
 				email,
 				passwordHash,
+				referralCode,
 			});
 		} catch (sheetSaveErr) {
 			console.error('Error al guardar usuario en Google Sheet:', sheetSaveErr);
@@ -74,6 +103,8 @@ export const POST: APIRoute = async (Astro) => {
 				username,
 				email,
 				password: passwordHash,
+				referralCode,
+				ownCode: username,
 			};
 			localUsers.push(newUser);
 			writeJSON('users.json', localUsers);

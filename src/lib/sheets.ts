@@ -170,6 +170,8 @@ export async function appendGoogleSheetUser(user: {
 	username: string;
 	email: string;
 	passwordHash: string;
+	/** Código de quien lo refiere (columna "Código Referido"). */
+	referralCode?: string;
 }): Promise<void> {
 	const sheets = getSheetsClient();
 
@@ -203,7 +205,7 @@ export async function appendGoogleSheetUser(user: {
 		'',                    // Número de Billetera
 		' $0',                 // Saldo Acumulado
 		'1',                   // Level
-		'',                    // Código Referido
+		user.referralCode || '', // Código Referido
 		user.username,         // Código Propio
 		'Pendiente',           // Estado Documento
 		'',                    // Enlace Documento

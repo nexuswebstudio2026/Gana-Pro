@@ -5,6 +5,8 @@ import AuthLayout from '../layouts/AuthLayout.astro';
 export const prerender = false;
 
 const error = Astro.url.searchParams.get('error');
+// Si llegan con ?ref=CODIGO (enlace de referido), se precarga el campo
+const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
 ---
 
 <AuthLayout title="Membresía Exclusiva" subtitle="Complete sus datos para solicitar su cuenta en GANA PRO">
@@ -68,6 +70,20 @@ const error = Astro.url.searchParams.get('error');
 				required
 				minlength="6"
 			/>
+		</div>
+
+		<div class="field">
+			<label for="ref">Código de Referido (opcional)</label>
+			<input
+				type="text"
+				id="ref"
+				name="ref"
+				value={referralCode}
+				placeholder={referralCode ? '' : 'Si alguien te invitó, escribe su código'}
+				maxlength="60"
+				autocomplete="off"
+			/>
+			<span class="field-hint">Por cada persona que se registre con tu código ganas $1.000 (una sola vez).</span>
 		</div>
 
 		<button type="submit" class="gold-button btn-full">
