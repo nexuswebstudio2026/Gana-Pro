@@ -1,0 +1,7 @@
+{
+	// Todo el sitio se guarda y se abre en UTF-8: así las tildes, la ñ y los
+	// signos de puntuación del español se mantienen correctos en todo momento.
+	"files.encoding": "utf8",
+	"files.autoGuessEncoding": false,
+	"files.eol": "\r\n"
+}

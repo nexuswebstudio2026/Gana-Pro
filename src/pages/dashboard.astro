@@ -1,4 +1,4 @@
-﻿---
+---
 import { validateSession } from '../lib/session';
 import { getGoogleSheetUsers } from '../lib/sheets';
 import { getReferralStats, COMMISSION_PER_REFERRAL, formatCOP } from '../lib/referrals';
@@ -23,7 +23,7 @@ const token = Astro.cookies.get('auth_session')?.value;
 const session = validateSession(token);
 
 if (!session) {
-	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesiÃ³n para acceder a esta pÃ¡gina.'), 303);
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
 }
 
 // Consultar datos detallados del usuario en Google Sheets
@@ -43,7 +43,7 @@ try {
 const effectiveRole = (userDetail?.role || session.role || '').trim().toLowerCase();
 const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
 
-// Red de referidos: cÃ³digo propio, cuÃ¡ntos han entrado y la comisiÃ³n acumulada
+// Red de referidos: código propio, cuántos han entrado y la comisión acumulada
 let referrals = {
 	ownCode: userDetail?.ownCode || session.username,
 	referred: [] as User[],
@@ -62,29 +62,31 @@ if (userDetail) {
 }
 const referralLink = referrals.shareUrl || `${Astro.url.origin}/register?ref=${encodeURIComponent(referrals.ownCode)}`;
 
-// --- UbicaciÃ³n en tiempo real ---
+// --- Ubicación en tiempo real ---
 let myLocation: StoredLocation | null = null;
 let locationSheetUrl = getLocationSheetUrl();
 try {
 	myLocation = await getUserLocation(session.username);
 	if (myLocation) locationSheetUrl = getLocationSheetUrl(myLocation.sheetId);
 } catch (e) {
-	console.error('Error al leer la ubicaciÃ³n:', e);
+	console.error('Error al leer la ubicación:', e);
 }
 const hasLocation = myLocation !== null;
 const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, myLocation!.lng) : '';
 
-// --- Documento de identidad ---
+// --- NIT y RUT (DIAN) ---
 const docResult = Astro.url.searchParams.get('doc');
 const docMessage = Astro.url.searchParams.get('msg');
 const docStatus = (userDetail?.documentStatus || 'Pendiente').trim();
-const docLink = (userDetail?.documentLink || '').trim();
-const docNumber = (userDetail?.documentNumber || '').trim();
-const docType = (userDetail?.documentType || '').trim();
-const isPdf = (userDetail?.scannedDocument || '').toLowerCase().endsWith('.pdf');
+const nitValue = (userDetail?.nit || userDetail?.documentNumber || '').trim();
+// El RUT es el único archivo: si el registro aún guarda el documento antiguo,
+// se muestra como RUT para no perderlo.
+const rutLink = (userDetail?.rutLink || userDetail?.documentLink || '').trim();
+const rutFileName = (userDetail?.scannedRut || userDetail?.scannedDocument || 'rut.pdf').trim() || 'rut.pdf';
+const isPdf = rutFileName.toLowerCase().endsWith('.pdf');
 const docApproved = docStatus === 'Aprobado';
 const docRejected = docStatus === 'Rechazado';
-const hasRut = (userDetail?.rutLink || '').trim() !== '';
+const hasRut = rutLink !== '';
 ---
 
 <!doctype html>
@@ -103,7 +105,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 			href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Montserrat:wght@300;400;500;600;700;800&display=swap"
 			rel="stylesheet"
 		/>
-		<title>{isAdmin ? 'Panel de AdministraciÃ³n' : 'Panel de Miembro'} â€” GANA PRO</title>
+		<title>{isAdmin ? 'Panel de Administración' : 'Panel de Miembro'} — GANA PRO</title>
 		<script is:inline>
 			const theme = (() => {
 				if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
@@ -144,7 +146,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 						</div>
 					</div>
 					<form method="POST" action="/api/logout">
-						<button type="submit" class="btn-logout" title="Cerrar sesiÃ³n">
+						<button type="submit" class="btn-logout" title="Cerrar sesión">
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 								<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
 								<polyline points="16 17 21 12 16 7"></polyline>
@@ -159,14 +161,14 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 			<main class="main-content" id="inicio">
 				<div class="welcome-banner luxury-card">
 					<div class="banner-text">
-						<span class="eyebrow">{isAdmin ? 'Panel de AdministraciÃ³n' : 'Panel de Control Exclusivo'}</span>
+						<span class="eyebrow">{isAdmin ? 'Panel de Administración' : 'Panel de Control Exclusivo'}</span>
 						<h1 class="font-cinzel">Bienvenido, <span class="gold-gradient-text">{session.username}</span></h1>
-						<p class="banner-sub">Su cuenta estÃ¡ verificada y sincronizada con Google Sheets en tiempo real.</p>
+						<p class="banner-sub">Su cuenta está verificada y sincronizada con Google Sheets en tiempo real.</p>
 					</div>
 					<div class="banner-status">
 						<div class="status-indicator">
 							<span class="pulse-dot"></span>
-							<span>SesiÃ³n Activa</span>
+							<span>Sesión Activa</span>
 						</div>
 					</div>
 				</div>
@@ -219,7 +221,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 							</svg>
 						</div>
 						<div class="stat-info">
-							<span class="stat-label">CÃ³digo Propio</span>
+							<span class="stat-label">Código Propio</span>
 							<h2 class="stat-value code-pill">{userDetail?.ownCode || session.username}</h2>
 						</div>
 					</div>
@@ -227,10 +229,9 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 				<div class="luxury-card doc-box">
 					<div class="doc-heading">
 						<div>
-							<h3 class="detail-title font-cinzel">Mi Documento de Identidad</h3>
+							<h3 class="detail-title font-cinzel">NIT y RUT (DIAN)</h3>
 							<p class="doc-lead">
-								Sube tu cÃ©dula o pasaporte para completar la verificaciÃ³n de tu cuenta. Puedes
-								adjuntar una imagen o un PDF de hasta 5 MB.
+								Registra tu NIT y sube el RUT emitido por la DIAN para completar la verificación de la cuenta. Puedes adjuntar una imagen o un PDF de hasta 5 MB.
 							</p>
 						</div>
 						<span class:list={['doc-badge', {
@@ -242,29 +243,36 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 
 					{docResult === 'ok' && (
 						<div class="doc-alert ok" role="status">
-							Documento recibido. Queda pendiente de revisiÃ³n por un administrador.
+							RUT recibido. Queda pendiente de revisión por un administrador.
 						</div>
 					)}
 					{docResult === 'error' && (
 						<div class="doc-alert ko" role="alert">
-							{docMessage || 'No se pudo guardar tu documento.'}
+							{docMessage || 'No se pudo guardar tu RUT.'}
 						</div>
 					)}
 					{docResult === 'config' && (
 						<div class="doc-alert ko" role="alert">
-							{docMessage || 'El almacenamiento no estÃ¡ disponible en el servidor.'}
+							{docMessage || 'El almacenamiento no está disponible en el servidor.'}
 						</div>
 					)}
 
-					{docLink && (
+					{nitValue && (
 						<div class="doc-current">
 							<div class="doc-current-info">
-								<span class="doc-label">Documento cargado</span>
-								<code class="doc-file">{userDetail?.scannedDocument}</code>
-								{docNumber && <span class="doc-number">N.Âº {docNumber}{docType ? ` Â· ${docType}` : ''}</span>}
+								<span class="doc-label">NIT (Identificación Tributaria DIAN)</span>
+								<code class="doc-file">{nitValue}</code>
+							</div>
+						</div>
+					)}
+					{hasRut && (
+						<div class="doc-current">
+							<div class="doc-current-info">
+								<span class="doc-label">RUT emitido por la DIAN</span>
+								<code class="doc-file">{rutFileName}</code>
 							</div>
 							<a
-								href={docLink}
+								href={rutLink}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="doc-view"
@@ -272,104 +280,57 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 								{isPdf ? 'Ver PDF' : 'Ver imagen'}
 							</a>
 						</div>
-
 					)}
-				{hasRut && userDetail?.rutLink && (
-					<div class="doc-current">
-						<div class="doc-current-info">
-							<span class="doc-label">RUT (DIAN)</span>
-							<code class="doc-file">{userDetail.scannedRut || 'rut.pdf'}</code>
-						</div>
-						<a
-							href={userDetail.rutLink}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="doc-view"
-						>
-							Ver RUT
-						</a>
-					</div>
-				)}
 
 					{docApproved ? (
 						<p class="doc-note ok">
-							Tu identidad fue verificada. Si necesitas actualizarla, vuelve a subir el documento.
+							Tu NIT y RUT fueron verificados. Si necesitas actualizarlos, vuelve a subirlos.
 						</p>
 					) : (
 						<form method="POST" action="/api/documents" enctype="multipart/form-data" class="doc-form">
-							<div class="doc-fields">
-								<div class="doc-field">
-									<label for="tipoDocumento">Tipo de documento</label>
-									<select id="tipoDocumento" name="tipoDocumento">
-										<option value="CÃ©dula" selected={!docType || docType === 'CÃ©dula'}>CÃ©dula de ciudadanÃ­a</option>
-										<option value="Pasaporte" selected={docType === 'Pasaporte'}>Pasaporte</option>
-									</select>
-								</div>
-								<div class="doc-field">
-									<label for="numeroDocumento">NÃºmero de documento</label>
-									<input
-										type="text"
-										id="numeroDocumento"
-										name="numeroDocumento"
-										value={docNumber}
-										placeholder="Ej: 1234567890"
-										required
-										minlength="5"
-										maxlength="40"
-									/>
-								</div>
-							</div>
-					<div class="doc-field">
-						<label for="nit">NIT (IdentificaciÃ³n Tributaria DIAN)</label>
-						<input
-							type="text"
-							id="nit"
-							name="nit"
-							value={userDetail?.nit || ''}
-							placeholder="Ej: 900123456"
-							inputmode="numeric"
-							required
-							minlength="6"
-							maxlength="20"
-						/>
-					</div>
-					<div class="doc-field">
-						<label for="rut">RUT emitido por la DIAN (opcional)</label>
-						<input
-							type="file"
-							id="rut"
-							name="rut"
-							accept="image/jpeg,image/png,image/webp,application/pdf"
-						/>
-						<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
-					</div>
-
 							<div class="doc-field">
-								<label for="documento">Archivo del documento</label>
+								<label for="nit">NIT (Identificación Tributaria DIAN)</label>
 								<input
-									type="file"
-									id="documento"
-									name="documento"
-									accept="image/jpeg,image/png,image/webp,application/pdf"
+									type="text"
+									id="nit"
+									name="nit"
+									value={nitValue}
+									placeholder="Ej: 900123456"
+									inputmode="numeric"
 									required
+									minlength="6"
+									maxlength="20"
+									pattern="[0-9]*"
+									title="Solo números, entre 6 y 20 dígitos"
 								/>
 							</div>
+							<div class="doc-field">
+								<label for="rut">RUT emitido por la DIAN</label>
+								<input
+									type="file"
+									id="rut"
+									name="rut"
+									accept="image/jpeg,image/png,image/webp,application/pdf"
+									required={!hasRut}
+								/>
+								<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
+							</div>
 							<button type="submit" class="gold-button">
-								{docLink ? 'Reemplazar documento' : 'Subir documento'}
+								{hasRut ? 'Actualizar NIT y RUT' : 'Subir NIT y RUT'}
 							</button>
 						</form>
 					)}
 				</div>
 
-				<!-- ============ MI UBICACIÃ“N EN TIEMPO REAL ============ -->
+				<!-- ============ MI UBICACIÓN EN TIEMPO REAL ============ -->
 				<div class="luxury-card doc-box loc-box" id="mi-ubicacion" data-loc-url="/api/location">
 					<div class="doc-head">
 						<div>
-							<h3 class="detail-title font-cinzel">Mi UbicaciÃ³n</h3>
+							<h3 class="detail-title font-cinzel">Mi Ubicación</h3>
 							<p class="doc-hint">
 								{hasLocation
-									? 'Ãšltima posiciÃ³n registrada al ingresar a tu cuenta.'
-									: 'Necesitamos tu ubicaciÃ³n para registrar tu acceso y actualizar la hoja de control.'}
+									? 'Última posición registrada al ingresar a tu cuenta.'
+									: 'Necesitamos tu ubicación para registrar tu acceso y actualizar la hoja de control.'}
 							</p>
 						</div>
 						<span class="doc-status" class:list={{ wait: true, ok: false, ko: false }} data-loc-badge>
@@ -392,13 +353,13 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 							<div class="loc-item">
 								<span class="loc-label">Exactitud</span>
 								<code class="loc-value" data-loc-acc>
-									{myLocation!.accuracy !== undefined ? `Â± ${myLocation!.accuracy} m` : 'No reportada'}
+									{myLocation!.accuracy !== undefined ? `± ${myLocation!.accuracy} m` : 'No reportada'}
 								</code>
 							</div>
 							<div class="loc-item">
 								<span class="loc-label">Registrado</span>
 								<code class="loc-value" data-loc-date>
-									{myLocation!.date ? formatAppDateTime(myLocation!.date) : 'â€”'}
+									{myLocation!.date ? formatAppDateTime(myLocation!.date) : '—'}
 								</code>
 							</div>
 						</div>
@@ -406,7 +367,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 
 					<div class="doc-actions">
 						<button type="button" class="gold-button" data-loc-btn>
-							{hasLocation ? 'Actualizar mi ubicaciÃ³n' : 'Compartir mi ubicaciÃ³n'}
+							{hasLocation ? 'Actualizar mi ubicación' : 'Compartir mi ubicación'}
 						</button>
 						{hasLocation && (
 							<a href={mapUrl} target="_blank" rel="noopener noreferrer" class="doc-view">
@@ -425,25 +386,25 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 						rel="noopener noreferrer"
 						class="doc-note"
 					>
-						Ver la hoja de ubicaciones en Google Sheets â†’
+						Ver la hoja de ubicaciones en Google Sheets →
 					</a>
 				</div>
 
 				<div class="luxury-card referral-box">
 					<h3 class="detail-title font-cinzel">Mi Red de Referidos</h3>
 					<p class="referral-lead">
-						Comparte tu enlace. Cada persona que se registre con tu cÃ³digo suma
-						<strong>{formatCOP(COMMISSION_PER_REFERRAL)}</strong> de una sola vez a tu comisiÃ³n, sin
-						exigirte a ti nada mÃ¡s.
+						Comparte tu enlace. Cada persona que se registre con tu código suma
+						<strong>{formatCOP(COMMISSION_PER_REFERRAL)}</strong> de una sola vez a tu comisión, sin
+						exigirte a ti nada más.
 					</p>
 
 					<div class="referral-codes">
 						<div class="referral-code-item">
-							<span class="referral-label">Tu cÃ³digo de referido</span>
+							<span class="referral-label">Tu código de referido</span>
 							<code class="referral-code">{referrals.ownCode}</code>
 						</div>
 						<div class="referral-code-item">
-							<span class="referral-label">Tu enlace de invitaciÃ³n</span>
+							<span class="referral-label">Tu enlace de invitación</span>
 							<code class="referral-link">{referralLink}</code>
 						</div>
 					</div>
@@ -455,7 +416,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 						</div>
 						<div class="referral-total">
 							<span class="referral-total-value font-cinzel gold-gradient-text">{formatCOP(referrals.commission)}</span>
-							<span class="referral-total-label">ComisiÃ³n acumulada (pago Ãºnico)</span>
+							<span class="referral-total-label">Comisión acumulada (pago único)</span>
 						</div>
 					</div>
 
@@ -473,7 +434,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 						</ul>
 					) : (
 						<p class="referral-empty">
-							TodavÃ­a no tienes referidos. Comparte tu enlace para empezar a acumular tu primera comisiÃ³n de
+							Todavía no tienes referidos. Comparte tu enlace para empezar a acumular tu primera comisión de
 							{formatCOP(COMMISSION_PER_REFERRAL)}.
 						</p>
 					)}
@@ -481,14 +442,14 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 
 				<div class="details-grid">
 					<div class="detail-card luxury-card">
-						<h3 class="detail-title font-cinzel">InformaciÃ³n de la Cuenta</h3>
+						<h3 class="detail-title font-cinzel">Información de la Cuenta</h3>
 						<div class="info-list">
 							<div class="info-row">
 								<span class="info-label">Usuario</span>
 								<span class="info-val">{session.username}</span>
 							</div>
 							<div class="info-row">
-								<span class="info-label">Correo ElectrÃ³nico</span>
+								<span class="info-label">Correo Electrónico</span>
 								<span class="info-val">{session.email}</span>
 							</div>
 							<div class="info-row">
@@ -514,11 +475,11 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 						<h3 class="detail-title font-cinzel">Billetera y Pagos</h3>
 						<div class="info-list">
 							<div class="info-row">
-								<span class="info-label">MÃ©todo de Pago</span>
+								<span class="info-label">Método de Pago</span>
 								<span class="info-val">{userDetail?.paymentMethod || 'No configurado'}</span>
 							</div>
 							<div class="info-row">
-								<span class="info-label">NÃºmero de Cuenta / Celular</span>
+								<span class="info-label">Número de Cuenta / Celular</span>
 								<span class="info-val">{userDetail?.walletNumber || 'Sin vincular'}</span>
 							</div>
 							<div class="info-row">
@@ -532,7 +493,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 			</div>
 		</div>
 	<script>
-		// Pide la ubicaciÃ³n al navegador y la envÃ­a al servidor.
+		// Pide la ubicación al navegador y la envía al servidor.
 		// Los navegadores exigen un clic del usuario para conceder el permiso.
 		const locBox = document.querySelector<HTMLElement>('#mi-ubicacion');
 		const locBtn = document.querySelector<HTMLButtonElement>('[data-loc-btn]');
@@ -550,38 +511,38 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ lat, lng, accuracy, source: 'gps' }),
 			});
-			if (!res.ok) throw new Error('No se pudo guardar la ubicaciÃ³n en la hoja.');
+			if (!res.ok) throw new Error('No se pudo guardar la ubicación en la hoja.');
 		}
 
 		if (locBtn) {
 			locBtn.addEventListener('click', () => {
 				if (!('geolocation' in navigator)) {
-					locFail('Tu navegador no admite la geolocalizaciÃ³n.');
+					locFail('Tu navegador no admite la geolocalización.');
 					return;
 				}
 
 				locBtn.disabled = true;
-				locBtn.textContent = 'Obteniendo ubicaciÃ³nâ€¦';
+				locBtn.textContent = 'Obteniendo ubicación…';
 
 				navigator.geolocation.getCurrentPosition(
 					async (pos) => {
 						try {
 							await sendLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-							// Se recarga para pintar la tarjeta con los datos ya leÃ­dos de la hoja
+							// Se recarga para pintar la tarjeta con los datos ya leídos de la hoja
 							window.location.reload();
 						} catch (err) {
-							locFail(err instanceof Error ? err.message : 'Error al guardar la ubicaciÃ³n.');
+							locFail(err instanceof Error ? err.message : 'Error al guardar la ubicación.');
 							locBtn.disabled = false;
 							locBtn.textContent = 'Reintentar';
 						}
 					},
 					(err) => {
 						const mensajes: Record<number, string> = {
-							1: 'Permiso denegado. ActÃ­valo desde el candado de la barra de direcciones.',
-							2: 'No se pudo determinar tu posiciÃ³n. Revisa que el GPS estÃ© encendido.',
-							3: 'La solicitud tardÃ³ demasiado. Intenta de nuevo.',
+							1: 'Permiso denegado. Actívalo desde el candado de la barra de direcciones.',
+							2: 'No se pudo determinar tu posición. Revisa que el GPS esté encendido.',
+							3: 'La solicitud tardó demasiado. Intenta de nuevo.',
 						};
-						locFail(mensajes[err.code] || 'No se pudo obtener la ubicaciÃ³n.');
+						locFail(mensajes[err.code] || 'No se pudo obtener la ubicación.');
 						locBtn.disabled = false;
 						locBtn.textContent = 'Reintentar';
 					},
@@ -591,7 +552,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 		}
 
 		// Si el permiso ya estaba concedido en visitas anteriores,
-		// la ubicaciÃ³n se refresca sola en cada ingreso.
+		// la ubicación se refresca sola en cada ingreso.
 		if (locBox && navigator.permissions && navigator.permissions.query) {
 			navigator.permissions
 				.query({ name: 'geolocation' })
@@ -1162,7 +1123,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 		.details-grid { grid-template-columns: 1fr; }
 	}
 
-	/* ============ MÃ“VIL PEQUEÃ‘O ============ */
+	/* ============ MÓVIL PEQUEÑO ============ */
 	@media (max-width: 520px) {
 		/* El chip de usuario + toggle + salir no caben en una fila */
 		.header-actions { gap: 10px; }
@@ -1191,7 +1152,7 @@ const hasRut = (userDetail?.rutLink || '').trim() !== '';
 			gap: 4px;
 		}
 	}
-	/* ---- UbicaciÃ³n en tiempo real ---- */
+	/* ---- Ubicación en tiempo real ---- */
 	.loc-box {
 		display: block;
 	}

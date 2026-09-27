@@ -107,8 +107,10 @@ if (section === 'organigrama-global') {
 // --- Revisión de documentos ---
 const reviewResult = Astro.url.searchParams.get('review');
 const reviewMessage = Astro.url.searchParams.get('msg');
-// Solo los que han enviado algún documento necesitan revisión
-const withDocument = sheetUsers.filter((u) => (u.documentLink || '').trim() !== '');
+// Solo los que han enviado NIT/RUT necesitan revisión
+const withDocument = sheetUsers.filter(
+	(u) => (u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== ''
+);
 const pendingDocuments = withDocument.filter(
 	(u) => (u.documentStatus || '').trim() !== DOCUMENT_STATUS.aprobado
 );
@@ -150,8 +152,8 @@ function documentStatusOf(user: User): string {
 				<div>
 					<h2>Usuarios registrados</h2>
 					<p>
-						{sheetUsers.length} usuarios en total · {withDocument.length} con documento cargado ·
-						{pendingDocuments.length} pendientes de revisar · {sheetUsers.filter((u) => (u.rutLink || '').trim() !== '').length} con RUT.
+						{sheetUsers.length} usuarios en total · {withDocument.length} con NIT/RUT ·
+						{pendingDocuments.length} pendientes de revisar.
 					</p>
 				</div>
 			</div>
@@ -172,7 +174,7 @@ function documentStatusOf(user: User): string {
 							<tr>
 								<th>Usuario</th>
 								<th>Nivel</th>
-								<th>Documento de identidad / NIT / RUT</th>
+								<th>NIT / RUT (DIAN)</th>
 								<th>Estado</th>
 								<th>Acciones</th>
 							</tr>
@@ -180,7 +182,7 @@ function documentStatusOf(user: User): string {
 						<tbody>
 							{sheetUsers.map((u) => {
 								const status = documentStatusOf(u);
-								const hasDoc = (u.documentLink || '').trim() !== '';
+								const hasDoc = ((u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== '');
 								const hasRut = (u.rutLink || '').trim() !== '';
 								const rutPdf = (u.scannedRut || '').toLowerCase().endsWith('.pdf');
 								const nit = (u.nit || '').trim();
@@ -195,45 +197,24 @@ function documentStatusOf(user: User): string {
 								<td>
 									<div class="doc-cell">
 										<span class="doc-line">
-											<span class="doc-kind">Identidad</span>
-											{hasDoc ? (
+											<span class="doc-kind">NIT</span>
+											{nit ? <small class="nit-tag">{nit}</small> : <span class="muted">Sin registrar</span>}
+										</span>
+										<span class="doc-line">
+											<span class="doc-kind">RUT emitido por la DIAN</span>
+											{hasRut ? (
 												<a
-													href={u.documentLink}
+													href={u.rutLink}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="doc-link"
+													class="doc-link rut-link"
 												>
-													Ver archivo
+													{rutPdf ? 'Ver RUT (PDF)' : 'Ver RUT'}
 												</a>
 											) : (
 												<span class="muted">Sin subir</span>
 											)}
-										</span>
-										{(u.documentNumber || u.documentType) && (
-											<small class="doc-ref">
-												N.º {u.documentNumber}{u.documentType ? ` · ${u.documentType}` : ''}
-											</small>
-										)}
-									<span class="doc-line">
-										<span class="doc-kind">NIT</span>
-										{nit ? <small class="nit-tag">{nit}</small> : <span class="muted">Sin registrar</span>}
-									</span>
-									<span class="doc-line">
-										<span class="doc-kind">RUT DIAN</span>
-										{hasRut ? (
-											<a
-												href={u.rutLink}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="doc-link rut-link"
-											>
-												{rutPdf ? 'Ver RUT (PDF)' : 'Ver RUT'}
-											</a>
-										) : (
-											<span class="muted">Sin subir</span>
-										)}
-									</span>
-								</div>
+										</span></div>
 								</td>
 										<td>
 											<span class:list={['status-pill', {
