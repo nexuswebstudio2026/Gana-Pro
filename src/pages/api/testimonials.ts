@@ -6,6 +6,9 @@ import {
 	ALLOWED_IMAGE_TYPES,
 	MAX_IMAGE_BYTES,
 } from '../../lib/testimonials';
+import { ImageStorageNotConfiguredError } from '../../lib/image-storage';
+import { getUserLevel } from '../../lib/users';
+
 
 export const prerender = false;
 
@@ -47,7 +50,8 @@ export const POST: APIRoute = async (Astro) => {
 		let imageId = '';
 		let imageUrl = '';
 		let imageFolder = '';
-		let imageFailed = false;
+		/** Motivo por el que no se pudo guardar la imagen ('' = todo correcto). */
+		let imageProblem: 'config' | 'upload' | '' = '';
 
 		if (file instanceof File && file.size > 0) {
 			if (!ALLOWED_IMAGE_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_TYPES)[number])) {
@@ -67,7 +71,8 @@ export const POST: APIRoute = async (Astro) => {
 			} catch (imgErr) {
 				// La imagen es opcional: si falla el almacenamiento se publica
 				// el testimonio igual y se avisa al usuario.
-				imageFailed = true;
+				imageProblem =
+					imgErr instanceof ImageStorageNotConfiguredError ? 'config' : 'upload';
 				console.error(
 					'No se pudo subir la imagen del testimonio:',
 					imgErr instanceof Error ? imgErr.message : String(imgErr)
@@ -75,10 +80,13 @@ export const POST: APIRoute = async (Astro) => {
 			}
 		}
 
+		// El testimonio guarda el nivel que tiene el usuario en este momento
+		const level = await getUserLevel(session.username, session.email);
+
 		await appendTestimonial({
 			username: session.username,
 			email: session.email,
-			level: '1',
+			level,
 			rating: Math.round(rating),
 			comment,
 			imageName,
@@ -87,7 +95,8 @@ export const POST: APIRoute = async (Astro) => {
 			imageFolder,
 		});
 
-		return Astro.redirect('/?ok=1' + (imageFailed ? '&imagen=error' : '') + '#testimonios', 303);
+		return Astro.redirect('/?ok=1' + (imageProblem ? `&imagen=${imageProblem}` : '') + '#testimonios', 303);
+
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.error('Error al enviar testimonio:', msg);

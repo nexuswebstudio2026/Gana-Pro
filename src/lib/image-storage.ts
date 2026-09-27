@@ -9,6 +9,18 @@ const LOCAL_UPLOAD_DIR = join(process.cwd(), 'public', LOCAL_FOLDER_NAME);
 
 export type ImageStorage = 'vercel-blob' | 'local';
 
+/**
+ * El almacenamiento no está configurado en el servidor.
+ * Suele significar que falta BLOB_READ_WRITE_TOKEN en las variables de
+ * entorno del proyecto (en Vercel: Settings > Environment Variables).
+ */
+export class ImageStorageNotConfiguredError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'ImageStorageNotConfiguredError';
+	}
+}
+
 export interface StoredImage {
 	/** Nombre/ruta del recurso almacenado. */
 	id: string;
@@ -73,8 +85,9 @@ export async function saveTestimonialImage(
 	}
 
 	if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-		throw new Error(
-			'Falta BLOB_READ_WRITE_TOKEN: crea un Blob Store en Vercel para poder guardar imágenes en producción.'
+		throw new ImageStorageNotConfiguredError(
+			'Falta BLOB_READ_WRITE_TOKEN en el servidor (Vercel > Settings > Environment Variables). ' +
+				'Las imágenes no pueden guardarse en producción.'
 		);
 	}
 

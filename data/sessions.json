@@ -5,12 +5,5 @@
     "email": "gana-pro@gana-pro-508805.iam.gserviceaccount.com",
     "role": "Admin",
     "expiresAt": 1791080808485
-  },
-  {
-    "token": "eyJ1c2VybmFtZSI6IlZlcmlmVG1wIiwiZW1haWwiOiJ2ZXJpZl90bXBAZWplbXBsby5jb20iLCJyb2xlIjoiVXNlciIsImV4cGlyZXNBdCI6MTc5MTA4NDAzNTQ4M30.74cdc4db0e98c936038da7c65a2aebda7183ee0b4da277dd0c482980a4469ebf",
-    "username": "VerifTmp",
-    "email": "verif_tmp@ejemplo.com",
-    "role": "User",
-    "expiresAt": 1791084035483
   }
 ]

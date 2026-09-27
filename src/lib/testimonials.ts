@@ -1,5 +1,6 @@
 import { getEnvValue, getSheetsClient } from './sheets';
 import { saveTestimonialImage, type StoredImage } from './image-storage';
+import { toZonedIso } from './datetime';
 import type { Testimonial } from './types';
 
 const SHEET_ID = getEnvValue('GOOGLE_SHEET_ID') || '';
@@ -137,10 +138,10 @@ export async function appendTestimonial(testimonial: {
 		nextId = Date.now();
 	}
 
-	const now = new Date();
 	const row = [
 		String(nextId),
-		now.toLocaleString('es-ES'),
+		// ISO 8601 con desfase: inequívoco aunque el servidor esté en UTC
+		toZonedIso(),
 		testimonial.username,
 		testimonial.email,
 		testimonial.level,

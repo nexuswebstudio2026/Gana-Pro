@@ -1,5 +1,6 @@
 ---
 import { getTestimonials, averageRating } from '../lib/testimonials';
+import { formatAppDateTime } from '../lib/datetime';
 import type { Session } from '../lib/session';
 
 interface Props {
@@ -10,7 +11,8 @@ const { session } = Astro.props;
 
 const ok = Astro.url.searchParams.get('ok');
 const error = Astro.url.searchParams.get('error');
-const imageError = Astro.url.searchParams.get('imagen') === 'error';
+const imageProblem = Astro.url.searchParams.get('imagen');
+
 
 // Los testimonios se cargan desde Google Sheets; si falla, la página sigue funcionando
 let testimonials: Awaited<ReturnType<typeof getTestimonials>> = [];
@@ -25,11 +27,10 @@ try {
 const average = averageRating(testimonials);
 const totalRatings = testimonials.filter((t) => t.rating > 0).length;
 
-function formatDate(value: string): string {
-	if (!value) return '';
-	const parsed = new Date(value);
-	return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('es-ES');
-}
+// Las fechas se guardan en ISO con desfase y se muestran en la zona de la
+// plataforma; el formato antiguo (generado en UTC) también se interpreta.
+const formatDate = (value: string): string => formatAppDateTime(value);
+
 ---
 
 <section class="section testimonials-section" id="testimonios" aria-labelledby="testimonials-title">
@@ -69,7 +70,14 @@ function formatDate(value: string): string {
 				¡Gracias! Tu testimonio y tu valoración han sido publicados.
 			</div>
 		)}
-		{imageError && (
+		{imageProblem === 'config' && (
+			<div class="alert alert-error" role="alert">
+				Tu testimonio se publicó, pero la imagen no pudo subirse porque el almacenamiento de imágenes no
+				está configurado en el servidor. Avísale al administrador para que añada
+				<code>BLOB_READ_WRITE_TOKEN</code> en las variables de entorno de Vercel.
+			</div>
+		)}
+		{imageProblem === 'upload' && (
 			<div class="alert alert-error" role="alert">
 				Tu testimonio se publicó, pero la imagen no pudo subirse al almacenamiento de imágenes. Puedes
 				volver a publicarlo más adelante.

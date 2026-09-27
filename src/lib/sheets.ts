@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import type { User } from './types';
+import { toZonedIso } from './datetime';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -186,8 +187,8 @@ export async function appendGoogleSheetUser(user: {
 		nextId = Date.now();
 	}
 
-	const now = new Date();
-	const formattedDate = `${now.toLocaleDateString('es-CO')}, ${now.toLocaleTimeString('es-CO')}`;
+	// ISO 8601 con desfase: evita el desfase de 5 h del servidor (UTC)
+	const formattedDate = toZonedIso();
 
 	const newRow = [
 		String(nextId),        // ID
