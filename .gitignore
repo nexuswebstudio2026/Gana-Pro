@@ -4,6 +4,10 @@ dist/
 .astro/
 .vercel/
 
+# Imagenes de testimonios subidas en desarrollo
+public/testimonios/*
+!public/testimonios/.gitkeep
+
 # Environment variables
 .env*
 !.env.example

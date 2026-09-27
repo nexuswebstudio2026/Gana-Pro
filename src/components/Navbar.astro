@@ -1,13 +1,18 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
+import { validateSession } from '../lib/session';
 
 interface Props {
 	title?: string;
 }
 
+// Se valida la sesión (no solo la cookie) para mostrar el nombre del usuario
+// y evitar mostrar el portal con un token caducado o manipulado.
 const token = Astro.cookies.get('auth_session')?.value;
-const isLoggedIn = Boolean(token);
+const session = validateSession(token);
+const username = session?.username?.trim() ?? '';
+const initial = username ? username.charAt(0).toUpperCase() : '';
 ---
 
 <header class="navbar">
@@ -30,8 +35,16 @@ const isLoggedIn = Boolean(token);
 
 		<div class="nav-actions">
 			<ThemeToggle />
-			{isLoggedIn ? (
-				<a href="/dashboard" class="gold-button btn-sm">Mi Portal</a>
+			{username ? (
+				<a
+					href="/dashboard"
+					class="gold-button btn-sm user-button"
+					title={`Mi Portal — ${username}`}
+					aria-label={`Mi Portal — ${username}`}
+				>
+					<span class="user-avatar" aria-hidden="true">{initial}</span>
+					<span class="user-name">{username}</span>
+				</a>
 			) : (
 				<a href="/login" class="gold-button btn-sm">Acceso</a>
 			)}
@@ -203,6 +216,39 @@ const isLoggedIn = Boolean(token);
 		font-size: 0.85rem;
 	}
 
+	/* ============ BOTÓN CON EL NOMBRE DEL USUARIO ============ */
+	.user-button {
+		/* El nombre se muestra tal cual se registró, sin MAYÚSCULAS forçadas */
+		text-transform: none;
+		letter-spacing: 0.02em;
+		gap: 8px;
+		max-width: 230px;
+	}
+
+	.user-avatar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 26px;
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		background: rgba(3, 7, 18, 0.22);
+		border: 1px solid rgba(255, 235, 150, 0.6);
+		font-size: 0.78rem;
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: 0;
+	}
+
+	/* Los nombres largos se recortan en lugar de romper el navbar */
+	.user-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
+	}
+
 	/* ============ TABLET Y MÓVIL ============ */
 	@media (max-width: 900px) {
 		.nav-container {
@@ -367,6 +413,18 @@ const isLoggedIn = Boolean(token);
 			gap: 8px;
 		}
 
+		.user-button {
+			max-width: 160px;
+			gap: 6px;
+		}
+
+		.user-avatar {
+			flex-basis: 22px;
+			width: 22px;
+			height: 22px;
+			font-size: 0.7rem;
+		}
+
 		.nav-actions :global(.theme-toggle-btn) {
 			width: 40px;
 			height: 40px;
@@ -394,6 +452,11 @@ const isLoggedIn = Boolean(token);
 		.logo-shield {
 			width: 34px;
 			height: 34px;
+		}
+
+		.user-button {
+			max-width: 120px;
+			padding: 8px 12px;
 		}
 
 		.btn-sm {

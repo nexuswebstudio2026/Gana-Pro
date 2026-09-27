@@ -10,6 +10,7 @@ const { session } = Astro.props;
 
 const ok = Astro.url.searchParams.get('ok');
 const error = Astro.url.searchParams.get('error');
+const imageError = Astro.url.searchParams.get('imagen') === 'error';
 
 // Los testimonios se cargan desde Google Sheets; si falla, la página sigue funcionando
 let testimonials: Awaited<ReturnType<typeof getTestimonials>> = [];
@@ -66,6 +67,12 @@ function formatDate(value: string): string {
 		{ok && (
 			<div class="alert alert-ok" role="status">
 				¡Gracias! Tu testimonio y tu valoración han sido publicados.
+			</div>
+		)}
+		{imageError && (
+			<div class="alert alert-error" role="alert">
+				Tu testimonio se publicó, pero la imagen no pudo subirse al almacenamiento de imágenes. Puedes
+				volver a publicarlo más adelante.
 			</div>
 		)}
 		{error && (

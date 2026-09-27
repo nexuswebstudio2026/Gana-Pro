@@ -1,10 +1,9 @@
-import { getEnvValue, getSheetsClient, getDriveClient } from './sheets';
+import { getEnvValue, getSheetsClient } from './sheets';
+import { saveTestimonialImage, type StoredImage } from './image-storage';
 import type { Testimonial } from './types';
 
 const SHEET_ID = getEnvValue('GOOGLE_SHEET_ID') || '';
 const TESTIMONIAL_TAB = getEnvValue('GOOGLE_SHEET_TESTIMONIALS_TAB') || 'valoracion';
-/** ID de la carpeta de Drive donde se guardan las imágenes. */
-const DRIVE_FOLDER_ID = getEnvValue('GOOGLE_DRIVE_FOLDER_ID') || '';
 
 /** Columnas de la hoja "valoracion", en orden. */
 export const TESTIMONIAL_HEADERS = [
@@ -30,53 +29,26 @@ function normalizeHeader(header: string): string {
 		.trim();
 }
 
-/** URL pública de la carpeta de Drive donde se guardan las imágenes. */
-export function getDriveFolderUrl(): string {
-	return DRIVE_FOLDER_ID ? `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}` : '';
-}
-
 /** Tipos de imagen permitidos. */
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
 /** Tamaño máximo de la imagen: 5 MB. */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /**
- * Sube una imagen a la carpeta de Drive y la hace pública para lectura.
- * Devuelve el ID y la URL de visualización, o `null` si no se subió.
+ * Guarda la imagen de un testimonio.
+ *
+ * En producción usa Vercel Blob (el disco de Vercel es de solo lectura) y en
+ * desarrollo la deja en `public/testimonios/`.
  */
 export async function uploadTestimonialImage(
 	fileName: string,
-	base64: string
-): Promise<{ id: string; url: string } | null> {
-	if (!DRIVE_FOLDER_ID) {
-		throw new Error('GOOGLE_DRIVE_FOLDER_ID no está configurado.');
-	}
+	buffer: Buffer,
+	mimeType: string
+): Promise<StoredImage> {
+	const extension = (fileName.split('.').pop() || 'jpg').toLowerCase();
+	const stampedName = `testimonio_${Date.now()}.${extension === 'jpeg' ? 'jpg' : extension}`;
 
-	const drive = getDriveClient();
-	const extension = fileName.split('.').pop() || 'jpg';
-	const safeName = `testimonio_${Date.now()}.${extension}`;
-
-	const response = await drive.files.create({
-		requestBody: {
-			name: safeName,
-			parents: [DRIVE_FOLDER_ID],
-			// Visible por cualquier persona con el enlace
-			permissions: [{ role: 'reader', type: 'anyone' }],
-		},
-		media: {
-			mimeType: `image/${extension === 'jpg' ? 'jpeg' : extension}`,
-			body: Buffer.from(base64, 'base64'),
-		},
-		fields: 'id, webViewLink',
-	});
-
-	const fileId = response.data.id;
-	if (!fileId) throw new Error('No se pudo obtener el ID del archivo subido.');
-
-	return {
-		id: fileId,
-		url: `https://drive.google.com/uc?export=view&id=${fileId}`,
-	};
+	return saveTestimonialImage(stampedName, buffer, mimeType);
 }
 
 /** Lee todos los testimonios visibles de la hoja "valoracion". */
@@ -147,6 +119,7 @@ export async function appendTestimonial(testimonial: {
 	imageName?: string;
 	imageId?: string;
 	imageUrl?: string;
+	imageFolder?: string;
 }): Promise<void> {
 	const sheets = getSheetsClient();
 
@@ -176,7 +149,7 @@ export async function appendTestimonial(testimonial: {
 		testimonial.imageName || '',
 		testimonial.imageId || '',
 		testimonial.imageUrl || '',
-		getDriveFolderUrl(),
+		testimonial.imageFolder || '',
 		'visible',
 	];
 

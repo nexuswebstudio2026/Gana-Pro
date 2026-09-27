@@ -26,8 +26,10 @@ export const POST: APIRoute = async (Astro) => {
 		const comment = String(formData.get('comment') || '').trim();
 		const file = formData.get('image');
 
+		// Los parámetros van ANTES del fragmento (#), si no el navegador
+		// los ignora y el mensaje nunca se muestra en la página.
 		const fail = (msg: string) =>
-			Astro.redirect('/#testimonios?error=' + encodeURIComponent(msg), 303);
+			Astro.redirect('/?error=' + encodeURIComponent(msg) + '#testimonios', 303);
 
 		if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
 			return fail('Selecciona una valoración entre 1 y 5 estrellas.');
@@ -44,6 +46,8 @@ export const POST: APIRoute = async (Astro) => {
 		let imageName = '';
 		let imageId = '';
 		let imageUrl = '';
+		let imageFolder = '';
+		let imageFailed = false;
 
 		if (file instanceof File && file.size > 0) {
 			if (!ALLOWED_IMAGE_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_TYPES)[number])) {
@@ -54,11 +58,20 @@ export const POST: APIRoute = async (Astro) => {
 			}
 
 			const buffer = Buffer.from(await file.arrayBuffer());
-			const uploaded = await uploadTestimonialImage(file.name, buffer.toString('base64'));
-			if (uploaded) {
+			try {
+				const stored = await uploadTestimonialImage(file.name, buffer, file.type);
 				imageName = file.name;
-				imageId = uploaded.id;
-				imageUrl = uploaded.url;
+				imageId = stored.id;
+				imageUrl = stored.url;
+				imageFolder = stored.folder;
+			} catch (imgErr) {
+				// La imagen es opcional: si falla el almacenamiento se publica
+				// el testimonio igual y se avisa al usuario.
+				imageFailed = true;
+				console.error(
+					'No se pudo subir la imagen del testimonio:',
+					imgErr instanceof Error ? imgErr.message : String(imgErr)
+				);
 			}
 		}
 
@@ -71,14 +84,17 @@ export const POST: APIRoute = async (Astro) => {
 			imageName,
 			imageId,
 			imageUrl,
+			imageFolder,
 		});
 
-		return Astro.redirect('/#testimonios?ok=1', 303);
+		return Astro.redirect('/?ok=1' + (imageFailed ? '&imagen=error' : '') + '#testimonios', 303);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.error('Error al enviar testimonio:', msg);
 		return Astro.redirect(
-			'/#testimonios?error=' + encodeURIComponent('No se pudo guardar tu testimonio. Inténtalo de nuevo.'),
+			'/?error=' +
+				encodeURIComponent('No se pudo guardar tu testimonio. Inténtalo de nuevo.') +
+				'#testimonios',
 			303
 		);
 	}
