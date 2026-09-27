@@ -3,9 +3,8 @@ import { join } from 'node:path';
 import { put } from '@vercel/blob';
 import { getEnvValue } from './sheets';
 
-/** Carpeta local donde se guardan las imágenes cuando se desarrolla en local. */
+/** Carpeta local donde se guardan las imágenes de testimonios en desarrollo. */
 const LOCAL_FOLDER_NAME = 'testimonios';
-const LOCAL_UPLOAD_DIR = join(process.cwd(), 'public', LOCAL_FOLDER_NAME);
 
 export type ImageStorage = 'vercel-blob' | 'local';
 
@@ -52,20 +51,21 @@ function safeFileName(fileName: string): string {
 }
 
 /**
- * Guarda la imagen de un testimonio.
+ * Guarda un archivo en Vercel Blob (o en `public/<folder>/` en desarrollo).
  *
  * - Si hay `BLOB_READ_WRITE_TOKEN` usa Vercel Blob (obligatorio en producción,
  *   porque en Vercel el disco es de solo lectura).
- * - Si no hay token y se está en local, la deja en `public/testimonios/`
- *   para poder verla servida durante `astro dev`.
+ * - Si no hay token y se está en local, lo deja en `public/<folder>/` para
+ *   poder verlo servido durante `astro dev`.
  */
-export async function saveTestimonialImage(
+export async function saveFile(
+	folder: string,
 	fileName: string,
 	buffer: Buffer,
 	mimeType: string
 ): Promise<StoredImage> {
 	const name = safeFileName(fileName);
-	const pathname = `${LOCAL_FOLDER_NAME}/${name}`;
+	const pathname = `${folder}/${name}`;
 
 	const token = getEnvValue('BLOB_READ_WRITE_TOKEN');
 	if (token) {
@@ -87,17 +87,27 @@ export async function saveTestimonialImage(
 	if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
 		throw new ImageStorageNotConfiguredError(
 			'Falta BLOB_READ_WRITE_TOKEN en el servidor (Vercel > Settings > Environment Variables). ' +
-				'Las imágenes no pueden guardarse en producción.'
+				'Los archivos no pueden guardarse en producción.'
 		);
 	}
 
 	// Desarrollo: se guarda en public/ para servirse como archivo estático
-	await mkdir(LOCAL_UPLOAD_DIR, { recursive: true });
-	await writeFile(join(LOCAL_UPLOAD_DIR, name), buffer);
+	const dir = join(process.cwd(), 'public', folder);
+	await mkdir(dir, { recursive: true });
+	await writeFile(join(dir, name), buffer);
 	return {
 		id: name,
-		url: `/${LOCAL_FOLDER_NAME}/${name}`,
-		folder: `/${LOCAL_FOLDER_NAME}`,
+		url: `/${folder}/${name}`,
+		folder: `/${folder}`,
 		storage: 'local',
 	};
+}
+
+/** Guarda la imagen de un testimonio en la carpeta `testimonios/`. */
+export async function saveTestimonialImage(
+	fileName: string,
+	buffer: Buffer,
+	mimeType: string
+): Promise<StoredImage> {
+	return saveFile(LOCAL_FOLDER_NAME, fileName, buffer, mimeType);
 }

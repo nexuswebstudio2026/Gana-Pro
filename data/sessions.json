@@ -1,9 +1,9 @@
 [
   {
-    "token": "eyJ1c2VybmFtZSI6IkdhbmFQcm8iLCJlbWFpbCI6ImdhbmEtcHJvQGdhbmEtcHJvLTUwODgwNS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsInJvbGUiOiJBZG1pbiIsImV4cGlyZXNBdCI6MTc5MTA4MDgwODQ4NX0.358c6de9532186e012603c76cc0f5644fedb5846381950eb1a995c87ded8ac8f",
-    "username": "GanaPro",
-    "email": "gana-pro@gana-pro-508805.iam.gserviceaccount.com",
-    "role": "Admin",
-    "expiresAt": 1791080808485
+    "token": "eyJ1c2VybmFtZSI6IkFua2FtbyIsImVtYWlsIjoiY2FtaWxvdmlkYWwuMTcwNEBnbWFpbC5jb20iLCJyb2xlIjoiVXNlciIsImV4cGlyZXNBdCI6MTc5MTA5MTUxNTAzMX0.4088cae35daf54c1cf968a084b99d5ad1b262e80899b422378b949059ed7a807",
+    "username": "Ankamo",
+    "email": "camilovidal.1704@gmail.com",
+    "role": "User",
+    "expiresAt": 1791091515031
   }
 ]

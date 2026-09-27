@@ -222,3 +222,95 @@ export async function appendGoogleSheetUser(user: {
 		},
 	});
 }
+
+/** Campos de documento que se pueden actualizar de un usuario. */
+export interface UserDocumentFields {
+	documentType?: string;
+	documentNumber?: string;
+	documentStatus?: string;
+	documentLink?: string;
+	scannedDocument?: string;
+}
+
+/**
+ * Actualiza las columnas de documento de un usuario (estado, enlace y nombre
+ * del archivo). Devuelve `true` si encontró y actualizó la fila.
+ */
+export async function updateSheetUserDocument(
+	username: string,
+	fields: UserDocumentFields
+): Promise<boolean> {
+	const sheets = getSheetsClient();
+
+	const res = await sheets.spreadsheets.values.get({
+		spreadsheetId: SHEET_ID,
+		range: `${SHEET_TAB}!A1:Z2000`,
+	});
+	const rows = res.data.values || [];
+	if (rows.length === 0) return false;
+
+	// En esta hoja la fila 1 suele estar vacía: los encabezados no siempre
+	// están en la primera fila, se localizan por contenido.
+	let headerRow = -1;
+	for (let i = 0; i < rows.length; i++) {
+		const normalized = rows[i].map((c: unknown) => normalizeHeader(String(c)));
+		if (normalized.includes('usuario') && (normalized.includes('contras') || normalized.includes('email'))) {
+			headerRow = i;
+			break;
+		}
+	}
+	if (headerRow === -1) return false;
+
+	const headers = rows[headerRow].map((h: unknown) => normalizeHeader(String(h)));
+	const idxUser = headers.indexOf('usuario');
+	const idxType = headers.findIndex((h) => h.includes('tipo') && h.includes('doc'));
+	const idxNumber = headers.findIndex(
+		(h) => (h.includes('numero') || h.includes('num')) && h.includes('doc')
+	);
+	const idxStatus = headers.findIndex((h) => h.includes('estado') && h.includes('doc'));
+	const idxLink = headers.findIndex((h) => h.includes('enlace') && h.includes('doc'));
+	const idxScanned = headers.findIndex((h) => h.includes('escaneado'));
+
+	if (idxUser === -1) return false;
+
+	const target = String(username || '').trim().toLowerCase();
+	const rowIndex = rows.findIndex(
+		(row, i) => i > headerRow && String(row?.[idxUser] || '').trim().toLowerCase() === target
+	);
+	if (rowIndex === -1) return false;
+
+	// Se escribe cada columna por separado: así no depende de que existan todas
+	const updates: { col: number; value: string }[] = [];
+	if (fields.documentType !== undefined && idxType !== -1)
+		updates.push({ col: idxType, value: fields.documentType });
+	if (fields.documentNumber !== undefined && idxNumber !== -1)
+		updates.push({ col: idxNumber, value: fields.documentNumber });
+	if (fields.documentStatus !== undefined && idxStatus !== -1)
+		updates.push({ col: idxStatus, value: fields.documentStatus });
+	if (fields.documentLink !== undefined && idxLink !== -1)
+		updates.push({ col: idxLink, value: fields.documentLink });
+	if (fields.scannedDocument !== undefined && idxScanned !== -1)
+		updates.push({ col: idxScanned, value: fields.scannedDocument });
+
+	for (const u of updates) {
+		await sheets.spreadsheets.values.update({
+			spreadsheetId: SHEET_ID,
+			range: `${SHEET_TAB}!${columnLetter(u.col)}${rowIndex + 1}`,
+			valueInputOption: 'RAW',
+			requestBody: { values: [[u.value]] },
+		});
+	}
+
+	return updates.length > 0;
+}
+
+/** Convierte un índice de columna (0-based) en letra (0 -> A, 26 -> AA). */
+function columnLetter(index: number): string {
+	let letter = '';
+	let n = index;
+	do {
+		letter = String.fromCharCode(65 + (n % 26)) + letter;
+		n = Math.floor(n / 26) - 1;
+	} while (n >= 0);
+	return letter;
+}

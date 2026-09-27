@@ -1,5 +1,47 @@
 import { getEnvValue, getSheetsClient } from './sheets';
-import { saveTestimonialImage, type StoredImage } from './image-storage';
+import { saveFile, saveTestimonialImage, type StoredImage } from './image-storage';
+
+/** Carpeta (en el almacén) donde se guardan los documentos de identidad. */
+export const DOCUMENTS_FOLDER = 'documentos';
+
+/** Tipos de archivo admitidos para el documento de identidad. */
+export const ALLOWED_DOCUMENT_TYPES = [
+	'image/jpeg',
+	'image/png',
+	'image/webp',
+	'application/pdf',
+] as const;
+
+/** Tamaño máximo del documento: 5 MB. */
+export const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
+
+/** Estados posibles de la revisión documental. */
+export const DOCUMENT_STATUS = {
+	pendiente: 'Pendiente',
+	aprobado: 'Aprobado',
+	rechazado: 'Rechazado',
+} as const;
+
+/**
+ * Sube el documento de identidad de un usuario y devuelve la referencia
+ * guardada (URL pública + nombre del archivo).
+ *
+ * El archivo se guarda como `documento_<usuario>_<timestamp>.<ext>` para que
+ * sea fácil identificar de quién es y no se pisen entre sí.
+ */
+export async function uploadIdentityDocument(
+	username: string,
+	fileName: string,
+	buffer: Buffer,
+	mimeType: string
+): Promise<StoredImage> {
+	const extension = (fileName.split('.').pop() || 'jpg').toLowerCase();
+	const safeUser = username.replace(/[^a-zA-Z0-9_-]/g, '');
+	const stampedName = `documento_${safeUser || 'user'}_${Date.now()}.${extension}`;
+
+	return saveFile(DOCUMENTS_FOLDER, stampedName, buffer, mimeType);
+}
+
 import { toZonedIso } from './datetime';
 import type { Testimonial } from './types';
 

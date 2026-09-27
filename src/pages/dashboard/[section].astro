@@ -2,8 +2,10 @@
 import { validateSession } from '../../lib/session';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { buildUserHierarchy, countOrganizationUsers } from '../../lib/user-hierarchy';
+import { DOCUMENT_STATUS } from '../../lib/testimonials';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import UserOrgNode from '../../components/UserOrgNode.astro';
+import type { User } from '../../lib/types';
 
 export const prerender = false;
 
@@ -85,14 +87,34 @@ const page = pages[section as SectionKey];
 
 let hierarchy = buildUserHierarchy([]);
 let organizationLoadFailed = false;
-if (section === 'organigrama-global') {
+let sheetUsers: User[] = [];
+let usersLoadFailed = false;
+
+if (section === 'organigrama-global' || section === 'usuarios-registrados') {
 	try {
-		const sheetUsers = await getGoogleSheetUsers();
-		hierarchy = buildUserHierarchy(sheetUsers);
+		sheetUsers = await getGoogleSheetUsers();
 	} catch (error) {
 		organizationLoadFailed = true;
-		console.error('Error al obtener usuarios del organigrama desde Google Sheets:', error);
+		usersLoadFailed = true;
+		console.error('Error al obtener usuarios desde Google Sheets:', error);
 	}
+}
+
+if (section === 'organigrama-global') {
+	hierarchy = buildUserHierarchy(sheetUsers);
+}
+
+// --- Revisión de documentos ---
+const reviewResult = Astro.url.searchParams.get('review');
+const reviewMessage = Astro.url.searchParams.get('msg');
+// Solo los que han enviado algún documento necesitan revisión
+const withDocument = sheetUsers.filter((u) => (u.documentLink || '').trim() !== '');
+const pendingDocuments = withDocument.filter(
+	(u) => (u.documentStatus || '').trim() !== DOCUMENT_STATUS.aprobado
+);
+
+function documentStatusOf(user: User): string {
+	return (user.documentStatus || DOCUMENT_STATUS.pendiente).trim();
 }
 ---
 
@@ -121,6 +143,104 @@ if (section === 'organigrama-global') {
 			) : hierarchy.children.length === 0 ? (
 				<p class="org-empty">Todavía no hay usuarios registrados en Google Sheets para construir el organigrama.</p>
 			) : null}
+		</section>
+	) : section === 'usuarios-registrados' ? (
+		<section class="org-panel luxury-card" aria-label="Usuarios registrados">
+			<div class="org-panel-heading">
+				<div>
+					<h2>Usuarios registrados</h2>
+					<p>
+						{sheetUsers.length} usuarios en total · {withDocument.length} con documento cargado ·
+						{pendingDocuments.length} pendientes de revisar.
+					</p>
+				</div>
+			</div>
+
+			{reviewResult === 'ok' && <p class="doc-alert ok">{reviewMessage}</p>}
+			{reviewResult === 'error' && (
+				<p class="doc-alert ko">{reviewMessage || 'No se pudo actualizar el estado.'}</p>
+			)}
+
+			{usersLoadFailed ? (
+				<p class="org-empty">No se pudo consultar la información de usuarios en Google Sheets.</p>
+			) : sheetUsers.length === 0 ? (
+				<p class="org-empty">Todavía no hay usuarios registrados.</p>
+			) : (
+				<div class="org-chart-scroll">
+					<table class="users-table">
+						<thead>
+							<tr>
+								<th>Usuario</th>
+								<th>Nivel</th>
+								<th>Documento</th>
+								<th>Estado</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+							{sheetUsers.map((u) => {
+								const status = documentStatusOf(u);
+								const hasDoc = (u.documentLink || '').trim() !== '';
+								return (
+									<tr>
+										<td>
+											<strong>{u.username}</strong>
+											<small>{u.email}</small>
+										</td>
+										<td>{u.level || '1'}</td>
+										<td>
+											{hasDoc ? (
+												<a
+													href={u.documentLink}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="doc-link"
+												>
+													Ver archivo
+												</a>
+											) : (
+												<span class="muted">Sin subir</span>
+											)}
+											{u.documentNumber && <small>N.º {u.documentNumber}</small>}
+										</td>
+										<td>
+											<span class:list={['status-pill', {
+												ok: status === DOCUMENT_STATUS.aprobado,
+												ko: status === DOCUMENT_STATUS.rechazado,
+												wait: status === DOCUMENT_STATUS.pendiente,
+											}]}>{status}</span>
+										</td>
+										<td class="actions">
+											{hasDoc && (
+												<>
+													<form method="POST" action="/api/admin/documents">
+														<input type="hidden" name="username" value={u.username} />
+														<input
+															type="hidden"
+															name="status"
+															value={DOCUMENT_STATUS.aprobado}
+														/>
+														<button type="submit" class="btn-approve">Aprobar</button>
+													</form>
+													<form method="POST" action="/api/admin/documents">
+														<input type="hidden" name="username" value={u.username} />
+														<input
+															type="hidden"
+															name="status"
+															value={DOCUMENT_STATUS.rechazado}
+														/>
+														<button type="submit" class="btn-reject">Rechazar</button>
+													</form>
+												</>
+											)}
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
+			)}
 		</section>
 	) : (
 		<div class="module-grid">
@@ -156,7 +276,106 @@ if (section === 'organigrama-global') {
 	.org-children::before { content: ''; position: absolute; top: 0; left: 50%; width: calc(100% - 30px); border-top: 1px solid var(--gold-border); transform: translateX(-50%); }
 	.org-children > .org-branch::before { content: ''; position: absolute; top: -24px; left: 50%; height: 24px; border-left: 1px solid var(--gold-border); }
 	.org-empty { margin: 0; padding: 24px 0 4px; color: var(--text-secondary); text-align: center; }
+
+	/* ============ TABLA DE USUARIOS Y REVISIÓN DE DOCUMENTOS ============ */
+	.users-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 14px;
+		min-width: 760px;
+	}
+
+	.users-table th {
+		text-align: left;
+		padding: 12px 14px;
+		font-size: 11.5px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
+		border-bottom: 1px solid var(--gold-border);
+		white-space: nowrap;
+	}
+
+	.users-table td {
+		padding: 14px;
+		border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+		vertical-align: middle;
+		color: var(--text-secondary);
+	}
+
+	.users-table td strong {
+		display: block;
+		color: var(--text-primary);
+		font-size: 14px;
+	}
+
+	.users-table td small {
+		display: block;
+		font-size: 12px;
+		color: var(--text-muted);
+		margin-top: 3px;
+	}
+
+	.users-table tbody tr:hover { background: rgba(212, 175, 55, 0.04); }
+
+	.doc-link {
+		color: var(--gold-primary);
+		font-weight: 700;
+		text-decoration: none;
+		border-bottom: 1px solid var(--gold-border);
+	}
+
+	.doc-link:hover { border-bottom-color: var(--gold-primary); }
+
+	.muted { color: var(--text-muted); font-size: 13px; }
+
+	.status-pill {
+		display: inline-block;
+		padding: 5px 12px;
+		border-radius: 9999px;
+		font-size: 12px;
+		font-weight: 700;
+		border: 1px solid var(--gold-border);
+		white-space: nowrap;
+	}
+
+	.status-pill.ok { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.45); color: #10b981; }
+	.status-pill.ko { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.45); color: #ef4444; }
+	.status-pill.wait { background: rgba(212, 175, 55, 0.12); color: var(--gold-primary); }
+
+	.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+	.actions form { margin: 0; }
+
+	.btn-approve,
+	.btn-reject {
+		padding: 7px 14px;
+		border-radius: 8px;
+		font-size: 12.5px;
+		font-weight: 700;
+		cursor: pointer;
+		border: 1px solid;
+		transition: filter 0.2s ease;
+	}
+
+	.btn-approve { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.5); color: #10b981; }
+	.btn-reject { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.5); color: #ef4444; }
+	.btn-approve:hover, .btn-reject:hover { filter: brightness(1.25); }
+
+	.doc-alert {
+		padding: 12px 16px;
+		border-radius: 10px;
+		font-size: 14px;
+		margin: 0 0 18px;
+		border: 1px solid;
+	}
+
+	.doc-alert.ok { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.35); color: #10b981; }
+	.doc-alert.ko { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.35); color: #f87171; }
+
+
 	@media (max-width: 768px) {
+
 		.org-panel { padding: 20px 14px; }
 		.org-panel-heading { flex-direction: column; }
 		.org-total { align-self: flex-start; }
