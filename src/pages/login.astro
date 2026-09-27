@@ -7,6 +7,7 @@ export const prerender = false;
 const error = Astro.url.searchParams.get('error');
 const registered = Astro.url.searchParams.get('registered') === '1';
 const loggedout = Astro.url.searchParams.get('loggedout') === '1';
+const reset = Astro.url.searchParams.get('reset') === '1';
 ---
 
 <AuthLayout title="Acceso Exclusivo" subtitle="Ingrese sus credenciales de miembro para entrar al portal">
@@ -30,6 +31,15 @@ const loggedout = Astro.url.searchParams.get('loggedout') === '1';
 		</div>
 	)}
 
+	{reset && (
+		<div class="msg msg-success">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+				<polyline points="20 6 9 17 4 12"></polyline>
+			</svg>
+			<span>Su contraseña fue actualizada correctamente. Ya puede ingresar con su usuario y su nueva clave.</span>
+		</div>
+	)}
+
 	{registered && (
 		<div class="msg msg-success">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -41,19 +51,20 @@ const loggedout = Astro.url.searchParams.get('loggedout') === '1';
 
 	<form method="POST" action="/api/login" class="form">
 		<div class="field">
-			<label for="identifier">Usuario o Correo Electrónico</label>
+			<label for="username">Usuario</label>
 			<input
 				type="text"
-				id="identifier"
-				name="identifier"
-				placeholder="su-usuario@ganapro.com"
+				id="username"
+				name="username"
+				placeholder="su-usuario"
 				required
 				autofocus
+				autocomplete="username"
 			/>
 		</div>
 
 		<div class="field">
-			<label for="password">Contraseña Cifrada</label>
+			<label for="password">Contraseña</label>
 			<input
 				type="password"
 				id="password"
@@ -61,6 +72,7 @@ const loggedout = Astro.url.searchParams.get('loggedout') === '1';
 				placeholder="••••••••••••"
 				required
 				minlength="6"
+				autocomplete="current-password"
 			/>
 		</div>
 

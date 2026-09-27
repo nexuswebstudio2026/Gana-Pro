@@ -239,6 +239,61 @@ export interface UserDocumentFields {
  * Actualiza las columnas de documento de un usuario (estado, enlace y nombre
  * del archivo). Devuelve `true` si encontró y actualizó la fila.
  */
+/**
+ * Reemplaza la contraseña (ya hasheada) de un usuario en Google Sheets.
+ * Devuelve `true` si encontró la fila y la actualizó.
+ */
+export async function updateSheetUserPassword(
+	username: string,
+	hashedPassword: string
+): Promise<boolean> {
+	const sheets = getSheetsClient();
+
+	const res = await sheets.spreadsheets.values.get({
+		spreadsheetId: SHEET_ID,
+		range: `${SHEET_TAB}!A1:Z2000`,
+	});
+	const rows = res.data.values || [];
+	if (rows.length === 0) return false;
+
+	// Los encabezados pueden no estar en la primera fila: se buscan por contenido.
+	let headerRow = -1;
+	for (let i = 0; i < rows.length; i++) {
+		const normalized = rows[i].map((c: unknown) => normalizeHeader(String(c)));
+		if (normalized.includes('usuario')) {
+			headerRow = i;
+			break;
+		}
+	}
+	if (headerRow === -1) return false;
+
+	const headers = rows[headerRow].map((h: unknown) => normalizeHeader(String(h)));
+	const idxUser = headers.indexOf('usuario');
+	const idxPass = headers.findIndex(
+		(h) => h.includes('contras') || h.includes('clave') || h.includes('password') || h === 'pass'
+	);
+	if (idxUser === -1 || idxPass === -1) return false;
+
+	const target = String(username || '').trim().toLowerCase();
+	const rowIndex = rows.findIndex(
+		(row, i) => i > headerRow && String(row?.[idxUser] || '').trim().toLowerCase() === target
+	);
+	if (rowIndex === -1) return false;
+
+	await sheets.spreadsheets.values.update({
+		spreadsheetId: SHEET_ID,
+		range: `${SHEET_TAB}!${columnLetter(idxPass)}${rowIndex + 1}`,
+		valueInputOption: 'RAW',
+		requestBody: { values: [[hashedPassword]] },
+	});
+
+	return true;
+}
+
+/**
+ * Reemplaza la contraseña (ya hasheada) de un usuario en Google Sheets.
+ * Devuelve `true` si encontró la fila y la actualizó.
+ */
 export async function updateSheetUserDocument(
 	username: string,
 	fields: UserDocumentFields

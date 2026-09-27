@@ -13,12 +13,12 @@ export const POST: APIRoute = async (Astro) => {
 		// Parse form data from the request body
 		const body = await Astro.request.text();
 		const params = new URLSearchParams(body);
-		const identifier = params.get('identifier')?.trim() ?? '';
+		const username = params.get('username')?.trim() ?? '';
 		const password = params.get('password') ?? '';
 
 		// --- Validation ---
-		if (!identifier || !password) {
-			return Astro.redirect('/login?error=' + encodeURIComponent('Debes ingresar tu nombre de usuario y contraseña.'), 303);
+		if (!username || !password) {
+			return Astro.redirect('/login?error=' + encodeURIComponent('Debes ingresar tu usuario y contraseña.'), 303);
 		}
 
 		// 1. Consultar usuarios en Google Sheets
@@ -39,12 +39,10 @@ export const POST: APIRoute = async (Astro) => {
 
 		const allUsers = [...sheetUsers, ...localUsers];
 
-		const normalizedIdentifier = identifier.toLowerCase();
-		const user = allUsers.find(
-			(u) =>
-				u.username?.toLowerCase() === normalizedIdentifier ||
-				u.email?.toLowerCase() === normalizedIdentifier
-		);
+		// El acceso es exclusivamente por nombre de usuario: el correo no sirve
+		// para iniciar sesión. La comparación no distingue mayúsculas.
+		const target = username.toLowerCase();
+		const user = allUsers.find((u) => (u.username ?? '').trim().toLowerCase() === target);
 
 		if (!user || !verifyPassword(password, user.password)) {
 			return Astro.redirect('/login?error=' + encodeURIComponent('Credenciales incorrectas. Inténtalo de nuevo.'), 303);
