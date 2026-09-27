@@ -32,6 +32,9 @@ const SHEET_TAB = getEnvValue('GOOGLE_SHEET_TAB') || 'Usuarios';
 const SERVICE_ACCOUNT_EMAIL = getEnvValue('GOOGLE_SERVICE_ACCOUNT_EMAIL');
 const PRIVATE_KEY = getEnvValue('GOOGLE_PRIVATE_KEY')?.replace(/\\n/g, '\n');
 
+/** ID del spreadsheet principal (compartido por todas las pestañas). */
+export const SPREADSHEET_ID = SHEET_ID;
+
 /** Scope necesario solo para Google Sheets. */
 export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 

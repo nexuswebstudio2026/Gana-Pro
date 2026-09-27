@@ -2,6 +2,15 @@
 import { validateSession } from '../lib/session';
 import { getGoogleSheetUsers } from '../lib/sheets';
 import { getReferralStats, COMMISSION_PER_REFERRAL, formatCOP } from '../lib/referrals';
+import {
+	getUserLocation,
+	getLocationSheetUrl,
+	getMapUrl,
+	type StoredLocation,
+} from '../lib/location';
+
+import { formatAppDateTime } from '../lib/datetime';
+
 import type { User } from '../lib/types';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import AdminSidebar from '../components/AdminSidebar.astro';
@@ -52,6 +61,18 @@ if (userDetail) {
 	referrals.shareUrl = `${Astro.url.origin}/register?ref=${encodeURIComponent(referrals.ownCode)}`;
 }
 const referralLink = referrals.shareUrl || `${Astro.url.origin}/register?ref=${encodeURIComponent(referrals.ownCode)}`;
+
+// --- Ubicación en tiempo real ---
+let myLocation: StoredLocation | null = null;
+let locationSheetUrl = getLocationSheetUrl();
+try {
+	myLocation = await getUserLocation(session.username);
+	if (myLocation) locationSheetUrl = getLocationSheetUrl(myLocation.sheetId);
+} catch (e) {
+	console.error('Error al leer la ubicación:', e);
+}
+const hasLocation = myLocation !== null;
+const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, myLocation!.lng) : '';
 
 // --- Documento de identidad ---
 const docResult = Astro.url.searchParams.get('doc');
@@ -297,6 +318,74 @@ const docRejected = docStatus === 'Rechazado';
 					)}
 				</div>
 
+				<!-- ============ MI UBICACIÓN EN TIEMPO REAL ============ -->
+				<div class="luxury-card doc-box loc-box" id="mi-ubicacion" data-loc-url="/api/location">
+					<div class="doc-head">
+						<div>
+							<h3 class="detail-title font-cinzel">Mi Ubicación</h3>
+							<p class="doc-hint">
+								{hasLocation
+									? 'Última posición registrada al ingresar a tu cuenta.'
+									: 'Necesitamos tu ubicación para registrar tu acceso y actualizar la hoja de control.'}
+							</p>
+						</div>
+						<span class="doc-status" class:list={{ wait: true, ok: false, ko: false }} data-loc-badge>
+							{hasLocation ? 'Registrada' : 'Sin registrar'}
+						</span>
+					</div>
+
+					<div class="loc-alert ko" role="alert" data-loc-error hidden></div>
+
+					{hasLocation && (
+						<div class="loc-grid" data-loc-box>
+							<div class="loc-item">
+								<span class="loc-label">Latitud</span>
+								<code class="loc-value" data-loc-lat>{myLocation!.lat.toFixed(6)}</code>
+							</div>
+							<div class="loc-item">
+								<span class="loc-label">Longitud</span>
+								<code class="loc-value" data-loc-lng>{myLocation!.lng.toFixed(6)}</code>
+							</div>
+							<div class="loc-item">
+								<span class="loc-label">Exactitud</span>
+								<code class="loc-value" data-loc-acc>
+									{myLocation!.accuracy !== undefined ? `± ${myLocation!.accuracy} m` : 'No reportada'}
+								</code>
+							</div>
+							<div class="loc-item">
+								<span class="loc-label">Registrado</span>
+								<code class="loc-value" data-loc-date>
+									{myLocation!.date ? formatAppDateTime(myLocation!.date) : '—'}
+								</code>
+							</div>
+						</div>
+					)}
+
+					<div class="doc-actions">
+						<button type="button" class="gold-button" data-loc-btn>
+							{hasLocation ? 'Actualizar mi ubicación' : 'Compartir mi ubicación'}
+						</button>
+						{hasLocation && (
+							<a href={mapUrl} target="_blank" rel="noopener noreferrer" class="doc-view">
+								Ver en Google Maps
+							</a>
+						)}
+					</div>
+
+					{hasLocation && (
+						<code class="loc-url" data-loc-url-link>{mapUrl}</code>
+					)}
+
+					<a
+						href={locationSheetUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="doc-note"
+					>
+						Ver la hoja de ubicaciones en Google Sheets →
+					</a>
+				</div>
+
 				<div class="luxury-card referral-box">
 					<h3 class="detail-title font-cinzel">Mi Red de Referidos</h3>
 					<p class="referral-lead">
@@ -399,6 +488,87 @@ const docRejected = docStatus === 'Rechazado';
 			</main>
 			</div>
 		</div>
+	<script>
+		// Pide la ubicación al navegador y la envía al servidor.
+		// Los navegadores exigen un clic del usuario para conceder el permiso.
+		const locBox = document.querySelector<HTMLElement>('#mi-ubicacion');
+		const locBtn = document.querySelector<HTMLButtonElement>('[data-loc-btn]');
+		const locError = document.querySelector<HTMLElement>('[data-loc-error]');
+
+		function locFail(message: string): void {
+			if (!locError) return;
+			locError.textContent = message;
+			locError.hidden = false;
+		}
+
+		async function sendLocation(lat: number, lng: number, accuracy: number): Promise<void> {
+			const res = await fetch((locBox && locBox.dataset.locUrl) || '/api/location', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ lat, lng, accuracy, source: 'gps' }),
+			});
+			if (!res.ok) throw new Error('No se pudo guardar la ubicación en la hoja.');
+		}
+
+		if (locBtn) {
+			locBtn.addEventListener('click', () => {
+				if (!('geolocation' in navigator)) {
+					locFail('Tu navegador no admite la geolocalización.');
+					return;
+				}
+
+				locBtn.disabled = true;
+				locBtn.textContent = 'Obteniendo ubicación…';
+
+				navigator.geolocation.getCurrentPosition(
+					async (pos) => {
+						try {
+							await sendLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+							// Se recarga para pintar la tarjeta con los datos ya leídos de la hoja
+							window.location.reload();
+						} catch (err) {
+							locFail(err instanceof Error ? err.message : 'Error al guardar la ubicación.');
+							locBtn.disabled = false;
+							locBtn.textContent = 'Reintentar';
+						}
+					},
+					(err) => {
+						const mensajes: Record<number, string> = {
+							1: 'Permiso denegado. Actívalo desde el candado de la barra de direcciones.',
+							2: 'No se pudo determinar tu posición. Revisa que el GPS esté encendido.',
+							3: 'La solicitud tardó demasiado. Intenta de nuevo.',
+						};
+						locFail(mensajes[err.code] || 'No se pudo obtener la ubicación.');
+						locBtn.disabled = false;
+						locBtn.textContent = 'Reintentar';
+					},
+					{ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+				);
+			});
+		}
+
+		// Si el permiso ya estaba concedido en visitas anteriores,
+		// la ubicación se refresca sola en cada ingreso.
+		if (locBox && navigator.permissions && navigator.permissions.query) {
+			navigator.permissions
+				.query({ name: 'geolocation' })
+				.then((status) => {
+					if (status.state !== 'granted' || locBox.dataset.locAuto === 'done') return;
+					locBox.dataset.locAuto = 'done';
+					navigator.geolocation.getCurrentPosition(
+						(pos) => {
+							sendLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy).catch(
+								() => undefined
+							);
+						},
+						() => undefined,
+						{ enableHighAccuracy: true, timeout: 10000 }
+					);
+				})
+				.catch(() => undefined);
+		}
+	</script>
+
 	</body>
 </html>
 
@@ -977,5 +1147,56 @@ const docRejected = docStatus === 'Rechazado';
 			align-items: flex-start;
 			gap: 4px;
 		}
+	}
+	/* ---- Ubicación en tiempo real ---- */
+	.loc-box {
+		display: block;
+	}
+	.loc-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+	.loc-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		padding: 0.7rem 0.85rem;
+		border: 1px solid var(--border-color, rgba(212, 175, 55, 0.25));
+		border-radius: 10px;
+		background: rgba(255, 255, 255, 0.02);
+	}
+	.loc-label {
+		font-size: 0.68rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		opacity: 0.6;
+	}
+	.loc-value {
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: var(--gold, #d4af37);
+		word-break: break-all;
+	}
+	.loc-alert {
+		margin-bottom: 0.9rem;
+		padding: 0.65rem 0.85rem;
+		border-radius: 8px;
+		font-size: 0.85rem;
+		border: 1px solid rgba(220, 80, 80, 0.35);
+		background: rgba(220, 80, 80, 0.1);
+		color: #ff9a9a;
+	}
+	.loc-url {
+		display: block;
+		margin-bottom: 0.75rem;
+		padding: 0.5rem 0.7rem;
+		border-radius: 8px;
+		background: rgba(212, 175, 55, 0.08);
+		border: 1px dashed rgba(212, 175, 55, 0.3);
+		font-size: 0.75rem;
+		color: var(--gold, #d4af37);
+		word-break: break-all;
 	}
 </style>

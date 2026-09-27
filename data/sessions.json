@@ -1,9 +1,7 @@
-[
-  {
-    "token": "eyJ1c2VybmFtZSI6IkFua2FtbyIsImVtYWlsIjoiY2FtaWxvdmlkYWwuMTcwNEBnbWFpbC5jb20iLCJyb2xlIjoiVXNlciIsImV4cGlyZXNBdCI6MTc5MTA5MTUxNTAzMX0.4088cae35daf54c1cf968a084b99d5ad1b262e80899b422378b949059ed7a807",
-    "username": "Ankamo",
-    "email": "camilovidal.1704@gmail.com",
-    "role": "User",
-    "expiresAt": 1791091515031
-  }
-]
+{
+    "token":  "eyJ1c2VybmFtZSI6IkFua2FtbyIsImVtYWlsIjoiY2FtaWxvdmlkYWwuMTcwNEBnbWFpbC5jb20iLCJyb2xlIjoiVXNlciIsImV4cGlyZXNBdCI6MTc5MTA5MTUxNTAzMX0.4088cae35daf54c1cf968a084b99d5ad1b262e80899b422378b949059ed7a807",
+    "username":  "Ankamo",
+    "email":  "camilovidal.1704@gmail.com",
+    "role":  "User",
+    "expiresAt":  1791091515031
+}
