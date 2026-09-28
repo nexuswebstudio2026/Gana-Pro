@@ -1,0 +1,123 @@
+---
+import { validateSession } from '../../lib/session';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+if (!session) {
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+}
+
+let userDetail: User | null = null;
+let userDetailsLoadFailed = false;
+try {
+	const users = await getGoogleSheetUsers();
+	userDetail = users.find(
+		(user) =>
+			user.username?.toLowerCase() === session.username.toLowerCase() ||
+			user.email?.toLowerCase() === session.email.toLowerCase()
+	) || null;
+} catch (error) {
+	userDetailsLoadFailed = true;
+	console.error('Error al cargar la información de la cuenta:', error);
+}
+
+const role = (userDetail?.role || session.role || '').trim().toLowerCase();
+const isAdmin = role === 'admin' || role === 'administrator';
+const accountRole = userDetail?.role || session.role || 'Usuario';
+const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
+	.filter((value) => (value || '').trim())
+	.join(': ');
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Información de la Cuenta"
+	eyebrow="Configuración · Usuario"
+	description="Consulta la información vinculada a tu cuenta."
+>
+	<section class="account-panel luxury-card" aria-labelledby="account-title">
+		<header class="account-heading">
+			<div>
+				<h2 id="account-title">Datos de la cuenta</h2>
+				<p>Información personal y de acceso asociada a tu perfil.</p>
+			</div>
+		</header>
+
+		{userDetailsLoadFailed && (
+			<p class="account-alert" role="status">
+				No se pudieron cargar todos los datos del perfil; se muestran los datos disponibles de la sesión.
+			</p>
+		)}
+
+		<dl class="account-details">
+			<div class="account-row">
+				<dt>Usuario</dt>
+				<dd>{userDetail?.username || session.username}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Correo electrónico</dt>
+				<dd>{userDetail?.email || session.email}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Rol del sistema</dt>
+				<dd><span class="role-badge">{accountRole}</span></dd>
+			</div>
+			<div class="account-row">
+				<dt>Documento de identidad</dt>
+				<dd>{documentLabel || 'Sin registrar'}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Fecha de registro</dt>
+				<dd>{userDetail?.registeredAt || '—'}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Método de pago</dt>
+				<dd>{userDetail?.paymentMethod?.trim() || (userDetail ? 'No configurado' : '—')}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Número de billetera / celular</dt>
+				<dd>{userDetail?.walletNumber?.trim() || (userDetail ? 'Sin vincular' : '—')}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Saldo acumulado</dt>
+				<dd>{userDetail?.balance?.trim() || '—'}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Nivel de miembro</dt>
+				<dd>{userDetail?.level?.trim() || '—'}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Código propio</dt>
+				<dd>{userDetail?.ownCode?.trim() || userDetail?.username || '—'}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Estado del documento</dt>
+				<dd>{userDetail?.documentStatus?.trim() || (userDetail ? 'Pendiente' : '—')}</dd>
+			</div>
+		</dl>
+	</section>
+</AdminPageLayout>
+
+<style>
+	.account-panel { padding: 28px; }
+	.account-heading { margin-bottom: 20px; }
+	.account-heading h2 { margin: 0 0 8px; font-size: 1.25rem; }
+	.account-heading p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+	.account-details { display: grid; gap: 0; margin: 0; }
+	.account-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 0; border-bottom: 1px solid rgba(212, 175, 55, 0.12); }
+	.account-row:last-child { border-bottom: 0; }
+	.account-row dt { color: var(--text-secondary); font-size: 13px; }
+	.account-row dd { margin: 0; color: var(--text-primary); font-size: 14px; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+	.role-badge { display: inline-flex; padding: 4px 10px; border-radius: 6px; background: rgba(212, 175, 55, 0.15); color: var(--gold-primary); font-size: 12px; }
+	.account-alert { padding: 12px 16px; border: 1px solid var(--gold-border); border-radius: 10px; color: var(--text-secondary); font-size: 13px; }
+	@media (max-width: 600px) {
+		.account-panel { padding: 22px 18px; }
+		.account-row { align-items: flex-start; flex-direction: column; gap: 6px; }
+		.account-row dd { text-align: left; }
+	}
+</style>

@@ -1,6 +1,7 @@
 ---
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Logo from '../components/Logo.astro';
+import Footer from '../components/Footer.astro';
 
 interface Props {
 	title: string;
@@ -66,8 +67,8 @@ const { title, subtitle } = Astro.props;
 				<slot />
 			</div>
 
-			<p class="auth-footer">© 2026 GANA PRO • Seguridad y Privacidad Blindada</p>
 		</div>
+		<Footer />
 	</body>
 </html>
 
@@ -202,7 +203,6 @@ const { title, subtitle } = Astro.props;
 	.brand h2 { font-size: 1.35rem; font-weight: 800; }
 	.card-title { font-size: 1.55rem; font-weight: 800; margin-bottom: 6px; }
 	.subtitle { color: var(--text-muted); font-size: 0.92rem; line-height: 1.5; margin-bottom: 26px; }
-	.auth-footer { font-size: 0.8rem; color: var(--text-muted); text-align: center; }
 
 	/* ============ MÓVIL ============ */
 	@media (max-width: 640px) {
@@ -238,10 +238,5 @@ const { title, subtitle } = Astro.props;
 			padding: 28px 18px;
 		}
 
-		/* Evitar que el email largo desborde en pantallas muy estrechas */
-		.auth-footer {
-			font-size: 0.75rem;
-			line-height: 1.6;
-		}
 	}
 </style>

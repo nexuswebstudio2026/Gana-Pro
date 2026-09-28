@@ -16,7 +16,7 @@ export const prerender = false;
 // Se acepta el campo antiguo 'documento' como si fuera el RUT.
 export const POST: APIRoute = async (Astro) => {
   const fail = (msg: string) =>
-    Astro.redirect('/dashboard?doc=error&msg=' + encodeURIComponent(msg), 303);
+    Astro.redirect('/dashboard/rut?doc=error&msg=' + encodeURIComponent(msg), 303);
 
   try {
     const token = Astro.cookies.get('auth_session')?.value;
@@ -62,7 +62,7 @@ export const POST: APIRoute = async (Astro) => {
           : 'No se pudo guardar el archivo. Intentalo de nuevo.';
       console.error('Error al subir el RUT:', err);
       return Astro.redirect(
-        '/dashboard?doc=' + (err instanceof ImageStorageNotConfiguredError ? 'config' : 'error') +
+        '/dashboard/rut?doc=' + (err instanceof ImageStorageNotConfiguredError ? 'config' : 'error') +
           '&msg=' + encodeURIComponent(reason),
         303
       );
@@ -89,11 +89,11 @@ export const POST: APIRoute = async (Astro) => {
       return fail('No se encontro tu registro para guardar el RUT.');
     }
 
-    return Astro.redirect('/dashboard?doc=ok', 303);
+    return Astro.redirect('/dashboard/rut?doc=ok', 303);
   } catch (err) {
     console.error('Error al procesar el RUT:', err);
     return Astro.redirect(
-      '/dashboard?doc=error&msg=' +
+      '/dashboard/rut?doc=error&msg=' +
         encodeURIComponent('No se pudo guardar tu RUT. Intentalo de nuevo.'),
       303
     );

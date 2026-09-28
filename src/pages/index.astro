@@ -2,7 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import TestimonialsSection from '../components/TestimonialsSection.astro';
-import Footer from '../components/Footer.astro';
 import { validateSession } from '../lib/session';
 
 export const prerender = false;
@@ -17,8 +16,6 @@ const session = validateSession(token);
 	<main class="main-content">
 		<TestimonialsSection session={session} />
 	</main>
-
-	<Footer />
 </Layout>
 
 <style>

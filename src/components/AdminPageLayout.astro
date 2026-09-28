@@ -1,17 +1,19 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
-import AdminSidebar from './AdminSidebar.astro';
+import DashboardSidebar from './DashboardSidebar.astro';
+import Footer from './Footer.astro';
 import type { Session } from '../lib/session';
 
 interface Props {
 	session: Session;
 	title: string;
 	eyebrow: string;
-	description: string;
+		description: string;
+	isAdmin?: boolean;
 }
 
-const { session, title, eyebrow, description } = Astro.props;
+const { session, title, eyebrow, description, isAdmin = true } = Astro.props;
 const roleLabel = session.role || 'Admin';
 ---
 
@@ -35,8 +37,8 @@ const roleLabel = session.role || 'Admin';
 		</script>
 	</head>
 	<body>
-		<div class="dashboard-wrapper admin-layout">
-			<AdminSidebar />
+		<div class:list={['dashboard-wrapper', 'has-sidebar', { 'admin-layout': isAdmin }]}>
+			<DashboardSidebar isAdmin={isAdmin} />
 			<div class="dashboard-content">
 				<header class="header">
 					<div class="brand">
@@ -73,6 +75,7 @@ const roleLabel = session.role || 'Admin';
 				</main>
 			</div>
 		</div>
+		<Footer />
 	</body>
 </html>
 
@@ -86,6 +89,7 @@ const roleLabel = session.role || 'Admin';
 	.gold-gradient-text { background: linear-gradient(135deg, #d4af37, #f3e5ab 50%, #aa7c11); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 	.luxury-card { background: var(--bg-surface); border: 1px solid var(--gold-border); border-radius: 16px; backdrop-filter: blur(16px); }
 	.dashboard-wrapper { min-height: 100vh; }
+	.dashboard-wrapper.has-sidebar { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
 	.dashboard-wrapper.admin-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
 	.dashboard-content { min-width: 0; }
 	.header { display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; background: var(--bg-surface); border-bottom: 1px solid var(--gold-border); position: sticky; top: 0; z-index: 50; }
@@ -110,7 +114,7 @@ const roleLabel = session.role || 'Admin';
 	.module-card { padding: 24px; }
 	.module-card h2 { margin: 0 0 10px; font-size: 1.1rem; }
 	.module-card p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
-	@media (max-width: 1024px) { .dashboard-wrapper.admin-layout { display: block; } .header { padding-left: 72px; } }
+	@media (max-width: 1024px) { .dashboard-wrapper.has-sidebar, .dashboard-wrapper.admin-layout { display: block; } .header { padding-left: 72px; } }
 	@media (max-width: 768px) { .header { padding: 14px 20px 14px 72px; } .main-content { padding: 20px; } .module-hero { padding: 24px 20px; } }
 </style>
 

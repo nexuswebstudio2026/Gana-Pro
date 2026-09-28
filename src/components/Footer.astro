@@ -40,7 +40,7 @@ import Logo from './Logo.astro';
 
 <style>
 	.footer {
-		background: var(--bg-tertiary);
+		background: var(--bg-tertiary, var(--bg-surface, #0c1838));
 		border-top: 1px solid var(--gold-border);
 		padding: 70px 24px 30px;
 		margin-top: auto;
@@ -86,7 +86,7 @@ import Logo from './Logo.astro';
 	}
 
 	.brand-desc {
-		color: var(--text-muted);
+		color: var(--text-muted, var(--text-secondary, #94a3b8));
 		font-size: 0.95rem;
 		line-height: 1.7;
 		max-width: 420px;
@@ -133,7 +133,7 @@ import Logo from './Logo.astro';
 		align-items: center;
 		padding-top: 30px;
 		font-size: 0.85rem;
-		color: var(--text-muted);
+		color: var(--text-muted, var(--text-secondary, #94a3b8));
 		flex-wrap: wrap;
 		gap: 16px;
 	}
@@ -148,7 +148,7 @@ import Logo from './Logo.astro';
 	}
 
 	.copyright a:hover {
-		color: var(--gold-hover);
+		color: var(--gold-hover, var(--gold-primary, #d4af37));
 		border-bottom-color: var(--gold-primary);
 	}
 
