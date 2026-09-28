@@ -112,7 +112,7 @@ const withDocument = sheetUsers.filter(
 	(u) => (u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== ''
 );
 const pendingDocuments = withDocument.filter(
-	(u) => (u.documentStatus || '').trim() !== DOCUMENT_STATUS.aprobado
+	(user) => documentStatusOf(user) === DOCUMENT_STATUS.pendiente
 );
 
 function documentStatusOf(user: User): string {
@@ -175,17 +175,21 @@ function documentStatusOf(user: User): string {
 								<th>Usuario</th>
 								<th>Nivel</th>
 								<th>NIT / RUT (DIAN)</th>
-								<th>Estado</th>
 								<th>Acciones</th>
 							</tr>
 						</thead>
 						<tbody>
 							{sheetUsers.map((u) => {
-								const status = documentStatusOf(u);
-								const hasDoc = ((u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== '');
-								const hasRut = (u.rutLink || '').trim() !== '';
-								const rutPdf = (u.scannedRut || '').toLowerCase().endsWith('.pdf');
-								const nit = (u.nit || '').trim();
+									const status = documentStatusOf(u);
+									const isApproved = status === DOCUMENT_STATUS.aprobado;
+									const hasDocument =
+										(u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== '';
+									const approvedDocumentLink = isApproved
+										? (u.rutLink || u.documentLink || '').trim()
+										: '';
+									const documentFileName = (u.scannedRut || u.scannedDocument || '').trim();
+									const documentPdf = documentFileName.toLowerCase().endsWith('.pdf');
+									const nit = (u.nit || '').trim();
 
 								return (
 									<tr>
@@ -202,50 +206,47 @@ function documentStatusOf(user: User): string {
 										</span>
 										<span class="doc-line">
 											<span class="doc-kind">RUT emitido por la DIAN</span>
-											{hasRut ? (
+											{approvedDocumentLink ? (
 												<a
-													href={u.rutLink}
+													href={approvedDocumentLink}
 													target="_blank"
 													rel="noopener noreferrer"
 													class="doc-link rut-link"
 												>
-													{rutPdf ? 'Ver RUT (PDF)' : 'Ver RUT'}
+													{documentPdf ? 'Ver documento aprobado (PDF)' : 'Ver documento aprobado'}
 												</a>
 											) : (
-												<span class="muted">Sin subir</span>
+												<span class="muted">
+													{hasDocument ? 'Documento pendiente de aprobación' : 'Sin subir'}
+												</span>
 											)}
-										</span></div>
+										</span>
+									</div>
 								</td>
-										<td>
-											<span class:list={['status-pill', {
-												ok: status === DOCUMENT_STATUS.aprobado,
-												ko: status === DOCUMENT_STATUS.rechazado,
-												wait: status === DOCUMENT_STATUS.pendiente,
-											}]}>{status}</span>
-										</td>
-										<td class="actions">
-											{hasDoc && (
-												<>
-													<form method="POST" action="/api/admin/documents">
-														<input type="hidden" name="username" value={u.username} />
-														<input
-															type="hidden"
-															name="status"
-															value={DOCUMENT_STATUS.aprobado}
-														/>
-														<button type="submit" class="btn-approve">Aprobar</button>
-													</form>
-													<form method="POST" action="/api/admin/documents">
-														<input type="hidden" name="username" value={u.username} />
-														<input
-															type="hidden"
-															name="status"
-															value={DOCUMENT_STATUS.rechazado}
-														/>
-														<button type="submit" class="btn-reject">Rechazar</button>
-													</form>
-												</>
-											)}
+						<td class="actions">
+							{isApproved ? (
+								<span class="status-pill ok" aria-label={`Estado del documento de ${u.username}`}>
+									Aprobado
+								</span>
+							) : (
+								<>
+									<span class="status-pill wait" aria-label={`Estado del documento de ${u.username}`}>
+										No aprobado
+									</span>
+									{hasDocument && (
+										<>
+											<form method="POST" action="/api/admin/documents">
+													<input type="hidden" name="username" value={u.username} />
+													<input type="hidden" name="status" value={DOCUMENT_STATUS.aprobado} />
+													<button type="submit" class="btn-approve">Aprobar</button>
+												</form>
+												<form method="POST" action="/api/admin/documents">
+													<input type="hidden" name="username" value={u.username} />
+													<input type="hidden" name="status" value={DOCUMENT_STATUS.rechazado} />
+													<button type="submit" class="btn-reject">Rechazar</button>
+												</form>
+											</>
+										)}
 										<form
 											method="POST"
 											action="/api/admin/documents"
@@ -277,7 +278,9 @@ function documentStatusOf(user: User): string {
 											<p class="doc-hint">RUT en JPG, PNG, WEBP o PDF (máximo 5 MB).</p>
 											<button type="submit" class="btn-save">Guardar NIT y RUT</button>
 										</form>
-										</td>
+								</>
+							)}
+						</td>
 									</tr>
 								);
 							})}

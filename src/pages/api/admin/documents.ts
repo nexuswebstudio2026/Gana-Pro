@@ -1,6 +1,10 @@
 import type { APIRoute } from 'astro';
 import { validateSession } from '../../../lib/session';
-import { ensureUserDocumentColumns, updateSheetUserDocument } from '../../../lib/sheets';
+import {
+	ensureUserDocumentColumns,
+	getGoogleSheetUsers,
+	updateSheetUserDocument,
+} from '../../../lib/sheets';
 import {
 	DOCUMENT_STATUS,
 	uploadRutDocument,
@@ -49,6 +53,13 @@ export const POST: APIRoute = async (Astro) => {
 		const username = String(formData.get('username') || '').trim();
 		if (!username) {
 			return fail('No se indicó el usuario al que aplicar el cambio.');
+		}
+
+		const existingUser = (await getGoogleSheetUsers()).find(
+			(user) => user.username.trim().toLowerCase() === username.toLowerCase()
+		);
+		if ((existingUser?.documentStatus || '').trim() === DOCUMENT_STATUS.aprobado) {
+			return fail('Este documento ya fue aprobado y no admite más cambios.');
 		}
 
 		const status = String(formData.get('status') || '').trim();
