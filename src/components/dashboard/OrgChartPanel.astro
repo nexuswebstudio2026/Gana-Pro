@@ -1,0 +1,117 @@
+---
+import type { OrganizationNode } from '../../lib/user-hierarchy';
+import UserOrgNode from '../UserOrgNode.astro';
+
+interface OrgLevel {
+	level: number;
+	count: number;
+}
+
+interface Props {
+	hierarchy: OrganizationNode;
+	total: number;
+	depth: number;
+	levels: OrgLevel[];
+	loadFailed: boolean;
+}
+
+const { hierarchy, total, depth, levels, loadFailed } = Astro.props;
+const direct = hierarchy.children.length;
+---
+
+<section class="org-panel luxury-card" aria-label="Organigrama global de usuarios">
+	<div class="org-panel-heading">
+		<div>
+			<h2>Estructura de usuarios</h2>
+			<p>Cada usuario principal recibe hasta cinco usuarios siguientes según el orden de registro.</p>
+		</div>
+		<span class="org-total">{total} usuarios distribuidos</span>
+	</div>
+
+	<div class="org-stats" role="list" aria-label="Resumen del organigrama">
+		<div class="org-stat" role="listitem">
+			<span class="org-stat-value">{total}</span>
+			<span class="org-stat-label">Usuarios en red</span>
+		</div>
+		<div class="org-stat" role="listitem">
+			<span class="org-stat-value">{direct}<small>/5</small></span>
+			<span class="org-stat-label">Directos de GANA PRO</span>
+		</div>
+		<div class="org-stat" role="listitem">
+			<span class="org-stat-value">{depth}</span>
+			<span class="org-stat-label">Niveles de profundidad</span>
+		</div>
+		<div class="org-stat" role="listitem">
+			<span class="org-stat-value">{levels.length}</span>
+			<span class="org-stat-label">Niveles con usuarios</span>
+		</div>
+	</div>
+
+	{levels.length > 1 && (
+		<ol class="org-levels" aria-label="Usuarios por nivel">
+			{levels.map(({ level, count }) => (
+				<li class="org-level">
+					<span class="org-level-name">{level === 0 ? 'Raíz' : `Nivel ${level}`}</span>
+					<span class="org-level-bar" aria-hidden="true">
+						<span style={`width: ${(count / Math.max(total + 1, 1)) * 100}%`}></span>
+					</span>
+					<span class="org-level-count">{count}</span>
+				</li>
+			))}
+		</ol>
+	)}
+
+	<div class="org-toolbar">
+		<label class="org-search">
+			<span class="org-search-icon" aria-hidden="true">⌕</span>
+			<input
+				type="search"
+				placeholder="Buscar por nombre o correo…"
+				aria-label="Buscar usuario en el organigrama"
+				data-org-search
+			/>
+		</label>
+		<div class="org-zoom" role="group" aria-label="Controles del organigrama">
+			<button type="button" data-org-zoom-out aria-label="Reducir zoom">−</button>
+			<span data-org-zoom-label aria-live="polite">100%</span>
+			<button type="button" data-org-zoom-in aria-label="Aumentar zoom">+</button>
+			<button type="button" data-org-zoom-reset>Restablecer</button>
+			<button type="button" data-org-tree-toggle aria-expanded="false">Ver árbol completo</button>
+			<button type="button" data-org-collapse-all>Contraer todo</button>
+			<button type="button" data-org-expand-all>Expandir todo</button>
+		</div>
+	</div>
+
+	<p class="org-result" data-org-result role="status" hidden></p>
+
+	<div class="org-focus" data-org-focus aria-live="polite">
+		<div class="org-focus-head">
+			<div>
+				<span class="org-focus-eyebrow">Viendo equipo de</span>
+				<strong class="org-focus-name" data-org-focus-name>GANA PRO</strong>
+				<span class="org-focus-sub" data-org-focus-sub></span>
+			</div>
+			<div class="org-focus-actions">
+				<button type="button" data-org-back hidden>← Volver</button>
+				<button type="button" data-org-home>⌂ Raíz</button>
+			</div>
+		</div>
+		<nav class="org-crumbs" aria-label="Ruta del equipo" data-org-crumbs></nav>
+		<div class="org-focus-grid" data-org-focus-grid></div>
+	</div>
+
+	<div class="org-chart-scroll" data-org-scroll hidden>
+		<ul class="org-tree" data-org-tree style="--org-zoom: 1">
+			<UserOrgNode node={hierarchy} root />
+		</ul>
+	</div>
+
+	<script type="application/json" data-org-data set:html={JSON.stringify(hierarchy)} />
+	<script>import '../../scripts/org-chart.ts';</script>
+
+	{loadFailed ? (
+		<p class="org-empty" role="alert">No se pudo consultar la información de usuarios en Google Sheets.</p>
+	) : total === 0 ? (
+		<p class="org-empty">Todavía no hay usuarios registrados en Google Sheets para construir el organigrama.</p>
+	) : null}
+</section>

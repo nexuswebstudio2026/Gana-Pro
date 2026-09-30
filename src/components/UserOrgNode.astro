@@ -8,15 +8,66 @@ interface Props {
 }
 
 const { node, root = false } = Astro.props;
+const initials = root
+	? 'GP'
+	: node.name
+			.split(/[\s_.-]+/)
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((part) => part.charAt(0).toUpperCase())
+			.join('') || `#${node.position}`;
+const subtitle = root
+	? 'Raíz de la organización'
+	: [node.level, node.role].filter(Boolean).join(' · ') || `Registro #${node.position}`;
 ---
 
-<li class:list={['org-branch', { 'org-root': root }]}>
-	<article class:list={['org-node', { 'org-node-root': root }]}>
-		<span class="org-avatar" aria-hidden="true">{root ? 'GP' : node.position}</span>
+<li
+	class:list={['org-branch', { 'org-root': root }]}
+	data-org-node={node.id}
+	data-org-depth={node.depth}
+	data-org-name={node.name.toLowerCase()}
+	data-org-email={(node.email || '').toLowerCase()}
+>
+	<article
+		class:list={['org-node', { 'org-node-root': root }]}
+		title={root ? 'GANA PRO · Raíz' : `${node.name}${node.email ? ` · ${node.email}` : ''}`}
+	>
+		<span class="org-avatar" aria-hidden="true">{initials}</span>
 		<div class="org-copy">
 			<strong>{node.name}</strong>
-			<span>{root ? 'Raíz de la organización' : `Registro #${node.position}`}</span>
+			<span>{subtitle}</span>
+			{!root && node.email && <span class="org-email">{node.email}</span>}
 		</div>
+		{!root && (
+			<span class="org-meta">
+				<span class="org-pos">#{node.position}</span>
+				{node.children.length > 0 && (
+					<span class="org-kids" title={`${node.children.length} directos`}>
+						{node.children.length} ▾
+					</span>
+				)}
+			</span>
+		)}
+		<button
+			type="button"
+			class="org-view"
+			data-org-select={node.id}
+			aria-label={root ? 'GANA PRO, ver sus 5 directos' : `Ver equipo de ${node.name}`}
+			title={root ? 'Ver sus 5 directos' : `Ver equipo de ${node.name}`}
+		>
+			Ver ›
+		</button>
+		{node.children.length > 0 && (
+			<button
+				type="button"
+				class="org-toggle"
+				data-org-toggle
+				aria-expanded="true"
+				aria-label={`Contraer equipo de ${node.name}`}
+			>
+				−
+			</button>
+		)}
 	</article>
 
 	{node.children.length > 0 && (

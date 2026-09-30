@@ -1,0 +1,28 @@
+---
+interface Card {
+	title: string;
+	text: string;
+}
+
+interface Props {
+	cards: readonly Card[];
+}
+
+const { cards } = Astro.props;
+---
+
+<div class="module-grid">
+	{cards.map((card) => (
+		<article class="module-card luxury-card">
+			<h2>{card.title}</h2>
+			<p>{card.text}</p>
+		</article>
+	))}
+</div>
+
+<style>
+	.module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+	.module-card { padding: 24px; }
+	.module-card h2 { margin: 0 0 10px; font-size: 1.1rem; }
+	.module-card p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+</style>

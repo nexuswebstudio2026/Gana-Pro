@@ -1,0 +1,453 @@
+---
+import { validateSession } from '../../lib/session';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { buildUserHierarchy, countOrganizationUsers, countByLevel, maxOrganizationDepth } from '../../lib/user-hierarchy';
+import { DOCUMENT_STATUS } from '../../lib/testimonials';
+import { getBusinessSettings, type BusinessSettings } from '../../lib/business-settings';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import UserOrgNode from '../../components/UserOrgNode.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const pages = {
+	'organigrama-global': {
+		title: 'Organigrama Global de Usuarios',
+		eyebrow: 'Gana Pro',
+		description: 'Consulta la estructura general de usuarios y sus relaciones dentro de la organización.',
+		cards: [
+			{ title: 'Estructura organizacional', text: 'Visualiza la distribución de usuarios por niveles y responsables.' },
+			{ title: 'Relaciones jerárquicas', text: 'Identifica responsables directos y equipos principales.' },
+		],
+	},
+	'usuarios-registrados': {
+		title: 'Usuarios Registrados',
+		eyebrow: 'Gana Pro',
+		description: 'Administra la información de las cuentas registradas en la plataforma.',
+		cards: [
+			{ title: 'Directorio de usuarios', text: 'Consulta las cuentas activas y sus datos de acceso.' },
+			{ title: 'Estado de cuentas', text: 'Revisa el estado de cada usuario dentro del sistema.' },
+		],
+	},
+	'ingresos': {
+		title: 'Ingresos',
+		eyebrow: 'Contabilidad',
+		description: 'Centraliza el seguimiento de los ingresos del negocio.',
+		cards: [
+			{ title: 'Resumen de ingresos', text: 'Consulta los ingresos registrados por período.' },
+			{ title: 'Historial', text: 'Revisa el detalle de los movimientos de ingresos.' },
+		],
+	},
+	'gastos': {
+		title: 'Gastos',
+		eyebrow: 'Contabilidad',
+		description: 'Centraliza el seguimiento de los gastos del negocio.',
+		cards: [
+			{ title: 'Resumen de gastos', text: 'Consulta los gastos registrados por período.' },
+			{ title: 'Historial', text: 'Revisa el detalle de los movimientos de gastos.' },
+		],
+	},
+	'negocio': {
+		title: 'Negocio',
+		eyebrow: 'Configuración',
+		description: 'Administra la configuración general de Gana Pro.',
+		cards: [
+			{ title: 'Información del negocio', text: 'Mantén los datos generales de la organización.' },
+			{ title: 'Preferencias', text: 'Gestiona las preferencias operativas del negocio.' },
+		],
+	},
+	'usuario': {
+		title: 'Usuario',
+		eyebrow: 'Configuración',
+		description: 'Administra tu cuenta y la información de acceso al panel.',
+		cards: [
+			{ title: 'Perfil de usuario', text: 'Consulta la información asociada a tu cuenta.' },
+			{ title: 'Acceso y seguridad', text: 'Gestiona las preferencias de acceso al panel.' },
+		],
+	},
+} as const;
+
+type SectionKey = keyof typeof pages;
+const section = Astro.params.section || '';
+if (!(section in pages)) {
+	return Astro.redirect('/dashboard', 303);
+}
+
+const token = Astro.cookies.get('auth_session')?.value;
+const session = validateSession(token);
+if (!session) {
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+}
+
+const role = (session.role || '').trim().toLowerCase();
+if (role !== 'admin' && role !== 'administrator') {
+	return Astro.redirect('/dashboard', 303);
+}
+
+const page = pages[section as SectionKey];
+let businessSettings: BusinessSettings | null = null;
+let businessSettingsLoadFailed = false;
+
+if (section === 'negocio') {
+	try {
+		businessSettings = await getBusinessSettings();
+	} catch (error) {
+		businessSettingsLoadFailed = true;
+		console.error('Error al obtener la configuración del negocio:', error);
+	}
+}
+
+const businessResult = Astro.url.searchParams.get('business');
+const businessMessage = Astro.url.searchParams.get('msg');
+
+let hierarchy = buildUserHierarchy([]);
+let organizationLoadFailed = false;
+let sheetUsers: User[] = [];
+let usersLoadFailed = false;
+
+if (section === 'organigrama-global' || section === 'usuarios-registrados') {
+	try {
+		sheetUsers = await getGoogleSheetUsers();
+	} catch (error) {
+		organizationLoadFailed = true;
+		usersLoadFailed = true;
+		console.error('Error al obtener usuarios desde Google Sheets:', error);
+	}
+}
+
+if (section === 'organigrama-global') {
+	hierarchy = buildUserHierarchy(sheetUsers);
+}
+
+const orgTotal = countOrganizationUsers(hierarchy);
+const orgDepth = maxOrganizationDepth(hierarchy);
+const orgLevels = countByLevel(hierarchy);
+const orgDirect = hierarchy.children.length;
+
+// --- Revisión de documentos ---
+const reviewResult = Astro.url.searchParams.get('review');
+const reviewMessage = Astro.url.searchParams.get('msg');
+// Solo los que han enviado NIT/RUT necesitan revisión
+const withDocument = sheetUsers.filter(
+	(u) => (u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== ''
+);
+const pendingDocuments = withDocument.filter(
+	(user) => documentStatusOf(user) === DOCUMENT_STATUS.pendiente
+);
+
+function documentStatusOf(user: User): string {
+	return (user.documentStatus || DOCUMENT_STATUS.pendiente).trim();
+}
+---
+
+<AdminPageLayout
+	session={session}
+	title={page.title}
+	eyebrow={page.eyebrow}
+	description={page.description}
+>
+	{section === 'organigrama-global' ? (
+		<section class="org-panel luxury-card" aria-label="Organigrama global de usuarios">
+			<div class="org-panel-heading">
+				<div>
+					<h2>Estructura de usuarios</h2>
+					<p>Cada usuario principal recibe hasta cinco usuarios siguientes según el orden de registro.</p>
+				</div>
+				<span class="org-total">{orgTotal} usuarios distribuidos</span>
+			</div>
+			<div class="org-stats" role="list" aria-label="Resumen del organigrama">
+				<div class="org-stat" role="listitem">
+					<span class="org-stat-value">{orgTotal}</span>
+					<span class="org-stat-label">Usuarios en red</span>
+				</div>
+				<div class="org-stat" role="listitem">
+					<span class="org-stat-value">{orgDirect}<small>/5</small></span>
+					<span class="org-stat-label">Directos de GANA PRO</span>
+				</div>
+				<div class="org-stat" role="listitem">
+					<span class="org-stat-value">{orgDepth}</span>
+					<span class="org-stat-label">Niveles de profundidad</span>
+				</div>
+				<div class="org-stat" role="listitem">
+					<span class="org-stat-value">{orgLevels.length}</span>
+					<span class="org-stat-label">Niveles con usuarios</span>
+				</div>
+			</div>
+			{orgLevels.length > 1 && (
+				<ol class="org-levels" aria-label="Usuarios por nivel">
+					{orgLevels.map(({ level, count }) => (
+						<li class="org-level">
+							<span class="org-level-name">{level === 0 ? 'Raíz' : `Nivel ${level}`}</span>
+							<span class="org-level-bar" aria-hidden="true">
+								<span style={`width: ${(count / Math.max(orgTotal + 1, 1)) * 100}%`}></span>
+							</span>
+							<span class="org-level-count">{count}</span>
+						</li>
+					))}
+				</ol>
+			)}
+			<div class="org-toolbar">
+				<label class="org-search">
+					<span class="org-search-icon" aria-hidden="true">⌕</span>
+					<input
+						type="search"
+						placeholder="Buscar por nombre o correo…"
+						aria-label="Buscar usuario en el organigrama"
+						data-org-search
+					/>
+				</label>
+				<div class="org-zoom" role="group" aria-label="Controles del organigrama">
+					<button type="button" data-org-zoom-out aria-label="Reducir zoom">−</button>
+					<span data-org-zoom-label aria-live="polite">100%</span>
+					<button type="button" data-org-zoom-in aria-label="Aumentar zoom">+</button>
+					<button type="button" data-org-zoom-reset>Restablecer</button>
+					<button type="button" data-org-tree-toggle aria-expanded="false">Ver árbol completo</button>
+					<button type="button" data-org-collapse-all>Contraer todo</button>
+					<button type="button" data-org-expand-all>Expandir todo</button>
+				</div>
+			</div>
+			<p class="org-result" data-org-result role="status" hidden></p>
+			<div class="org-focus" data-org-focus aria-live="polite">
+				<div class="org-focus-head">
+					<div>
+						<span class="org-focus-eyebrow">Viendo equipo de</span>
+						<strong class="org-focus-name" data-org-focus-name>GANA PRO</strong>
+						<span class="org-focus-sub" data-org-focus-sub></span>
+					</div>
+					<div class="org-focus-actions">
+						<button type="button" data-org-back hidden>← Volver</button>
+						<button type="button" data-org-home>⌂ Raíz</button>
+					</div>
+				</div>
+				<nav class="org-crumbs" aria-label="Ruta del equipo" data-org-crumbs></nav>
+				<div class="org-focus-grid" data-org-focus-grid></div>
+			</div>
+			<div class="org-chart-scroll" data-org-scroll hidden>
+				<ul class="org-tree" data-org-tree style="--org-zoom: 1">
+					<UserOrgNode node={hierarchy} root />
+				</ul>
+			</div>
+			<script type="application/json" data-org-data set:html={JSON.stringify(hierarchy)} />
+			{organizationLoadFailed ? (
+				<p class="org-empty">No se pudo consultar la información de usuarios en Google Sheets.</p>
+			) : hierarchy.children.length === 0 ? (
+				<p class="org-empty">Todavía no hay usuarios registrados en Google Sheets para construir el organigrama.</p>
+			) : null}
+		</section>
+	) : section === 'usuarios-registrados' ? (
+		<section class="org-panel luxury-card" aria-label="Usuarios registrados">
+			<div class="org-panel-heading">
+				<div>
+					<h2>Usuarios registrados</h2>
+					<p>
+						{sheetUsers.length} usuarios en total · {withDocument.length} con NIT/RUT ·
+						{pendingDocuments.length} pendientes de revisar.
+					</p>
+				</div>
+			</div>
+
+			{reviewResult === 'ok' && <p class="doc-alert ok">{reviewMessage}</p>}
+			{reviewResult === 'error' && (
+				<p class="doc-alert ko">{reviewMessage || 'No se pudo actualizar el estado.'}</p>
+			)}
+
+			{usersLoadFailed ? (
+				<p class="org-empty">No se pudo consultar la información de usuarios en Google Sheets.</p>
+			) : sheetUsers.length === 0 ? (
+				<p class="org-empty">Todavía no hay usuarios registrados.</p>
+			) : (
+				<div class="org-chart-scroll">
+					<table class="users-table">
+						<thead>
+							<tr>
+								<th>Usuario</th>
+								<th>Nivel</th>
+								<th>NIT / RUT (DIAN)</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+							{sheetUsers.map((u) => {
+									const status = documentStatusOf(u);
+									const isApproved = status === DOCUMENT_STATUS.aprobado;
+									const hasDocument =
+										(u.documentLink || '').trim() !== '' || (u.rutLink || '').trim() !== '';
+									const approvedDocumentLink = isApproved
+										? (u.rutLink || u.documentLink || '').trim()
+										: '';
+									const documentFileName = (u.scannedRut || u.scannedDocument || '').trim();
+									const documentPdf = documentFileName.toLowerCase().endsWith('.pdf');
+									const nit = (u.nit || '').trim();
+
+								return (
+									<tr>
+										<td>
+											<strong>{u.username}</strong>
+											<small>{u.email}</small>
+										</td>
+								<td>{u.level || '1'}</td>
+								<td>
+									<div class="doc-cell">
+										<span class="doc-line">
+											<span class="doc-kind">NIT</span>
+											{nit ? <small class="nit-tag">{nit}</small> : <span class="muted">Sin registrar</span>}
+										</span>
+										<span class="doc-line">
+											<span class="doc-kind">RUT emitido por la DIAN</span>
+											{approvedDocumentLink ? (
+												<a
+													href={approvedDocumentLink}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="doc-link rut-link"
+												>
+													{documentPdf ? 'Ver documento aprobado (PDF)' : 'Ver documento aprobado'}
+												</a>
+											) : (
+												<span class="muted">
+													{hasDocument ? 'Documento pendiente de aprobación' : 'Sin subir'}
+												</span>
+											)}
+										</span>
+									</div>
+								</td>
+						<td class="actions">
+							{isApproved ? (
+								<span class="status-pill ok" aria-label={`Estado del documento de ${u.username}`}>
+									Aprobado
+								</span>
+							) : (
+								<>
+									<span class="status-pill wait" aria-label={`Estado del documento de ${u.username}`}>
+										No aprobado
+									</span>
+									{hasDocument && (
+										<>
+											<form method="POST" action="/api/admin/documents">
+													<input type="hidden" name="username" value={u.username} />
+													<input type="hidden" name="status" value={DOCUMENT_STATUS.aprobado} />
+													<button type="submit" class="btn-approve">Aprobar</button>
+												</form>
+												<form method="POST" action="/api/admin/documents">
+													<input type="hidden" name="username" value={u.username} />
+													<input type="hidden" name="status" value={DOCUMENT_STATUS.rechazado} />
+													<button type="submit" class="btn-reject">Rechazar</button>
+												</form>
+											</>
+										)}
+										<form
+											method="POST"
+											action="/api/admin/documents"
+											enctype="multipart/form-data"
+											class="doc-admin-form"
+										>
+											<input type="hidden" name="username" value={u.username} />
+											<span class="doc-admin-title">NIT / RUT (DIAN)</span>
+											<input
+												type="text"
+												name="nit"
+												value={nit}
+												placeholder="NIT: 900123456"
+												inputmode="numeric"
+												minlength="6"
+												maxlength="20"
+												pattern="[0-9]*"
+												title="Solo números, entre 6 y 20 dígitos"
+												aria-label={`NIT de ${u.username}`}
+												class="nit-input"
+											/>
+											<input
+												type="file"
+												name="rut"
+												accept="image/jpeg,image/png,image/webp,application/pdf"
+												aria-label={`RUT emitido por la DIAN de ${u.username}`}
+												class="rut-input"
+											/>
+											<p class="doc-hint">RUT en JPG, PNG, WEBP o PDF (máximo 5 MB).</p>
+											<button type="submit" class="btn-save">Guardar NIT y RUT</button>
+										</form>
+								</>
+							)}
+						</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
+			)}
+		</section>
+	) : section === 'negocio' ? (
+		<section class="org-panel luxury-card business-settings" id="rut-empresarial" aria-labelledby="business-rut-title">
+			<div class="org-panel-heading">
+				<div>
+					<h2 id="business-rut-title">Configurar y subir RUT empresarial</h2>
+					<p>Guarda el NIT y el RUT oficial de Gana Pro para la configuración del negocio.</p>
+				</div>
+			</div>
+
+			{businessResult === 'ok' && <p class="doc-alert ok" role="status">{businessMessage || 'NIT y RUT empresarial guardados correctamente.'}</p>}
+			{businessResult === 'error' && <p class="doc-alert ko" role="alert">{businessMessage || 'No se pudo guardar la configuración.'}</p>}
+			{businessSettingsLoadFailed ? (
+				<p class="org-empty" role="alert">No se pudo cargar la configuración del negocio. Verifica el acceso a Google Sheets.</p>
+			) : (
+				<>
+					{businessSettings?.rutLink ? (
+						<div class="business-current doc-cell" aria-label="RUT empresarial guardado">
+							<span class="doc-line"><span class="doc-kind">NIT empresarial</span><strong>{businessSettings.nit}</strong></span>
+							<span class="doc-line">
+								<span class="doc-kind">RUT empresarial</span>
+								<a href={businessSettings.rutLink} target="_blank" rel="noopener noreferrer" class="doc-link rut-link">
+									Ver RUT empresarial · {businessSettings.rutFileName}
+								</a>
+							</span>
+							{businessSettings.updatedAt && <small class="muted">Última actualización: {businessSettings.updatedAt}</small>}
+						</div>
+					) : (
+						<p class="business-empty muted">Todavía no se ha configurado el RUT del negocio.</p>
+					)}
+
+					<form method="POST" action="/api/admin/business-config" enctype="multipart/form-data" class="doc-admin-form business-form">
+						<label for="business-nit" class="doc-admin-title">NIT del negocio</label>
+						<input
+							type="text"
+							id="business-nit"
+							name="nit"
+							value={businessSettings?.nit || ''}
+							placeholder="NIT: 900123456"
+							inputmode="numeric"
+							minlength="6"
+							maxlength="20"
+							pattern="[0-9]*"
+							title="Solo números, entre 6 y 20 dígitos"
+							required
+							class="nit-input"
+						/>
+						<label for="business-rut-file" class="doc-admin-title">RUT emitido por la DIAN</label>
+						<input
+							type="file"
+							id="business-rut-file"
+							name="rut"
+							accept="image/jpeg,image/png,image/webp,application/pdf"
+							aria-describedby="business-rut-hint"
+							required={!businessSettings?.rutLink}
+							class="rut-input"
+						/>
+						<p class="doc-hint" id="business-rut-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
+						<button type="submit" class="btn-save">Guardar NIT y RUT del negocio</button>
+					</form>
+				</>
+			)}
+		</section>
+	) : (
+		<div class="module-grid">
+			{page.cards.map((card) => (
+				<article class="module-card luxury-card">
+					<h2>{card.title}</h2>
+					<p>{card.text}</p>
+				</article>
+			))}
+		</div>
+	)}
+</AdminPageLayout>
+

@@ -1,0 +1,152 @@
+---
+import { DOCUMENT_STATUS } from '../../lib/testimonials';
+import type { UserRowView } from '../../lib/dashboard-sections';
+
+interface Props {
+	users: UserRowView[];
+	review: string;
+	reviewMessage: string;
+	loadFailed: boolean;
+}
+
+const { users, review, reviewMessage, loadFailed } = Astro.props;
+---
+
+<section class="org-panel luxury-card" aria-label="Usuarios registrados">
+	<div class="org-panel-heading">
+		<div>
+			<h2>Directorio de usuarios</h2>
+			<p>Consulta las cuentas registradas en la plataforma.</p>
+		</div>
+		<span class="org-total">{users.length} usuarios registrados</span>
+	</div>
+
+	{review === 'ok' && <p class="doc-alert ok" role="status">{reviewMessage || 'Documento actualizado.'}</p>}
+	{review === 'error' && (
+		<p class="doc-alert ko" role="alert">{reviewMessage || 'No se pudo actualizar el documento.'}</p>
+	)}
+
+	{loadFailed ? (
+		<p class="org-empty" role="alert">
+			No se pudo cargar la lista de usuarios desde la hoja de cálculo.
+		</p>
+	) : users.length === 0 ? (
+		<p class="org-empty">Aún no hay usuarios registrados.</p>
+	) : (
+		<div class="users-table-wrap">
+			<table class="users-table">
+				<thead>
+					<tr>
+						<th scope="col">Usuario</th>
+						<th scope="col">Correo</th>
+						<th scope="col">NIT y RUT (DIAN)</th>
+						<th scope="col">Estado / Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					{users.map(({ user: u, nit, documentPdf, approvedDocumentLink, hasDocument, isApproved }) => (
+						<tr>
+							<td><strong>{u.username}</strong></td>
+							<td>{u.email}</td>
+							<td>
+								<div class="doc-cell">
+									<span class="doc-line">
+										<span class="doc-kind">NIT</span>
+										{nit ? (
+											<code class="doc-ref">{nit}</code>
+										) : (
+											<span class="muted">Sin registrar</span>
+										)}
+									</span>
+									<span class="doc-line">
+										<span class="doc-kind">RUT emitido por la DIAN</span>
+										{approvedDocumentLink ? (
+											<a
+												href={approvedDocumentLink}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="doc-link rut-link"
+											>
+												{documentPdf ? 'Ver documento aprobado (PDF)' : 'Ver documento aprobado'}
+											</a>
+										) : (
+											<span class="muted">
+												{hasDocument ? 'Documento pendiente de aprobación' : 'Sin subir'}
+											</span>
+										)}
+									</span>
+								</div>
+							</td>
+							<td class="actions">
+								{isApproved ? (
+									<span class="status-pill ok" aria-label={`Estado del documento de ${u.username}`}>
+										Aprobado
+									</span>
+								) : (
+									<>
+										<span class="status-pill wait" aria-label={`Estado del documento de ${u.username}`}>
+											No aprobado
+										</span>
+										{hasDocument && (
+											<>
+												<form method="POST" action="/api/admin/documents">
+													<input type="hidden" name="username" value={u.username} />
+													<input type="hidden" name="status" value={DOCUMENT_STATUS.aprobado} />
+													<button type="submit" class="btn-approve">Aprobar</button>
+												</form>
+												<form method="POST" action="/api/admin/documents">
+													<input type="hidden" name="username" value={u.username} />
+													<input type="hidden" name="status" value={DOCUMENT_STATUS.rechazado} />
+													<button type="submit" class="btn-reject">Rechazar</button>
+												</form>
+											</>
+										)}
+										<form
+											method="POST"
+											action="/api/admin/documents"
+											enctype="multipart/form-data"
+											class="doc-admin-form"
+										>
+											<input type="hidden" name="username" value={u.username} />
+											<span class="doc-admin-title">NIT y RUT (DIAN)</span>
+											<input
+												type="text"
+												name="nit"
+												class="nit-input"
+												placeholder="NIT (solo números, 6 a 20 dígitos)"
+												value={nit}
+												pattern="[0-9]{6,20}"
+												title="Solo números, entre 6 y 20 dígitos"
+											/>
+											<input
+												type="file"
+												name="rut"
+												class="rut-input"
+												accept="image/jpeg,image/png,image/webp,application/pdf"
+											/>
+											<button type="submit" class="btn-save">Guardar NIT y RUT</button>
+											<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
+										</form>
+									</>
+								)}
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)}
+</section>
+
+<style>
+	.org-panel { padding: 28px; }
+	.org-panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
+	.org-panel-heading h2 { margin: 0 0 8px; font-size: 1.25rem; }
+	.org-panel-heading p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+	.org-total { flex: none; padding: 8px 12px; border: 1px solid var(--gold-border); border-radius: 9999px; background: rgba(212, 175, 55, 0.1); color: var(--gold-primary); font-size: 12px; font-weight: 700; }
+	@media (max-width: 768px) {
+		.org-panel { padding: 20px 14px; }
+		.org-panel-heading { flex-direction: column; }
+		.org-total { align-self: flex-start; }
+	}
+</style>
