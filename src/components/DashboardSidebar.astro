@@ -3,9 +3,63 @@ interface Props {
 	isAdmin: boolean;
 }
 
+interface NavLink {
+	href: string;
+	label: string;
+	icon?: string;
+	anchor?: string;
+}
+
+interface NavGroup {
+	title: string;
+	links: NavLink[];
+	adminOnly?: boolean;
+}
+
 const { isAdmin } = Astro.props;
 const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/dashboard';
 const isActive = (path: string) => currentPath === path;
+
+const groups: NavGroup[] = [
+	{
+		title: 'Principal',
+		links: [{ href: '/dashboard', label: 'Inicio', icon: '⌂' }],
+	},
+	{
+		title: 'Administración',
+		adminOnly: true,
+		links: [
+			{ href: '/dashboard/organigrama-global', label: 'Organigrama Global', icon: '⌘' },
+			{ href: '/dashboard/usuarios-registrados', label: 'Usuarios Registrados', icon: '♙' },
+		],
+	},
+	{
+		title: 'Contabilidad',
+		adminOnly: true,
+		links: [
+			{ href: '/dashboard/ingresos', label: 'Ingresos', icon: '＋' },
+			{ href: '/dashboard/gastos', label: 'Gastos', icon: '－' },
+		],
+	},
+	{
+		title: 'Negocio',
+		adminOnly: true,
+		links: [
+			{ href: '/dashboard/negocio', label: 'Configuración del Negocio', icon: '▣' },
+			{ href: '/dashboard/negocio#rut-empresarial', label: 'RUT Empresarial', anchor: 'rut-empresarial' },
+		],
+	},
+	{
+		title: 'Mi cuenta',
+		links: [
+			{ href: '/dashboard/informacion-cuenta', label: 'Información de la Cuenta', icon: '◉' },
+			{ href: '/dashboard/rut', label: 'NIT y RUT Personal', icon: '▤' },
+			{ href: '/dashboard/ubicacion', label: 'Mi Ubicación', icon: '◎' },
+		],
+	},
+];
+
+const visibleGroups = groups.filter((group) => !group.adminOnly || isAdmin);
 ---
 
 <button
@@ -23,112 +77,35 @@ const isActive = (path: string) => currentPath === path;
 
 <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Navegación del panel">
 	<nav class="sidebar-nav" aria-label="Secciones del panel">
-		<a
-			class:list={['sidebar-link', { active: isActive('/dashboard') && !Astro.url.hash }]}
-			href="/dashboard"
-			data-nav-link
-			data-home-link
-			aria-current={isActive('/dashboard') && !Astro.url.hash ? 'page' : undefined}
-		>
-			<span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span>
-		</a>
-
-		{isAdmin && (
-			<>
-				<div class="nav-group">
-					<span class="nav-group-title">Gana Pro</span>
-					<a
-						class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/organigrama-global') }]}
-						href="/dashboard/organigrama-global"
-						data-nav-link
-						aria-current={isActive('/dashboard/organigrama-global') ? 'page' : undefined}
-					>
-						<span class="nav-icon" aria-hidden="true">⌘</span><span>Organigrama Global de Usuarios</span>
-					</a>
-				</div>
-
-				<a
-					class:list={['sidebar-link', { active: isActive('/dashboard/usuarios-registrados') }]}
-					href="/dashboard/usuarios-registrados"
-					data-nav-link
-					aria-current={isActive('/dashboard/usuarios-registrados') ? 'page' : undefined}
-				>
-					<span class="nav-icon" aria-hidden="true">♙</span><span>Usuarios Registrados</span>
-				</a>
-
-				<div class="nav-group">
-					<span class="nav-group-title">Contabilidad</span>
-					<a
-						class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/ingresos') }]}
-						href="/dashboard/ingresos"
-						data-nav-link
-						aria-current={isActive('/dashboard/ingresos') ? 'page' : undefined}
-					>
-						<span class="nav-icon" aria-hidden="true">＋</span><span>Ingresos</span>
-					</a>
-					<a
-						class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/gastos') }]}
-						href="/dashboard/gastos"
-						data-nav-link
-						aria-current={isActive('/dashboard/gastos') ? 'page' : undefined}
-					>
-						<span class="nav-icon" aria-hidden="true">－</span><span>Gastos</span>
-					</a>
-				</div>
-			</>
-		)}
-
-		<div class="nav-group">
-			<span class="nav-group-title">Configuración</span>
-			{isAdmin && (
-				<>
-					<a
-						class:list={['sidebar-link', 'nested', { active: isActive('/dashboard/negocio') }]}
-						href="/dashboard/negocio"
-						data-nav-link
-						aria-current={isActive('/dashboard/negocio') ? 'page' : undefined}
-					>
-						<span class="nav-icon" aria-hidden="true">▣</span><span>Negocio</span>
-					</a>
-					<a
-						class="sidebar-link nested nested-child"
-						href="/dashboard/negocio#rut-empresarial"
-						data-nav-link
-						data-nav-anchor="rut-empresarial"
-					>
-						<span>Configurar y Subir RUT</span>
-					</a>
-				</>
-			)}
-
-			<a class="sidebar-link nested" href="/dashboard/informacion-cuenta" data-nav-link>
-				<span class="nav-icon" aria-hidden="true">♙</span><span>Usuario</span>
-			</a>
-			<a
-				class:list={['sidebar-link', 'nested', 'nested-child', { active: isActive('/dashboard/informacion-cuenta') }]}
-				href="/dashboard/informacion-cuenta"
-				data-nav-link
-				aria-current={isActive('/dashboard/informacion-cuenta') ? 'page' : undefined}
-			>
-				<span>Configurar Documento de Identidad</span>
-			</a>
-			<a
-				class:list={['sidebar-link', 'nested', 'nested-child', { active: isActive('/dashboard/rut') }]}
-				href="/dashboard/rut"
-				data-nav-link
-				aria-current={isActive('/dashboard/rut') ? 'page' : undefined}
-			>
-				<span>Configurar NIT y RUT personal</span>
-			</a>
-			<a
-				class:list={['sidebar-link', 'nested', 'nested-child', { active: isActive('/dashboard/ubicacion') }]}
-				href="/dashboard/ubicacion"
-				data-nav-link
-				aria-current={isActive('/dashboard/ubicacion') ? 'page' : undefined}
-			>
-				<span>Configurar Mi Ubicación</span>
-			</a>
-		</div>
+		{visibleGroups.map((group, groupIndex) => (
+			<div class:list={['nav-group', { 'nav-group-first': groupIndex === 0 }]}>
+				<span class="nav-group-title">{group.title}</span>
+				{group.links.map((link) => {
+					const linkPath = link.href.split('#')[0];
+					const active = link.anchor
+						? false
+						: linkPath === '/dashboard'
+							? isActive('/dashboard') && !Astro.url.hash
+							: isActive(linkPath);
+					const isChild = Boolean(link.anchor);
+					return (
+						<a
+							class:list={['sidebar-link', { active, 'nested-child': isChild }]}
+							href={link.href}
+							data-nav-link
+							data-home-link={linkPath === '/dashboard' ? true : undefined}
+							data-nav-anchor={link.anchor}
+							aria-current={active ? 'page' : undefined}
+						>
+							{link.icon && (
+								<span class="nav-icon" aria-hidden="true">{link.icon}</span>
+							)}
+							<span>{link.label}</span>
+						</a>
+					);
+				})}
+			</div>
+		))}
 	</nav>
 </aside>
 <div class="sidebar-backdrop" data-sidebar-backdrop></div>
@@ -193,7 +170,7 @@ const isActive = (path: string) => currentPath === path;
 	}
 	.sidebar-nav::-webkit-scrollbar { display: none; }
 	.nav-group { margin-top: 18px; }
-	.nav-group:first-of-type { margin-top: 0; }
+	.nav-group:first-of-type, .nav-group-first { margin-top: 0; }
 	.nav-group-title { display: block; padding: 0 12px 8px; color: var(--gold-primary); font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
 	.sidebar-link { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; color: var(--text-secondary); font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
 	.sidebar-link:hover { color: var(--text-primary); background: rgba(212, 175, 55, 0.08); border-color: var(--gold-border); transform: translateX(2px); }

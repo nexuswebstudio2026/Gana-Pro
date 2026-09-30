@@ -68,6 +68,39 @@ const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, my
 
 		<div class="loc-alert ko" role="alert" data-loc-error hidden></div>
 
+		<!-- Ubicación en vivo (tiempo real del navegador) -->
+		<div class="live-card" data-live-card aria-live="polite">
+			<div class="live-head">
+				<span class="live-dot" data-live-dot aria-hidden="true"></span>
+				<strong data-live-status>Solicitando permiso de ubicación…</strong>
+			</div>
+			<p class="doc-hint" data-live-hint>
+				Al entrar a esta página el navegador te pedirá permiso para usar tu ubicación actual.
+			</p>
+			<div class="loc-grid">
+				<div class="loc-item">
+					<span class="loc-label">Latitud actual</span>
+					<code class="loc-value" data-live-lat>—</code>
+				</div>
+				<div class="loc-item">
+					<span class="loc-label">Longitud actual</span>
+					<code class="loc-value" data-live-lng>—</code>
+				</div>
+				<div class="loc-item">
+					<span class="loc-label">Exactitud</span>
+					<code class="loc-value" data-live-acc>—</code>
+				</div>
+				<div class="loc-item">
+					<span class="loc-label">Actualizado</span>
+					<code class="loc-value" data-live-time>—</code>
+				</div>
+			</div>
+			<div class="doc-actions">
+				<a href="#" target="_blank" rel="noopener noreferrer" class="doc-view" data-live-map hidden>Ver ubicación actual en Google Maps</a>
+				<span class="doc-note" data-live-saved hidden></span>
+			</div>
+		</div>
+
 		{hasLocation && (
 			<div class="loc-grid" data-loc-box>
 				<div class="loc-item">
@@ -97,6 +130,9 @@ const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, my
 			<button type="button" class="gold-button" data-loc-btn>
 				{hasLocation ? 'Actualizar mi ubicación' : 'Compartir mi ubicación'}
 			</button>
+			<button type="button" class="doc-view" data-live-toggle hidden>
+				Detener seguimiento en vivo
+			</button>
 			{hasLocation && (
 				<a href={mapUrl} target="_blank" rel="noopener noreferrer" class="doc-view">Ver en Google Maps</a>
 			)}
@@ -115,10 +151,36 @@ const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, my
 	const locBtn = document.querySelector<HTMLButtonElement>('[data-loc-btn]');
 	const locError = document.querySelector<HTMLElement>('[data-loc-error]');
 
+	const liveLat = document.querySelector<HTMLElement>('[data-live-lat]');
+	const liveLng = document.querySelector<HTMLElement>('[data-live-lng]');
+	const liveAcc = document.querySelector<HTMLElement>('[data-live-acc]');
+	const liveTime = document.querySelector<HTMLElement>('[data-live-time]');
+	const liveStatus = document.querySelector<HTMLElement>('[data-live-status]');
+	const liveHint = document.querySelector<HTMLElement>('[data-live-hint]');
+	const liveMap = document.querySelector<HTMLAnchorElement>('[data-live-map]');
+	const liveSaved = document.querySelector<HTMLElement>('[data-live-saved]');
+	const liveDot = document.querySelector<HTMLElement>('[data-live-dot]');
+	const liveToggle = document.querySelector<HTMLButtonElement>('[data-live-toggle]');
+
+	let watchId: number | null = null;
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
 	function locFail(message: string): void {
 		if (!locError) return;
 		locError.textContent = message;
 		locError.hidden = false;
+	}
+
+	function locClearError(): void {
+		if (!locError) return;
+		locError.textContent = '';
+		locError.hidden = true;
+	}
+
+	function setLiveState(state: string, message?: string): void {
+		if (liveDot) liveDot.dataset.state = state;
+		if (liveStatus && message) liveStatus.textContent = message;
+		if (liveToggle) liveToggle.hidden = state !== 'live';
 	}
 
 	async function sendLocation(lat: number, lng: number, accuracy: number): Promise<void> {
@@ -128,6 +190,43 @@ const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, my
 			body: JSON.stringify({ lat, lng, accuracy, source: 'gps' }),
 		});
 		if (!response.ok) throw new Error('No se pudo guardar la ubicación en la hoja.');
+		if (liveSaved) {
+			liveSaved.hidden = false;
+			liveSaved.textContent = `Guardada en Sheets · ${new Date().toLocaleTimeString('es-CO')}`;
+		}
+	}
+
+	function queueAutoSave(lat: number, lng: number, accuracy: number): void {
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => {
+			sendLocation(lat, lng, accuracy).catch(() => undefined);
+		}, 5000);
+	}
+
+	function renderLivePosition(position: GeolocationPosition): void {
+		locClearError();
+		const { latitude, longitude, accuracy } = position.coords;
+		if (liveLat) liveLat.textContent = latitude.toFixed(6);
+		if (liveLng) liveLng.textContent = longitude.toFixed(6);
+		if (liveAcc) liveAcc.textContent = Number.isFinite(accuracy) ? `± ${Math.round(accuracy)} m` : '—';
+		if (liveTime) liveTime.textContent = new Date().toLocaleString('es-CO');
+		if (liveMap) {
+			liveMap.hidden = false;
+			liveMap.href = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+		}
+		if (liveHint) liveHint.textContent = 'Ubicación actual de tu navegador (se actualiza en tiempo real).';
+		setLiveState('live', 'Ubicación en vivo activa');
+		queueAutoSave(latitude, longitude, accuracy);
+	}
+
+	function handleLiveError(error: GeolocationPositionError): void {
+		const messages: Record<number, string> = {
+			1: 'Permiso denegado. Pulsa "Compartir mi ubicación" y acepta el permiso en el navegador.',
+			2: 'No se pudo determinar tu posición. Revisa que el GPS esté encendido.',
+			3: 'La solicitud tardó demasiado. Intenta de nuevo.',
+		};
+		locFail(messages[error.code] || 'No se pudo obtener la ubicación.');
+		setLiveState('error', 'Ubicación en vivo detenida');
 	}
 
 	locBtn?.addEventListener('click', () => {
@@ -163,26 +262,37 @@ const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, my
 		);
 	});
 
-	// La ubicación se actualiza automáticamente solo al visitar esta página,
-	// cuando el usuario ya concedió permiso al navegador.
-	if (locBox && navigator.permissions && navigator.permissions.query) {
-		navigator.permissions
-			.query({ name: 'geolocation' })
-			.then((permission) => {
-				if (permission.state !== 'granted' || locBox.dataset.locAuto === 'done') return;
-				locBox.dataset.locAuto = 'done';
-				navigator.geolocation.getCurrentPosition(
-					(position) => {
-						sendLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy).catch(
-							() => undefined
-						);
-					},
-					() => undefined,
-					{ enableHighAccuracy: true, timeout: 10000 }
-				);
-			})
-			.catch(() => undefined);
+	function startLiveTracking(): void {
+		if (!('geolocation' in navigator)) {
+			locFail('Tu navegador no admite la geolocalización.');
+			setLiveState('error', 'Geolocalización no disponible');
+			return;
+		}
+		if (watchId !== null) return;
+		setLiveState('loading', 'Solicitando permiso de ubicación…');
+		watchId = navigator.geolocation.watchPosition(renderLivePosition, handleLiveError, {
+			enableHighAccuracy: true,
+			timeout: 15000,
+			maximumAge: 5000,
+		});
 	}
+
+	liveToggle?.addEventListener('click', () => {
+		if (watchId !== null) {
+			navigator.geolocation.clearWatch(watchId);
+			watchId = null;
+		}
+		if (saveTimer) {
+			clearTimeout(saveTimer);
+			saveTimer = null;
+		}
+		setLiveState('stopped', 'Seguimiento en vivo pausado');
+		if (liveToggle) liveToggle.hidden = true;
+	});
+
+	// Al entrar a la página se pide el permiso del navegador de inmediato
+	// y el seguimiento continúa en tiempo real con watchPosition.
+	startLiveTracking();
 </script>
 
 <style>
@@ -202,6 +312,15 @@ const mapUrl = hasLocation ? myLocation!.mapUrl || getMapUrl(myLocation!.lat, my
 	.loc-value { color: var(--gold-primary); font-size: 0.92rem; font-weight: 600; word-break: break-all; }
 	.loc-alert { margin-bottom: 0.9rem; padding: 0.65rem 0.85rem; border: 1px solid rgba(220, 80, 80, 0.35); border-radius: 8px; background: rgba(220, 80, 80, 0.1); color: #ff9a9a; font-size: 0.85rem; }
 	.loc-url { display: block; margin-bottom: 0.75rem; padding: 0.5rem 0.7rem; border: 1px dashed var(--gold-border); border-radius: 8px; background: rgba(212, 175, 55, 0.08); color: var(--gold-primary); font-size: 0.75rem; word-break: break-all; }
+	.live-card { margin-bottom: 1.25rem; padding: 1rem 1.1rem; border: 1px solid var(--gold-border); border-radius: 14px; background: rgba(212, 175, 55, 0.05); }
+	.live-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+	.live-head strong { font-size: 0.95rem; }
+	.live-dot { width: 12px; height: 12px; border-radius: 50%; background: #f5b301; flex: 0 0 12px; }
+	.live-dot[data-state='live'] { background: #10b981; box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.18); animation: livePulse 1.6s ease-in-out infinite; }
+	.live-dot[data-state='error'], .live-dot[data-state='stopped'] { background: #ef4444; box-shadow: none; animation: none; }
+	@keyframes livePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+	.live-card .loc-grid { margin-bottom: 0.5rem; }
+	.live-card .doc-actions { margin: 8px 0 0; }
 	@media (max-width: 768px) {
 		.doc-box { padding: 22px 18px; }
 		.doc-head { flex-direction: column; gap: 12px; }
