@@ -1,0 +1,42 @@
+---
+import { validateSession } from '../../lib/session';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import PersonalOrgChart from '../../components/dashboard/PersonalOrgChart.astro';
+
+export const prerender = false;
+
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+if (!session) {
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+}
+
+let sheetUsers = [];
+let loadFailed = false;
+try {
+	sheetUsers = await getGoogleSheetUsers();
+} catch (error) {
+	loadFailed = true;
+	console.error('Error al cargar el organigrama personal:', error);
+}
+
+// El usuario conectado es la raíz de su propio organigrama.
+const personal = buildPersonalHierarchy(sheetUsers, {
+	username: session.username,
+	email: session.email,
+});
+
+const role = (session.role || '').trim().toLowerCase();
+const isAdmin = role === 'admin' || role === 'administrator';
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Mi organigrama"
+	eyebrow="Configuración · Usuario"
+	description="Consulta los cinco usuarios que aparecen en tu rama dentro de la estructura de GANA PRO."
+>
+	<PersonalOrgChart personal={personal} loadFailed={loadFailed} />
+</AdminPageLayout>

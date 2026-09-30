@@ -1,6 +1,15 @@
 ---
 import { validateSession } from '../../lib/session';
 import { getGoogleSheetUsers } from '../../lib/sheets';
+import { formatAppDateTime } from '../../lib/datetime';
+import {
+	PROFILE_FIELD_LIMITS,
+	displayValue,
+	filledProfileCount,
+	isProfileEmpty,
+	profileToFormValues,
+	whatsappLink,
+} from '../../lib/account-profile';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import type { User } from '../../lib/types';
 
@@ -31,6 +40,38 @@ const accountRole = userDetail?.role || session.role || 'Usuario';
 const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 	.filter((value) => (value || '').trim())
 	.join(': ');
+const registeredAt = userDetail?.registeredAt?.trim();
+const registeredAtLabel = registeredAt ? formatAppDateTime(registeredAt) : '';
+
+/** Datos de contacto: vacíos si el usuario aún no los ha registrado. */
+const profile = profileToFormValues(userDetail ?? {});
+const profileIsEmpty = isProfileEmpty(profile);
+const filledFields = filledProfileCount(profile);
+const profileValues = {
+	address: displayValue(profile.address) ?? '—',
+	neighborhood: displayValue(profile.neighborhood) ?? '—',
+	city: displayValue(profile.city) ?? '—',
+	phone: displayValue(profile.phone) ?? '—',
+	whatsapp: displayValue(profile.whatsapp) ?? '—',
+};
+const whatsappUrl = whatsappLink(profile.whatsapp);
+const phoneLink = profile.phone ? `tel:${profile.phone.replace(/[^\d+]/g, '')}` : '';
+
+/** Resultado de la última operación del CRUD (query string). */
+const profileResult = Astro.url.searchParams.get('profile');
+const profileMessage = Astro.url.searchParams.get('msg');
+const profileErrorField = Astro.url.searchParams.get('field');
+const fieldHasError = (field: string) => profileErrorField === field;
+
+/** Mensaje de éxito según la operación realizada. */
+const successMessage =
+	profileResult === 'created'
+		? 'Datos de contacto registrados correctamente.'
+		: profileResult === 'updated'
+			? 'Datos de contacto actualizados correctamente.'
+			: profileResult === 'deleted'
+				? 'Tus datos de contacto fueron eliminados.'
+				: '';
 ---
 
 <AdminPageLayout
@@ -53,6 +94,16 @@ const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 				No se pudieron cargar todos los datos del perfil; se muestran los datos disponibles de la sesión.
 			</p>
 		)}
+		{successMessage && (
+			<p class="account-alert ok" role="status">
+				{successMessage}
+			</p>
+		)}
+		{profileResult === 'error' && (
+			<p class="account-alert ko" role="alert">
+				{profileMessage || 'No se pudo completar la operación.'}
+			</p>
+		)}
 
 		<dl class="account-details">
 			<div class="account-row">
@@ -68,13 +119,180 @@ const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 				<dd><span class="role-badge">{accountRole}</span></dd>
 			</div>
 			<div class="account-row">
-				<dt>Documento de identidad</dt>
+				<dt>Tipo y número de documento</dt>
 				<dd>{documentLabel || 'Sin registrar'}</dd>
 			</div>
 			<div class="account-row">
 				<dt>Fecha de registro</dt>
-				<dd>{userDetail?.registeredAt || '—'}</dd>
+				<dd>{registeredAtLabel || '—'}</dd>
 			</div>
+			<div class="account-row">
+				<dt>Dirección de residencia</dt>
+				<dd>{profileValues.address}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Barrio</dt>
+				<dd>{profileValues.neighborhood}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Ciudad de residencia</dt>
+				<dd>{profileValues.city}</dd>
+			</div>
+			<div class="account-row">
+				<dt>Teléfono de contacto</dt>
+				<dd>
+					{phoneLink ? (
+						<a class="contact-link" href={phoneLink}>{profileValues.phone}</a>
+					) : (
+						profileValues.phone
+					)}
+				</dd>
+			</div>
+			<div class="account-row">
+				<dt>Contacto de WhatsApp</dt>
+				<dd>
+					{whatsappUrl ? (
+						<a
+							class="contact-link"
+							href={whatsappUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							{profileValues.whatsapp}
+						</a>
+					) : (
+						profileValues.whatsapp
+					)}
+				</dd>
+			</div>
+		</dl>
+	</section>
+
+	<section class="account-panel luxury-card" aria-labelledby="contact-form-title">
+		<header class="account-heading">
+			<div>
+				<h2 id="contact-form-title">Datos de contacto y residencia</h2>
+				<p>
+					Registra o modifica tu dirección, barrio, ciudad, teléfono y WhatsApp. Se guardan en la
+					hoja de usuarios de Google Sheets.
+				</p>
+			</div>
+			<span class:list={['account-badge', { ok: !profileIsEmpty }]}>
+				{profileIsEmpty ? 'Sin registrar' : `${filledFields} de 5 campos`}
+			</span>
+		</header>
+
+		<form method="POST" action="/api/account" class="account-form">
+			<input type="hidden" name="action" value="save" />
+			<div class="account-field">
+				<label for="address">Dirección de residencia</label>
+				<input
+					type="text"
+					id="address"
+					name="address"
+					value={profile.address}
+					maxlength={PROFILE_FIELD_LIMITS.address}
+					placeholder="Calle 100 # 20-30, apartamento 501"
+					autocomplete="street-address"
+				/>
+			</div>
+
+			<div class="account-grid">
+				<div class="account-field">
+					<label for="neighborhood">Barrio</label>
+					<input
+						type="text"
+						id="neighborhood"
+						name="neighborhood"
+						value={profile.neighborhood}
+						maxlength={PROFILE_FIELD_LIMITS.neighborhood}
+						placeholder="Chapinero"
+					/>
+				</div>
+				<div class="account-field">
+					<label for="city">Ciudad de residencia</label>
+					<input
+						type="text"
+						id="city"
+						name="city"
+						value={profile.city}
+						maxlength={PROFILE_FIELD_LIMITS.city}
+						placeholder="Bogotá"
+					/>
+				</div>
+			</div>
+
+			<div class="account-grid">
+				<div class="account-field">
+					<label for="phone">Teléfono de contacto</label>
+					<input
+						type="tel"
+						id="phone"
+						name="phone"
+						value={profile.phone}
+						maxlength={PROFILE_FIELD_LIMITS.phone}
+						placeholder="300 123 4567"
+						autocomplete="tel"
+						aria-invalid={fieldHasError('phone') ? 'true' : undefined}
+						aria-describedby={fieldHasError('phone') ? 'phone-error' : undefined}
+					/>
+					{fieldHasError('phone') && (
+						<p class="account-field-error" id="phone-error">Revisa el teléfono.</p>
+					)}
+				</div>
+				<div class="account-field">
+					<label for="whatsapp">Contacto de WhatsApp</label>
+					<input
+						type="tel"
+						id="whatsapp"
+						name="whatsapp"
+						value={profile.whatsapp}
+						maxlength={PROFILE_FIELD_LIMITS.whatsapp}
+						placeholder="300 123 4567"
+						aria-invalid={fieldHasError('whatsapp') ? 'true' : undefined}
+						aria-describedby={fieldHasError('whatsapp') ? 'whatsapp-error' : undefined}
+					/>
+					<p class="account-hint">Solo números. Se muestra un enlace directo a la conversación.</p>
+					{fieldHasError('whatsapp') && (
+						<p class="account-field-error" id="whatsapp-error">Revisa el WhatsApp.</p>
+					)}
+				</div>
+			</div>
+
+			<div class="account-actions">
+				<button type="submit" class="account-submit">
+					{profileIsEmpty ? 'Registrar datos de contacto' : 'Guardar cambios'}
+				</button>
+			</div>
+		</form>
+
+		{!profileIsEmpty && (
+			<form
+				method="POST"
+				action="/api/account"
+				class="account-form account-form-danger"
+				data-confirm="¿Eliminar todos tus datos de contacto? Esta acción no se puede deshacer."
+			>
+				<input type="hidden" name="action" value="delete" />
+				<div>
+					<p class="account-hint">
+						Borra la dirección, barrio, ciudad, teléfono y WhatsApp de tu cuenta.
+					</p>
+					<button type="submit" class="account-delete">Eliminar datos de contacto</button>
+				</div>
+			</form>
+		)}
+	</section>
+
+	<section class="account-panel luxury-card" aria-labelledby="extra-title">
+		<header class="account-heading">
+			<div>
+				<h2 id="extra-title">Información de la membresía</h2>
+				<p>Datos administrativos y financieros de tu cuenta.</p>
+			</div>
+		</header>
+
+		<dl class="account-details">
 			<div class="account-row">
 				<dt>Método de pago</dt>
 				<dd>{userDetail?.paymentMethod?.trim() || (userDetail ? 'No configurado' : '—')}</dd>
@@ -101,10 +319,22 @@ const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 			</div>
 		</dl>
 	</section>
+
+	<script>
+		// Evita borrados accidentales: pide confirmación antes de enviar el
+		// formulario de eliminación. Sin JS el formulario sigue funcionando.
+		document.querySelectorAll<HTMLFormElement>('form[data-confirm]').forEach((form) => {
+			form.addEventListener('submit', (event) => {
+				if (!window.confirm(form.dataset.confirm || '¿Confirmas la operación?')) {
+					event.preventDefault();
+				}
+			});
+		});
+	</script>
 </AdminPageLayout>
 
 <style>
-	.account-panel { padding: 28px; }
+	.account-panel { padding: 28px; margin-bottom: 24px; }
 	.account-heading { margin-bottom: 20px; }
 	.account-heading h2 { margin: 0 0 8px; font-size: 1.25rem; }
 	.account-heading p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
@@ -114,10 +344,32 @@ const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 	.account-row dt { color: var(--text-secondary); font-size: 13px; }
 	.account-row dd { margin: 0; color: var(--text-primary); font-size: 14px; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
 	.role-badge { display: inline-flex; padding: 4px 10px; border-radius: 6px; background: rgba(212, 175, 55, 0.15); color: var(--gold-primary); font-size: 12px; }
-	.account-alert { padding: 12px 16px; border: 1px solid var(--gold-border); border-radius: 10px; color: var(--text-secondary); font-size: 13px; }
+	.contact-link { color: var(--gold-primary); text-decoration: none; border-bottom: 1px solid var(--gold-border); }
+	.contact-link:hover { border-bottom-color: var(--gold-primary); }
+	.account-alert { padding: 12px 16px; border: 1px solid var(--gold-border); border-radius: 10px; color: var(--text-secondary); font-size: 13px; margin: 0 0 18px; }
+	.account-alert.ok { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.35); color: #10b981; }
+	.account-alert.ko { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.35); color: #f87171; }
+	.account-form { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; max-width: 720px; }
+	.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; width: 100%; }
+	.account-field { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+	.account-field label { color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+	.account-field input { width: 100%; padding: 12px 14px; background: var(--bg-primary); border: 1px solid var(--gold-border); border-radius: 10px; color: var(--text-primary); font-family: inherit; font-size: 14px; }
+	.account-field input:focus { outline: none; border-color: var(--gold-primary); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15); }
+	.account-hint { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+	.account-badge { flex: 0 0 auto; padding: 6px 14px; border: 1px solid var(--gold-border); border-radius: 9999px; background: rgba(212, 175, 55, 0.12); color: var(--gold-primary); font-size: 12px; font-weight: 700; white-space: nowrap; }
+	.account-badge.ok { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #10b981; }
+	.account-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+	.account-field-error { margin: 0; color: #f87171; font-size: 12px; }
+	.account-field input[aria-invalid='true'] { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+	.account-form-danger { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(239, 68, 68, 0.25); }
+	.account-delete { margin-top: 8px; padding: 10px 20px; border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 9999px; background: rgba(239, 68, 68, 0.1); color: #f87171; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease; }
+	.account-delete:hover { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
+	.account-submit { padding: 12px 24px; border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 9999px; background: rgba(212, 175, 55, 0.16); color: var(--gold-primary); font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease; }
+	.account-submit:hover { background: rgba(212, 175, 55, 0.24); border-color: var(--gold-primary); }
 	@media (max-width: 600px) {
 		.account-panel { padding: 22px 18px; }
 		.account-row { align-items: flex-start; flex-direction: column; gap: 6px; }
 		.account-row dd { text-align: left; }
+		.account-form { max-width: 100%; }
 	}
 </style>

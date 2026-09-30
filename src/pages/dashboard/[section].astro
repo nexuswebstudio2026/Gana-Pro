@@ -1,4 +1,4 @@
----
+﻿---
 import { validateSession } from '../../lib/session';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { buildUserHierarchy, countOrganizationUsers, countByLevel, maxOrganizationDepth } from '../../lib/user-hierarchy';
@@ -9,6 +9,7 @@ import {
 	isAdminRole,
 	getBusinessFeedback,
 	getDocumentsFeedback,
+	getContactFeedback,
 	toUserRowViews,
 	getModuleCards,
 } from '../../lib/dashboard-sections';
@@ -24,7 +25,7 @@ import '../../styles/users-table.css';
 
 export const prerender = false;
 
-// --- Guardia de ruta y sesión (sin cambios de lógica) ---
+// --- Guardia de ruta y sesiÃ³n (sin cambios de lÃ³gica) ---
 const section = Astro.params.section || '';
 if (!isSectionKey(section)) {
 	return Astro.redirect('/dashboard', 303);
@@ -33,7 +34,7 @@ if (!isSectionKey(section)) {
 const token = Astro.cookies.get('auth_session')?.value;
 const session = validateSession(token);
 if (!session) {
-	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesiÃ³n para acceder a esta pÃ¡gina.'), 303);
 }
 
 if (!isAdminRole(session.role)) {
@@ -42,7 +43,7 @@ if (!isAdminRole(session.role)) {
 
 const page = DASHBOARD_PAGES[section];
 
-// --- Carga de datos (misma lógica, nombres agrupados) ---
+// --- Carga de datos (misma lÃ³gica, nombres agrupados) ---
 let businessSettings = null;
 let businessSettingsLoadFailed = false;
 let organizationLoadFailed = false;
@@ -52,7 +53,7 @@ try {
 	businessSettings = await getBusinessSettings();
 } catch (error) {
 	businessSettingsLoadFailed = true;
-	console.error('Error al cargar la configuración del negocio:', error);
+	console.error('Error al cargar la configuraciÃ³n del negocio:', error);
 }
 
 let sheetUsers = [];
@@ -78,8 +79,9 @@ const pendingDocuments = userRows.filter((row) => !row.isApproved && row.hasDocu
 // --- Feedback de formularios (querystring) ---
 const { result: businessResult, message: businessMessage } = getBusinessFeedback(Astro.url.searchParams);
 const { review: reviewResult, reviewMessage } = getDocumentsFeedback(Astro.url.searchParams);
+const { contact: contactResult, contactMessage } = getContactFeedback(Astro.url.searchParams);
 
-// --- Tarjetas genéricas (ingresos / gastos / usuario) ---
+// --- Tarjetas genÃ©ricas (ingresos / gastos / usuario) ---
 const moduleCards = getModuleCards(section);
 ---
 
@@ -104,6 +106,8 @@ const moduleCards = getModuleCards(section);
 			review={reviewResult}
 			reviewMessage={reviewMessage}
 			loadFailed={usersLoadFailed}
+			contact={contactResult}
+			contactMessage={contactMessage}
 		/>
 	) : section === 'negocio' ? (
 		<BusinessSettingsPanel

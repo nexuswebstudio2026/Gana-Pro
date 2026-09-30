@@ -15,6 +15,25 @@ export interface OrganizationNode {
 
 const ROOT_ALIASES = new Set(['gana pro', 'ganapro', 'gana-pro']);
 
+/** Máximo de usuarios que cuelgan de cada nodo (incluida la raíz GANA PRO). */
+export const MAX_DIRECT_TEAM = 5;
+
+/** Datos mínimos para localizar a una persona dentro del organigrama. */
+export interface UserIdentity {
+	username?: string;
+	email?: string;
+}
+
+/** Resultado del organigrama personal: la raíz es el propio usuario. */
+export interface PersonalHierarchy {
+	/** Nodo raíz: el usuario conectado. */
+	root: OrganizationNode;
+	/** Sus usuarios del segundo nivel (como máximo `MAX_DIRECT_TEAM`). */
+	team: OrganizationNode[];
+	/** `true` si el usuario aún no aparece en la hoja de cálculo. */
+	orphan: boolean;
+}
+
 function normalize(value: string | undefined): string {
 	return (value || '').trim().toLowerCase();
 }
@@ -67,7 +86,7 @@ export function buildUserHierarchy(users: User[]): OrganizationNode {
 		const parent = queue.shift();
 		if (!parent) break;
 
-		for (let childIndex = 0; childIndex < 5 && nextUserIndex < orderedUsers.length; childIndex++) {
+		for (let childIndex = 0; childIndex < MAX_DIRECT_TEAM && nextUserIndex < orderedUsers.length; childIndex++) {
 			const child = createNode(orderedUsers[nextUserIndex], position, parent.depth + 1);
 			position++;
 			nextUserIndex++;
@@ -101,4 +120,77 @@ export function countByLevel(node: OrganizationNode): { level: number; count: nu
 		.map(([level, count]) => ({ level, count }))
 		.sort((a, b) => a.level - b.level);
 }
+
+/**
+ * Localiza el nodo de una persona concreta dentro del organigrama.
+ * Se compara por nombre de usuario o por correo, sin distinguir mayúsculas,
+ * igual que el resto del panel. Devuelve `null` si no está en el árbol.
+ */
+export function findUserNode(root: OrganizationNode, identity: UserIdentity): OrganizationNode | null {
+	const username = normalize(identity.username);
+	const email = normalize(identity.email);
+	if (!username && !email) return null;
+
+	const stack: OrganizationNode[] = [root];
+	while (stack.length > 0) {
+		const node = stack.pop();
+		if (!node) break;
+		const matchesName = username && normalize(node.name) === username;
+		const matchesEmail = email && normalize(node.email) === email;
+		if (matchesName || matchesEmail) return node;
+		node.children.forEach((child) => stack.push(child));
+	}
+
+	return null;
+}
+
+/**
+ * Organigrama personal: el usuario conectado es la raíz y solo se muestran
+ * sus usuarios del segundo nivel, como máximo cinco.
+ *
+ * Se apoya en la misma estructura 5x5 del organigrama global, así que cada
+ * persona ve exactamente la misma rama que se le asignó al registrarse, sin
+ * duplicar reglas de reparto.
+ *
+ * Si el usuario todavía no está en la hoja (p. ej. acaba de registrarse) se
+ * devuelve una raíz sin equipo para que la página nunca quede en blanco.
+ */
+export function buildPersonalHierarchy(
+	users: User[],
+	identity: UserIdentity
+): PersonalHierarchy {
+	const globalRoot = buildUserHierarchy(users);
+	const node = findUserNode(globalRoot, identity);
+
+	if (!node) {
+		const name = (identity.username || '').trim() || 'Mi organigrama';
+		return {
+			root: {
+				id: 'self',
+				name,
+				email: identity.email,
+				position: 1,
+				depth: 0,
+				children: [],
+			},
+			team: [],
+			orphan: true,
+		};
+	}
+
+	// El nodo encontrado se convierte en la raíz: sus hijos pasan a ser el
+	// segundo nivel y se descarta el resto de la rama.
+	const root: OrganizationNode = {
+		...node,
+		depth: 0,
+		children: node.children.slice(0, MAX_DIRECT_TEAM),
+	};
+
+	return {
+		root,
+		team: root.children,
+		orphan: false,
+	};
+}
+
 

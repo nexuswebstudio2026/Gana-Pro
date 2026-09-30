@@ -1,0 +1,126 @@
+---
+import type { PersonalHierarchy } from '../../lib/user-hierarchy';
+import { MAX_DIRECT_TEAM } from '../../lib/user-hierarchy';
+
+interface Props {
+	personal: PersonalHierarchy;
+	loadFailed: boolean;
+}
+
+const { personal, loadFailed } = Astro.props;
+
+const { root, team, orphan } = personal;
+const initials = (name: string) =>
+	String(name || '')
+		.split(/[\s_.-]+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part.charAt(0).toUpperCase())
+		.join('') || '·';
+
+const emptySlots = Math.max(0, MAX_DIRECT_TEAM - team.length);
+---
+
+<section class="myorg luxury-card" aria-label="Mi organigrama">
+	<div class="myorg-head">
+		<div>
+			<h2>Mi organigrama</h2>
+			<p>Tus usuarios directos según el orden de registro. Máximo {MAX_DIRECT_TEAM} por persona.</p>
+		</div>
+		<span class="myorg-total">{team.length}/{MAX_DIRECT_TEAM}</span>
+	</div>
+
+	{loadFailed ? (
+		<p class="myorg-empty" role="alert">No se pudo consultar la información de usuarios en Google Sheets.</p>
+	) : orphan ? (
+		<p class="myorg-empty">
+			Tu usuario todavía no aparece en la lista de Google Sheets. Apenas se sincronice verás aquí tus {MAX_DIRECT_TEAM} usuarios.
+		</p>
+	) : (
+		<div class="myorg-tree">
+			<div class="myorg-node myorg-root">
+				<span class="myorg-avatar" aria-hidden="true">{initials(root.name)}</span>
+				<div class="myorg-copy">
+					<strong>{root.name}</strong>
+					<span>Tú · raíz de tu rama</span>
+					{root.email && <span class="myorg-email">{root.email}</span>}
+				</div>
+			</div>
+
+			{team.length > 0 && <span class="myorg-link" aria-hidden="true"></span>}
+
+			<div class="myorg-team">
+				{team.map((member, index) => (
+					<div class="myorg-node myorg-member">
+						<span class="myorg-slot">Puesto {index + 1} de {MAX_DIRECT_TEAM}</span>
+						<span class="myorg-avatar" aria-hidden="true">{initials(member.name)}</span>
+						<div class="myorg-copy">
+							<strong>{member.name}</strong>
+							<span>{[member.level, member.role].filter(Boolean).join(' · ') || `Registro #${member.position}`}</span>
+							{member.email && <span class="myorg-email">{member.email}</span>}
+						</div>
+					</div>
+				))}
+
+				{Array.from({ length: emptySlots }, (_, i) => (
+					<div class="myorg-node myorg-vacant">
+						<span class="myorg-slot">Puesto {team.length + i + 1} de {MAX_DIRECT_TEAM}</span>
+						<span class="myorg-avatar" aria-hidden="true">○</span>
+						<div class="myorg-copy">
+							<strong>Puesto disponible</strong>
+							<span>Sin asignar</span>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	)}
+
+<style>
+	.myorg { padding: 28px; }
+	.myorg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+	.myorg-head h2 { margin: 0 0 8px; font-size: 1.25rem; }
+	.myorg-head p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+	.myorg-total { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--gold-border); border-radius: 9999px; color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); font-size: 12px; font-weight: 700; }
+	.myorg-empty { margin: 0; padding: 22px; border: 1px dashed var(--gold-border); border-radius: 12px; color: var(--text-secondary); font-size: 14px; line-height: 1.6; text-align: center; }
+
+	/* Raíz centrada con el equipo en una fila debajo */
+	.myorg-tree { display: flex; flex-direction: column; align-items: center; }
+	.myorg-node { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--gold-border); border-radius: 14px; background: var(--bg-primary); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16); }
+	.myorg-root { border-color: var(--gold-primary); background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), var(--bg-primary)); min-width: 240px; }
+	.myorg-avatar { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 12px; background: rgba(212, 175, 55, 0.18); color: var(--gold-primary); font-size: 13px; font-weight: 800; }
+	.myorg-root .myorg-avatar { background: var(--gold-primary); color: #101827; }
+	.myorg-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+	.myorg-copy strong { color: var(--text-primary); font-size: 13px; overflow-wrap: anywhere; }
+	.myorg-copy span { color: var(--text-secondary); font-size: 11px; }
+	.myorg-email { overflow-wrap: anywhere; }
+
+	/* Conector vertical entre la raíz y la fila de usuarios */
+	.myorg-link { width: 2px; height: 26px; background: var(--gold-border); }
+
+	.myorg-team { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(160px, 1fr)); gap: 14px; position: relative; padding-top: 26px; }
+	/* Barra horizontal que une los cinco puestos con la raíz */
+	.myorg-team::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: var(--gold-border); }
+	.myorg-member { position: relative; flex-direction: column; text-align: center; }
+	/* Conector vertical de cada tarjeta hacia la barra */
+	.myorg-member::before { content: ''; position: absolute; top: -26px; left: 50%; width: 2px; height: 26px; background: var(--gold-border); }
+	.myorg-slot { padding: 3px 10px; border-radius: 999px; background: rgba(212, 175, 55, 0.14); color: var(--gold-primary); font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+	.myorg-vacant { border-style: dashed; opacity: 0.6; flex-direction: column; text-align: center; }
+
+	@media (max-width: 1100px) {
+		.myorg-team { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+	}
+	@media (max-width: 700px) {
+		.myorg { padding: 20px 14px; }
+		.myorg-head { flex-direction: column; gap: 12px; }
+		.myorg-total { align-self: flex-start; }
+		.myorg-team { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+	}
+	@media (max-width: 420px) {
+		.myorg-team { grid-template-columns: 1fr; }
+		/* Sin barra horizontal cuando hay una sola columna */
+		.myorg-team::before, .myorg-member::before, .myorg-link { display: none; }
+	}
+</style>
+
+</section>

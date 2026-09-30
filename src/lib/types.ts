@@ -43,4 +43,14 @@ export interface User {
 	/** Enlace al archivo del RUT. */
 	rutLink?: string;
 	registeredAt?: string;
+	/** Dirección de residencia. */
+	address?: string;
+	/** Barrio de residencia. */
+	neighborhood?: string;
+	/** Ciudad de residencia. */
+	city?: string;
+	/** Teléfono de contacto. */
+	phone?: string;
+	/** Contacto de WhatsApp. */
+	whatsapp?: string;
 }

@@ -74,6 +74,13 @@ export function getDocumentsFeedback(params: URLSearchParams): { review: string;
 	return { review, reviewMessage };
 }
 
+/** Mensaje de confirmación tras el CRUD de datos de contacto (admin). */
+export function getContactFeedback(params: URLSearchParams): { contact: string; contactMessage: string } {
+	const contact = params.get('contact') || '';
+	const contactMessage = params.get('msg') || '';
+	return { contact, contactMessage };
+}
+
 export interface UserRowView {
 	user: User;
 	nit: string;

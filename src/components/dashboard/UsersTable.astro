@@ -1,5 +1,14 @@
 ---
 import { DOCUMENT_STATUS } from '../../lib/testimonials';
+import {
+	PROFILE_FIELDS,
+	PROFILE_FIELD_LABELS,
+	PROFILE_FIELD_LIMITS,
+	displayValue,
+	filledProfileCount,
+	isProfileEmpty,
+	whatsappLink,
+} from '../../lib/account-profile';
 import type { UserRowView } from '../../lib/dashboard-sections';
 
 interface Props {
@@ -7,9 +16,29 @@ interface Props {
 	review: string;
 	reviewMessage: string;
 	loadFailed: boolean;
+	/** Mensaje del CRUD de datos de contacto. */
+	contact: string;
+	contactMessage: string;
 }
 
-const { users, review, reviewMessage, loadFailed } = Astro.props;
+const { users, review, reviewMessage, loadFailed, contact, contactMessage } = Astro.props;
+
+/** Vista de contacto de un usuario, lista para pintar. */
+function contactView(user: UserRowView['user']) {
+	const profile = {
+		address: String(user.address ?? '').trim(),
+		neighborhood: String(user.neighborhood ?? '').trim(),
+		city: String(user.city ?? '').trim(),
+		phone: String(user.phone ?? '').trim(),
+		whatsapp: String(user.whatsapp ?? '').trim(),
+	};
+	return {
+		profile,
+		empty: isProfileEmpty(profile),
+		filled: filledProfileCount(profile),
+		waUrl: whatsappLink(profile.whatsapp),
+	};
+}
 ---
 
 <section class="org-panel luxury-card" aria-label="Usuarios registrados">
@@ -25,6 +54,14 @@ const { users, review, reviewMessage, loadFailed } = Astro.props;
 	{review === 'error' && (
 		<p class="doc-alert ko" role="alert">{reviewMessage || 'No se pudo actualizar el documento.'}</p>
 	)}
+	{contact === 'ok' && (
+		<p class="doc-alert ok" role="status">{contactMessage || 'Datos de contacto actualizados.'}</p>
+	)}
+	{contact === 'error' && (
+		<p class="doc-alert ko" role="alert">
+			{contactMessage || 'No se pudo completar la operación de contacto.'}
+		</p>
+	)}
 
 	{loadFailed ? (
 		<p class="org-empty" role="alert">
@@ -39,16 +76,95 @@ const { users, review, reviewMessage, loadFailed } = Astro.props;
 					<tr>
 						<th scope="col">Usuario</th>
 						<th scope="col">Correo</th>
+						<th scope="col">Contacto y residencia</th>
 						<th scope="col">NIT y RUT (DIAN)</th>
 						<th scope="col">Estado / Acciones</th>
 					</tr>
 				</thead>
 				<tbody>
-					{users.map(({ user: u, nit, documentPdf, approvedDocumentLink, hasDocument, isApproved }) => (
-						<tr>
-							<td><strong>{u.username}</strong></td>
-							<td>{u.email}</td>
-							<td>
+					{users.map(({ user: u, nit, documentPdf, approvedDocumentLink, hasDocument, isApproved }) => {
+						const contact = contactView(u);
+						return (
+							<tr>
+								<td><strong>{u.username}</strong></td>
+								<td>{u.email}</td>
+								<td>
+									<div class="contact-cell">
+										{contact.empty ? (
+											<span class="muted">Sin registrar</span>
+										) : (
+											<>
+												<span class="doc-line">
+													<span class="doc-kind">Dirección</span>
+													<span class="muted">{contact.profile.address}</span>
+												</span>
+												<span class="doc-line">
+													<span class="doc-kind">Barrio / Ciudad</span>
+													<span class="muted">
+														{displayValue(contact.profile.neighborhood) || '—'} ·{' '}
+														{displayValue(contact.profile.city) || '—'}
+													</span>
+												</span>
+												<span class="doc-line">
+													<span class="doc-kind">Teléfono</span>
+													<span class="muted">{displayValue(contact.profile.phone) || '—'}</span>
+												</span>
+												<span class="doc-line">
+													<span class="doc-kind">WhatsApp</span>
+													{contact.waUrl ? (
+														<a
+															class="doc-link"
+															href={contact.waUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															{contact.profile.whatsapp}
+														</a>
+													) : (
+														<span class="muted">—</span>
+													)}
+												</span>
+											</>
+										)}
+
+										{/* CREATE / UPDATE: alta o edición de los datos de contacto */}
+										<form method="POST" action="/api/admin/account" class="doc-admin-form">
+											<input type="hidden" name="username" value={u.username} />
+											<input type="hidden" name="action" value="save" />
+											<span class="doc-admin-title">
+												{contact.empty ? 'Registrar contacto' : 'Editar contacto'}
+											</span>
+											{PROFILE_FIELDS.map((field) => (
+												<input
+													type={field === 'phone' || field === 'whatsapp' ? 'tel' : 'text'}
+													name={field}
+													value={contact.profile[field]}
+													maxlength={PROFILE_FIELD_LIMITS[field]}
+													placeholder={PROFILE_FIELD_LABELS[field]}
+													aria-label={`${PROFILE_FIELD_LABELS[field]} de ${u.username}`}
+												/>
+											))}
+											<button type="submit" class="btn-save">
+												{contact.empty ? 'Registrar' : 'Guardar'}
+											</button>
+										</form>
+
+										{/* DELETE: solo si hay algo que borrar */}
+										{!contact.empty && (
+											<form
+												method="POST"
+												action="/api/admin/account"
+												class="contact-delete-form"
+												data-confirm={`¿Eliminar los datos de contacto de ${u.username}? Esta acción no se puede deshacer.`}
+											>
+												<input type="hidden" name="username" value={u.username} />
+												<input type="hidden" name="action" value="delete" />
+												<button type="submit" class="btn-delete-contact">Eliminar contacto</button>
+											</form>
+										)}
+									</div>
+								</td>
+								<td>
 								<div class="doc-cell">
 									<span class="doc-line">
 										<span class="doc-kind">NIT</span>
@@ -131,12 +247,24 @@ const { users, review, reviewMessage, loadFailed } = Astro.props;
 								)}
 							</td>
 						</tr>
-					))}
+						);
+					})}
 				</tbody>
 			</table>
 		</div>
 	)}
 </section>
+
+<script>
+	// Confirmación antes de borrar los datos de contacto de un usuario.
+	document.querySelectorAll<HTMLFormElement>('form[data-confirm]').forEach((form) => {
+		form.addEventListener('submit', (event) => {
+			if (!window.confirm(form.dataset.confirm || '¿Confirmas la operación?')) {
+				event.preventDefault();
+			}
+		});
+	});
+</script>
 
 <style>
 	.org-panel { padding: 28px; }
@@ -144,6 +272,12 @@ const { users, review, reviewMessage, loadFailed } = Astro.props;
 	.org-panel-heading h2 { margin: 0 0 8px; font-size: 1.25rem; }
 	.org-panel-heading p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
 	.org-total { flex: none; padding: 8px 12px; border: 1px solid var(--gold-border); border-radius: 9999px; background: rgba(212, 175, 55, 0.1); color: var(--gold-primary); font-size: 12px; font-weight: 700; }
+	/* CRUD de datos de contacto */
+	.contact-cell { display: flex; flex-direction: column; gap: 8px; min-width: 230px; }
+	.contact-cell .doc-admin-form input { margin-top: 0; }
+	.contact-delete-form { margin: 0; }
+	.btn-delete-contact { padding: 7px 12px; border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 8px; background: rgba(239, 68, 68, 0.1); color: #f87171; font-size: 12px; font-weight: 700; cursor: pointer; }
+	.btn-delete-contact:hover { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
 	@media (max-width: 768px) {
 		.org-panel { padding: 20px 14px; }
 		.org-panel-heading { flex-direction: column; }
