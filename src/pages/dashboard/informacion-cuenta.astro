@@ -11,6 +11,7 @@ import {
 	whatsappLink,
 } from '../../lib/account-profile';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import { COMMISSION_PER_REFERRAL, formatCOP, getReferralStats, ownCodeOf } from '../../lib/referrals';
 import type { User } from '../../lib/types';
 
 export const prerender = false;
@@ -72,6 +73,26 @@ const successMessage =
 			: profileResult === 'deleted'
 				? 'Tus datos de contacto fueron eliminados.'
 				: '';
+
+/**
+ * Red de referidos del usuario. El QR se pide a /api/referral-qr, que exige la
+ * sesión y devuelve el SVG del propio usuario: si no se puede calcular, el
+ * panel se oculta en lugar de mostrar un código roto.
+ */
+let referralCode = '';
+let referralCount = 0;
+let referralCommission = 0;
+try {
+	if (userDetail) {
+		const stats = await getReferralStats(userDetail, Astro.url.origin);
+		referralCode = ownCodeOf(userDetail) || session.username;
+		referralCount = stats.count;
+		referralCommission = stats.commission;
+	}
+} catch (error) {
+	console.error('Error al calcular las estadísticas de referido:', error);
+}
+const hasReferralQr = Boolean(referralCode);
 ---
 
 <AdminPageLayout
@@ -103,6 +124,50 @@ const successMessage =
 			<p class="account-alert ko" role="alert">
 				{profileMessage || 'No se pudo completar la operación.'}
 			</p>
+		)}
+
+		{hasReferralQr && (
+			<section class="referral-panel" aria-labelledby="referral-title">
+				<header class="referral-heading">
+					<h3 id="referral-title">Tu código de referido</h3>
+					<p>
+						Comparte tu QR o tu código. Cada persona que se registre con él te
+						acredita {formatCOP(COMMISSION_PER_REFERRAL)} una sola vez.
+					</p>
+				</header>
+
+				<div class="referral-body">
+					<figure class="referral-qr">
+						<img
+							src="/api/referral-qr"
+							alt={`Código QR de referido de ${referralCode}`}
+							width="180"
+							height="180"
+							loading="lazy"
+						/>
+						<figcaption>Escanea para registrarse con tu código</figcaption>
+					</figure>
+
+					<dl class="referral-stats">
+						<div>
+							<dt>Tu código</dt>
+							<dd><strong class="referral-code-value">{referralCode}</strong></dd>
+						</div>
+						<div>
+							<dt>Personas traídas</dt>
+							<dd>{referralCount}</dd>
+						</div>
+						<div>
+							<dt>Comisión acumulada</dt>
+							<dd><strong>{formatCOP(referralCommission)}</strong></dd>
+						</div>
+						<div>
+							<dt>Comisión por referido</dt>
+							<dd>{formatCOP(COMMISSION_PER_REFERRAL)}</dd>
+						</div>
+					</dl>
+				</div>
+			</section>
 		)}
 
 		<dl class="account-details">
@@ -349,6 +414,19 @@ const successMessage =
 	.account-alert { padding: 12px 16px; border: 1px solid var(--gold-border); border-radius: 10px; color: var(--text-secondary); font-size: 13px; margin: 0 0 18px; }
 	.account-alert.ok { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.35); color: #10b981; }
 	.account-alert.ko { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.35); color: #f87171; }
+	/* Panel del QR de referido: QR a la izquierda, cifras a la derecha. */
+	.referral-panel { margin: 0 0 22px; padding: 18px; border: 1px solid var(--gold-border); border-radius: 14px; background: rgba(212, 175, 55, 0.06); }
+	.referral-heading h3 { margin: 0 0 6px; font-size: 1.05rem; }
+	.referral-heading p { margin: 0 0 16px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+	.referral-body { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+	.referral-qr { margin: 0; flex: 0 0 auto; text-align: center; }
+	.referral-qr img { width: 180px; height: 180px; background: #fff; border: 1px solid var(--gold-border); border-radius: 12px; }
+	.referral-qr figcaption { margin-top: 8px; color: var(--text-secondary); font-size: 11.5px; line-height: 1.4; }
+	.referral-stats { flex: 1 1 220px; margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+	.referral-stats > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--gold-border); }
+	.referral-stats dt { color: var(--text-secondary); font-size: 12.5px; }
+	.referral-stats dd { margin: 0; color: var(--text-primary); font-size: 14px; text-align: right; word-break: break-all; }
+	.referral-code-value { color: var(--gold-primary); }
 	.account-form { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; max-width: 720px; }
 	.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; width: 100%; }
 	.account-field { display: flex; flex-direction: column; gap: 8px; width: 100%; }

@@ -736,3 +736,22 @@ Error: EBUSY: resource busy or locked, watch 'C:\Users\JAC ROSABLANCA\Documents\
 [2m    at C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\eval at runInlinedModule (file:\C:\Users\JAC%20ROSABLANCA\Documents\GitHub\gana-pro\node_modules\vite\dist\node\module-runner.js:811:9
     [...] See full stack trace in the browser, or rerun with --verbose.[22m
 [2m23:45:22[22m [34m[200][39m /dashboard/recargas [2m2900ms[22m
+[2m23:46:33[22m [34m[watch][39m /src/components/DashboardSidebar.astro?astro&type=style&index=0&lang.css
+[2m23:46:40[22m [34m[watch][39m /src/components/DashboardSidebar.astro?astro&type=style&index=0&lang.css
+[2m23:46:42[22m [34m[watch][39m /src/components/DashboardSidebar.astro?astro&type=style&index=0&lang.css
+[2m23:46:53[22m [34m[watch][39m /src/components/DashboardSidebar.astro?astro&type=style&index=0&lang.css
+[2m23:46:55[22m [34m[watch][39m /src/components/DashboardSidebar.astro?astro&type=style&index=0&lang.css
+[2m23:47:15[22m [34m[watch][39m /src/components/AdminPageLayout.astro?astro&type=style&index=0&lang.css
+[2m23:47:17[22m [34m[watch][39m /src/components/AdminPageLayout.astro?astro&type=style&index=0&lang.css
+[2m23:50:41[22m Configuration file updated. Restarting...
+[2m23:50:42[22m [34m[vite][39m connected.
+[2m23:50:42[22m [34m[vite][39m connected.
+[2m23:50:42[22m [34m[vite][39m Re-optimizing dependencies because lockfile has changed
+[2m23:50:42[22m [34m[vite][39m server restarted.
+[2m23:50:44[22m [34m[vite][39m [optimizer] bundling dependencies...
+[2m23:50:49[22m [34m[200][39m /dashboard/recargas [2m2727ms[22m
+[2m23:52:01[22m Configuration file updated. Restarting...
+[2m23:52:01[22m [34m[vite][39m connected.
+[2m23:52:01[22m [34m[vite][39m connected.
+[2m23:52:01[22m [34m[vite][39m server restarted.
+[2m23:52:07[22m [34m[200][39m /dashboard/recargas [2m2454ms[22m

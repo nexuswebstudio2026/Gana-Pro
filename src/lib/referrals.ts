@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import { getGoogleSheetUsers } from './sheets';
 import type { User } from './types';
 
@@ -9,6 +10,25 @@ import type { User } from './types';
  */
 export const COMMISSION_PER_REFERRAL = 1000;
 
+
+/**
+ * Genera el QR de referido de un usuario como SVG.
+ *
+ * El QR codifica el mismo enlace que ya se comparte a mano
+ * (`/register?ref=CODIGO`), de modo que escanearlo y escribir el código llevan
+ * al mismo resultado. Se usa nivel de corrección bajo porque el QR se muestra en
+ * pantallas limpias: si alguien lo tapa con el dedo, el usuario puede escribir
+ * el código a mano.
+ */
+export async function buildReferralQrSvg(shareUrl: string): Promise<string> {
+	return QRCode.toString(shareUrl, {
+		type: 'svg',
+		errorCorrectionLevel: 'L',
+		margin: 1,
+		width: 240,
+		color: { dark: '#0b1220', light: '#ffffff' },
+	});
+}
 
 /** Formatea un monto en pesos colombianos: 1000 -> "$1.000" */
 export function formatCOP(value: number): string {
