@@ -1,18 +1,17 @@
 ---
-import { validateSession } from '../../lib/session';
+import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import PersonalOrgChart from '../../components/dashboard/PersonalOrgChart.astro';
+import type { User } from '../../lib/types';
 
 export const prerender = false;
 
-const session = validateSession(Astro.cookies.get('auth_session')?.value);
-if (!session) {
-	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
-}
+// El middleware ya resolvió la sesión y comprobó que hay una válida.
+const session = Astro.locals.user!;
 
-let sheetUsers = [];
+let sheetUsers: User[] = [];
 let loadFailed = false;
 try {
 	sheetUsers = await getGoogleSheetUsers();
@@ -27,8 +26,7 @@ const personal = buildPersonalHierarchy(sheetUsers, {
 	email: session.email,
 });
 
-const role = (session.role || '').trim().toLowerCase();
-const isAdmin = role === 'admin' || role === 'administrator';
+const isAdmin = isAdminRole(session.role);
 ---
 
 <AdminPageLayout

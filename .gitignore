@@ -4,9 +4,16 @@ dist/
 .astro/
 .vercel/
 
+# Datos de runtime: usuarios, sesiones activas y tokens de recuperacion.
+# NUNCA deben subirse: son credenciales reales, no codigo fuente.
+data/
+
 # Imagenes de testimonios subidas en desarrollo
 public/testimonios/*
 !public/testimonios/.gitkeep
+# Comprobantes de recarga y documentos empresariales en desarrollo
+public/comprobantes/
+public/business-docs/
 
 # Environment variables
 .env*

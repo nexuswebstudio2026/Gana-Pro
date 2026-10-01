@@ -1,5 +1,4 @@
 ﻿---
-import { validateSession } from '../../lib/session';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { buildUserHierarchy, countOrganizationUsers, countByLevel, maxOrganizationDepth } from '../../lib/user-hierarchy';
 import { getBusinessSettings } from '../../lib/business-settings';
@@ -18,6 +17,7 @@ import OrgChartPanel from '../../components/dashboard/OrgChartPanel.astro';
 import UsersTable from '../../components/dashboard/UsersTable.astro';
 import BusinessSettingsPanel from '../../components/dashboard/BusinessSettingsPanel.astro';
 import ModuleCards from '../../components/dashboard/ModuleCards.astro';
+import type { User } from '../../lib/types';
 import '../../styles/org-chart.css';
 import '../../styles/org-focus.css';
 import '../../styles/org-tree.css';
@@ -25,16 +25,15 @@ import '../../styles/users-table.css';
 
 export const prerender = false;
 
-// --- Guardia de ruta y sesiÃ³n (sin cambios de lÃ³gica) ---
+// --- Guardia de ruta (el middleware ya resolvio la sesion) ---
 const section = Astro.params.section || '';
 if (!isSectionKey(section)) {
 	return Astro.redirect('/dashboard', 303);
 }
 
-const token = Astro.cookies.get('auth_session')?.value;
-const session = validateSession(token);
+const session = Astro.locals.user;
 if (!session) {
-	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesiÃ³n para acceder a esta pÃ¡gina.'), 303);
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
 }
 
 if (!isAdminRole(session.role)) {
@@ -43,7 +42,7 @@ if (!isAdminRole(session.role)) {
 
 const page = DASHBOARD_PAGES[section];
 
-// --- Carga de datos (misma lÃ³gica, nombres agrupados) ---
+// --- Carga de datos (misma lógica, nombres agrupados) ---
 let businessSettings = null;
 let businessSettingsLoadFailed = false;
 let organizationLoadFailed = false;
@@ -53,10 +52,10 @@ try {
 	businessSettings = await getBusinessSettings();
 } catch (error) {
 	businessSettingsLoadFailed = true;
-	console.error('Error al cargar la configuraciÃ³n del negocio:', error);
+	console.error('Error al cargar la configuración del negocio:', error);
 }
 
-let sheetUsers = [];
+let sheetUsers: User[] = [];
 try {
 	sheetUsers = await getGoogleSheetUsers();
 } catch (error) {
@@ -73,15 +72,13 @@ const orgLevels = countByLevel(hierarchy);
 
 // --- Vista usuarios (filas enriquecidas) ---
 const userRows = toUserRowViews(sheetUsers, businessSettings);
-const withDocument = userRows.filter((row) => row.hasDocument);
-const pendingDocuments = userRows.filter((row) => !row.isApproved && row.hasDocument);
 
 // --- Feedback de formularios (querystring) ---
 const { result: businessResult, message: businessMessage } = getBusinessFeedback(Astro.url.searchParams);
 const { review: reviewResult, reviewMessage } = getDocumentsFeedback(Astro.url.searchParams);
 const { contact: contactResult, contactMessage } = getContactFeedback(Astro.url.searchParams);
 
-// --- Tarjetas genÃ©ricas (ingresos / gastos / usuario) ---
+// --- Tarjetas genéricas (ingresos / gastos / usuario) ---
 const moduleCards = getModuleCards(section);
 ---
 

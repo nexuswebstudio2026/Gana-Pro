@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../lib/session';
 import {
 	getGoogleSheetUsers,
 	moveBalance,
@@ -31,7 +30,7 @@ const MAX_AMOUNT = 100_000_000;
  */
 export const POST: APIRoute = async (Astro) => {
 	try {
-		const session = validateSession(Astro.cookies.get('auth_session')?.value);
+		const session = Astro.locals.user;
 		if (!session) {
 			return json({ ok: false, message: 'Sesión no válida.' }, 401);
 		}

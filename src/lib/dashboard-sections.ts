@@ -75,10 +75,7 @@ export function isSectionKey(section: string): section is SectionKey {
 }
 
 /** ¿El rol puede ver las secciones de administración? */
-export function isAdminRole(role: string | undefined): boolean {
-	const normalized = (role || '').trim().toLowerCase();
-	return normalized === 'admin' || normalized === 'administrator';
-}
+export { isAdminRole } from './auth';
 
 /** Mensaje de confirmación tras guardar el NIT/RUT empresarial. */
 export function getBusinessFeedback(params: URLSearchParams): { result: string; message: string } {

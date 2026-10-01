@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../lib/session';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { buildReferralQrSvg, getReferralStats, ownCodeOf } from '../../lib/referrals';
 import type { User } from '../../lib/types';
@@ -14,7 +13,7 @@ export const prerender = false;
  * persona conociendo solo su nombre de usuario.
  */
 export const GET: APIRoute = async (Astro) => {
-	const session = validateSession(Astro.cookies.get('auth_session')?.value);
+	const session = Astro.locals.user;
 	if (!session) return new Response('Sesión no válida.', { status: 401 });
 
 	try {

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../../lib/session';
+import { isAdminRole } from '../../../lib/auth';
 import { clearSheetUserProfile } from '../../../lib/sheets';
 import { isProfileEmpty, parseProfileForm } from '../../../lib/account-profile';
 import { saveUserProfile, type ProfileAction } from '../../../lib/account-crud';
@@ -24,12 +24,11 @@ export const POST: APIRoute = async (Astro) => {
 		Astro.redirect(`${ADMIN_USERS_URL}?contact=ok&msg=` + encodeURIComponent(msg), 303);
 
 	try {
-		const session = validateSession(Astro.cookies.get('auth_session')?.value);
+		const session = Astro.locals.user;
 		if (!session) return Astro.redirect('/login', 303);
 
 		// Solo un administrador puede tocar los datos de contacto de terceros.
-		const role = (session.role || '').trim().toLowerCase();
-		if (role !== 'admin' && role !== 'administrator') {
+		if (!isAdminRole(session.role)) {
 			return new Response('Sin permisos', { status: 403 });
 		}
 

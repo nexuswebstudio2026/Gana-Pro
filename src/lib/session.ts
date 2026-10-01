@@ -16,17 +16,40 @@ const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 /** Name of the cookie used to store the session token. */
 export const SESSION_COOKIE = 'auth_session';
 
-const SECRET = process.env.GOOGLE_PRIVATE_KEY || 'gana-pro-fallback-secret-2026';
+/**
+ * Secreto con el que se firman las sesiones.
+ *
+ * Se usa `SESSION_SECRET` y ya no la clave privada de Google: rotar la clave de
+ * Google no debe invalidar las sesiones, y un secreto que cambia por accident
+ * con cada despliegue deja a todos los usuarios fuera del panel.
+ *
+ * En desarrollo se genera uno aleatorio por proceso si no se define, de modo
+ * que las sesiones de la copia local nunca son firmadas con un valor público
+ * conocido. En producción NO hay valor por defecto: si falta la variable se
+ * lanza un error, porque arrancar con un secreto predecible permitiria a
+ * cualquiera firmar su propio cookie de administrador.
+ */
+const SECRET = (() => {
+	const configured = process.env.SESSION_SECRET?.trim();
+	if (configured) return configured;
+
+	if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+		throw new Error(
+			'Falta SESSION_SECRET en las variables de entorno del servidor. ' +
+				'Define un valor largo y aleatorio antes de desplegar: sin el, ' +
+				'las sesiones se firmarian con un secreto conocido por cualquiera.'
+		);
+	}
+
+	console.warn(
+		'[session] SESSION_SECRET no esta definido: se genera uno aleatorio para ' +
+			'este proceso. Las sesiones se invalidaran al reiniciar el servidor.'
+	);
+	return randomBytes(32).toString('hex');
+})();
 
 function sign(payload: string): string {
 	return createHmac('sha256', SECRET).update(payload).digest('hex');
-}
-
-/**
- * Generate a cryptographically random session token (or signed payload).
- */
-function generateToken(): string {
-	return randomBytes(32).toString('hex');
 }
 
 /** In-memory fallback if filesystem is read-only (like Vercel Lambda) */

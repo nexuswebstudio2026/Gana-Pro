@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../../lib/session';
+import { isAdminRole } from '../../../lib/auth';
 import { getGoogleSheetUsers, parseSheetBalance } from '../../../lib/sheets';
 import { getUserBalance } from '../../../lib/users';
 import { saveFile } from '../../../lib/image-storage';
@@ -30,10 +30,7 @@ const fmt = (v: number) => `$${Math.round(v).toLocaleString('es-CO')}`;
 /** Billetera del administrador: es la cuenta a la que deben transferir. */
 async function getAdminWallet(): Promise<{ walletType: string; walletNumber: string } | null> {
 	const users = await getGoogleSheetUsers();
-	const admin = users.find((u) => {
-		const role = String(u.role ?? '').trim().toLowerCase();
-		return role === 'admin' || role === 'administrator';
-	});
+	const admin = users.find((u) => isAdminRole(u.role));
 	if (!admin) return null;
 	return {
 		walletType: String(admin.paymentMethod ?? '').trim(),
@@ -46,7 +43,7 @@ async function getAdminWallet(): Promise<{ walletType: string; walletNumber: str
  * Alimenta el formulario antes de que el usuario escriba nada.
  */
 export const GET: APIRoute = async (Astro) => {
-	const session = validateSession(Astro.cookies.get('auth_session')?.value);
+	const session = Astro.locals.user;
 	if (!session) return json({ ok: false, message: 'Sesión no válida.' }, 401);
 
 	try {
@@ -77,7 +74,7 @@ export const GET: APIRoute = async (Astro) => {
  */
 export const POST: APIRoute = async (Astro) => {
 	try {
-		const session = validateSession(Astro.cookies.get('auth_session')?.value);
+		const session = Astro.locals.user;
 		if (!session) return json({ ok: false, message: 'Sesión no válida.' }, 401);
 
 		const formData = await Astro.request.formData();

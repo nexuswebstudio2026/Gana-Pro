@@ -1,5 +1,6 @@
 ---
 import { validateSession } from '../lib/session';
+import { isAdminRole } from '../lib/auth';
 import { getGoogleSheetUsers } from '../lib/sheets';
 import { getAdminWallet } from '../lib/users';
 import ThemeToggle from '../components/ThemeToggle.astro';
@@ -33,8 +34,7 @@ try {
 	console.error('Error fetching user detail in dashboard:', e);
 }
 
-const effectiveRole = (userDetail?.role || session.role || '').trim().toLowerCase();
-const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
+const isAdmin = isAdminRole(userDetail?.role || session.role);
 
 // Saldo acumulado: se toma de la fila del usuario en Google Sheets.
 // Solo se muestra si esa fila existe (userDetail), nunca un valor inventado.
