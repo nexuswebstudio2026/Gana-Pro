@@ -1,0 +1,547 @@
+---
+import { formatBalance } from '../lib/users';
+
+interface Props {
+	/**
+	 * Valor crudo de la celda "saldo acumulado" de Google Sheets.
+	 * Si viene vacío o no es un número, el chip no se muestra.
+	 */
+	balance?: string | number | null;
+}
+
+const { balance } = Astro.props;
+const label = formatBalance(balance == null ? null : String(balance));
+
+/**
+ * Las cuatro operaciones de saldo. `needsRecipient` marca las que piden el
+ * usuario de destino (solo "enviar").
+ */
+const OPERATIONS = [
+	{
+		id: 'recargar',
+		title: 'Recargar',
+		hint: 'Agrega fondos a tu saldo acumulado.',
+		field: 'Monto a recargar',
+		needsRecipient: false,
+	},
+	{
+		id: 'retirar',
+		title: 'Retirar',
+		hint: 'Retira fondos de tu saldo a tu medio de pago.',
+		field: 'Monto a retirar',
+		needsRecipient: false,
+	},
+	{
+		id: 'enviar',
+		title: 'Enviar',
+		hint: 'Transfiere saldo a otro miembro registrado.',
+		field: 'Monto a enviar',
+		needsRecipient: true,
+	},
+	{
+		id: 'solicitar',
+		title: 'Solicitar',
+		hint: 'Solicita un incremento de saldo a la plataforma.',
+		field: 'Monto a solicitar',
+		needsRecipient: false,
+	},
+] as const;
+---
+
+{
+	label && (
+		<div class="balance" data-balance>
+			<button
+				type="button"
+				class="balance-chip"
+				data-balance-toggle
+				aria-expanded="false"
+				aria-haspopup="true"
+				title="Saldo acumulado registrado en Google Sheets"
+				aria-label={`Saldo acumulado: ${label}. Opciones de saldo`}
+			>
+				<span class="balance-label">Saldo</span>
+				<span class="balance-value">{label}</span>
+				<svg
+					class="balance-caret"
+					width="12"
+					height="12"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					aria-hidden="true"
+				>
+					<polyline points="6 9 12 15 18 9"></polyline>
+				</svg>
+			</button>
+
+			<div class="balance-menu" data-balance-menu hidden>
+				<p class="balance-menu-title">Operaciones de saldo</p>
+				{OPERATIONS.map((op) => (
+					<button
+						type="button"
+						class="balance-op"
+						data-op={op.id}
+						data-title={op.title}
+						data-field={op.field}
+						data-hint={op.hint}
+						data-needs-recipient={String(op.needsRecipient)}
+					>
+						<span class="balance-op-title">{op.title}</span>
+						<span class="balance-op-hint">{op.hint}</span>
+					</button>
+				))}
+			</div>
+
+			<form class="balance-form" data-balance-form hidden>
+				<h3 class="balance-form-title" data-form-title>Operación</h3>
+				<p class="balance-form-hint" data-form-hint></p>
+
+				<label class="balance-form-label" data-amount-label>Monto</label>
+				<input type="number" class="balance-input" data-amount min="1" step="1" placeholder="0" required />
+
+				<label class="balance-form-label" data-to-label hidden>Usuario que recibe</label>
+				<input type="text" class="balance-input" data-to placeholder="usuario" autocomplete="off" hidden />
+
+				<p class="balance-form-msg" data-form-msg hidden></p>
+
+				<div class="balance-form-actions">
+					<button type="button" class="balance-btn ghost" data-cancel>Cancelar</button>
+					<button type="submit" class="balance-btn solid">Confirmar</button>
+				</div>
+			</form>
+
+			<div class="balance-backdrop" data-balance-backdrop hidden></div>
+		</div>
+	)
+}
+
+<style>
+	.balance {
+		position: relative;
+	}
+
+	/* Chip entre el conmutador de tema y el botón de usuario. Ahora es un
+	   botón porque al pulsarlo se despliegan las operaciones de saldo. */
+	.balance-chip {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 7px;
+		padding: 7px 14px;
+		border-radius: 999px;
+		background: rgba(212, 175, 55, 0.12);
+		border: 1px solid var(--gold-border);
+		white-space: nowrap;
+		line-height: 1;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+		transition: background 0.25s ease, border-color 0.25s ease;
+	}
+
+	.balance-chip:hover,
+	.balance-chip[aria-expanded='true'] {
+		background: rgba(212, 175, 55, 0.22);
+		border-color: var(--gold-primary);
+	}
+
+	.balance-label {
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.balance-value {
+		font-family: 'Cinzel', Georgia, serif;
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: var(--gold-primary);
+	}
+
+	.balance-caret {
+		align-self: center;
+		color: var(--gold-primary);
+		transition: transform 0.25s ease;
+	}
+
+	.balance-chip[aria-expanded='true'] .balance-caret {
+		transform: rotate(180deg);
+	}
+
+	/* ---------- Menú desplegable ---------- */
+	.balance-menu,
+	.balance-form {
+		position: absolute;
+		top: calc(100% + 10px);
+		right: 0;
+		z-index: 120;
+		min-width: 288px;
+		padding: 10px;
+		border-radius: 14px;
+		background: var(--bg-surface, #0d1526);
+		border: 1px solid var(--gold-border);
+		box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+	}
+
+	.balance-menu[hidden],
+	.balance-form[hidden],
+	.balance-backdrop[hidden] {
+		display: none;
+	}
+
+	.balance-menu-title {
+		margin: 2px 6px 8px;
+		font-size: 0.66rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.balance-op {
+		display: block;
+		width: 100%;
+		text-align: left;
+		padding: 10px 12px;
+		border: 0;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--text-primary);
+		cursor: pointer;
+		font: inherit;
+		transition: background 0.2s ease;
+	}
+
+	.balance-op:hover,
+	.balance-op:focus-visible {
+		background: rgba(212, 175, 55, 0.16);
+		outline: none;
+	}
+
+	.balance-op-title {
+		display: block;
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+	}
+
+	.balance-op-hint {
+		display: block;
+		margin-top: 2px;
+		font-size: 0.74rem;
+		color: var(--text-secondary);
+	}
+
+	/* ---------- Formulario ---------- */
+	.balance-form {
+		min-width: 300px;
+	}
+
+	.balance-form-title {
+		margin: 2px 0 4px;
+		font-family: 'Cinzel', Georgia, serif;
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+	}
+
+	.balance-form-hint {
+		margin: 0 0 12px;
+		font-size: 0.76rem;
+		color: var(--text-secondary);
+	}
+
+	.balance-form-label {
+		display: block;
+		margin-bottom: 5px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.balance-input {
+		width: 100%;
+		margin-bottom: 12px;
+		padding: 10px 12px;
+		border-radius: 10px;
+		border: 1px solid var(--gold-border);
+		background: rgba(2, 7, 18, 0.45);
+		color: var(--text-primary);
+		font: inherit;
+	}
+
+	.balance-input:focus {
+		outline: none;
+		border-color: var(--gold-primary);
+	}
+
+	.balance-form-msg {
+		margin: 0 0 10px;
+		padding: 9px 11px;
+		border-radius: 8px;
+		font-size: 0.78rem;
+		line-height: 1.4;
+	}
+
+	.balance-form-msg[hidden] {
+		display: none;
+	}
+
+	.balance-form-msg.ok {
+		color: #10b981;
+		background: rgba(16, 185, 129, 0.14);
+		border: 1px solid rgba(16, 185, 129, 0.4);
+	}
+
+	.balance-form-msg.error {
+		color: #ef4444;
+		background: rgba(239, 68, 68, 0.14);
+		border: 1px solid rgba(239, 68, 68, 0.4);
+	}
+
+	.balance-form-actions {
+		display: flex;
+		gap: 8px;
+	}
+
+	.balance-btn {
+		flex: 1;
+		padding: 10px 12px;
+		border-radius: 10px;
+		font: inherit;
+		font-size: 0.82rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: filter 0.2s ease, background 0.2s ease;
+	}
+
+	.balance-btn.solid {
+		border: 1px solid var(--gold-primary);
+		background: var(--gold-primary);
+		color: #10233f;
+	}
+
+	.balance-btn.solid:hover {
+		filter: brightness(1.08);
+	}
+
+	.balance-btn.solid[disabled] {
+		opacity: 0.6;
+		cursor: progress;
+	}
+
+	.balance-btn.ghost {
+		border: 1px solid var(--gold-border);
+<script>
+	/**
+	 * Operaciones de saldo desplegables.
+	 *
+	 * El chip abre un menú con las cuatro acciones; al elegir una se muestra su
+	 * formulario. El envío va por fetch a /api/balance y, si la operación se
+	 * aplicó, se recarga la página para que el chip muestre el saldo real.
+	 *
+	 * Se inicializa en `astro:page-load` porque la navegación de Astro puede
+	 * volver a renderizar el componente.
+	 */
+	function initBalanceMenus() {
+		document.querySelectorAll('[data-balance]').forEach((root) => {
+			if (!(root instanceof HTMLElement) || root.dataset.ready === '1') return;
+			root.dataset.ready = '1';
+
+			const toggle = root.querySelector('[data-balance-toggle]');
+			const menu = root.querySelector('[data-balance-menu]');
+			const form = root.querySelector('[data-balance-form]');
+			const backdrop = root.querySelector('[data-balance-backdrop]');
+			const amount = root.querySelector('[data-amount]');
+			const to = root.querySelector('[data-to]');
+			const toLabel = root.querySelector('[data-to-label]');
+			const amountLabel = root.querySelector('[data-amount-label]');
+			const formTitle = root.querySelector('[data-form-title]');
+			const formHint = root.querySelector('[data-form-hint]');
+			const msg = root.querySelector('[data-form-msg]');
+			const submitBtn = form?.querySelector('button[type="submit"]');
+
+			if (
+				!(toggle instanceof HTMLButtonElement) ||
+				!(menu instanceof HTMLElement) ||
+				!(form instanceof HTMLFormElement) ||
+				!(amount instanceof HTMLInputElement)
+			) {
+				return;
+			}
+
+			let currentOp = '';
+
+			const isNarrow = () => window.matchMedia('(max-width: 480px)').matches;
+
+			const closeAll = () => {
+				menu.hidden = true;
+				form.hidden = true;
+				toggle.setAttribute('aria-expanded', 'false');
+				if (backdrop instanceof HTMLElement) backdrop.hidden = true;
+			};
+
+			const openMenu = () => {
+				form.hidden = true;
+				menu.hidden = false;
+				toggle.setAttribute('aria-expanded', 'true');
+				// El fondo oscurecido solo hace falta en móvil, donde el panel
+				// se ancla abajo a pantalla completa.
+				if (backdrop instanceof HTMLElement) backdrop.hidden = !isNarrow();
+			};
+
+			const showMessage = (text, kind) => {
+				if (!(msg instanceof HTMLElement)) return;
+				msg.textContent = text;
+				msg.classList.remove('ok', 'error');
+				msg.classList.add(kind);
+				msg.hidden = false;
+			};
+
+			toggle.addEventListener('click', (event) => {
+				event.stopPropagation();
+				if (menu.hidden && form.hidden) openMenu();
+				else closeAll();
+			});
+
+			menu.querySelectorAll('[data-op]').forEach((btn) => {
+				if (!(btn instanceof HTMLButtonElement)) return;
+				btn.addEventListener('click', (event) => {
+					event.stopPropagation();
+					currentOp = btn.dataset.op ?? '';
+					const needsRecipient = btn.dataset.needsRecipient === 'true';
+
+					if (formTitle) formTitle.textContent = btn.dataset.title ?? 'Operación';
+					if (formHint) formHint.textContent = btn.dataset.hint ?? '';
+					if (amountLabel) amountLabel.textContent = btn.dataset.field ?? 'Monto';
+
+					// Solo "enviar" pide destinatario.
+					if (to instanceof HTMLInputElement) {
+						to.hidden = !needsRecipient;
+						to.required = needsRecipient;
+						to.value = '';
+					}
+					if (toLabel instanceof HTMLElement) toLabel.hidden = !needsRecipient;
+
+					amount.value = '';
+					amount.focus();
+					if (msg instanceof HTMLElement) msg.hidden = true;
+
+					menu.hidden = true;
+					form.hidden = false;
+				});
+			});
+
+			form.querySelector('[data-cancel]')?.addEventListener('click', closeAll);
+			backdrop?.addEventListener('click', closeAll);
+
+			// Cerrar al pulsar fuera del desplegable.
+			document.addEventListener('click', (event) => {
+				if (root instanceof HTMLElement && !root.contains(event.target)) closeAll();
+			});
+
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape') closeAll();
+			});
+
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+
+				const value = Number(amount.value);
+				if (!Number.isFinite(value) || value <= 0) {
+					showMessage('Escribe un monto mayor que cero.', 'error');
+					return;
+				}
+
+				if (submitBtn instanceof HTMLButtonElement) submitBtn.disabled = true;
+
+				try {
+					const response = await fetch('/api/balance', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							op: currentOp,
+							amount: value,
+							to: to instanceof HTMLInputElement && !to.hidden ? to.value : undefined,
+						}),
+					});
+					const data = await response.json().catch(() => ({}));
+
+					if (data && data.ok) {
+						showMessage(data.message ?? 'Operación realizada.', 'ok');
+						// Se recarga para que el chip muestre el saldo ya aplicado.
+						setTimeout(() => window.location.reload(), 900);
+					} else {
+						showMessage(
+							(data && data.message) || 'No se pudo completar la operación.',
+							'error'
+						);
+					}
+				} catch {
+					showMessage('Error de conexión. Inténtalo de nuevo.', 'error');
+				} finally {
+					if (submitBtn instanceof HTMLButtonElement) submitBtn.disabled = false;
+				}
+			});
+		});
+	}
+
+	initBalanceMenus();
+	document.addEventListener('astro:page-load', initBalanceMenus);
+</script>
+
+		background: transparent;
+		color: var(--text-primary);
+	}
+
+	.balance-btn.ghost:hover {
+		background: rgba(212, 175, 55, 0.12);
+	}
+
+	/* ---------- Fondo oscurecido (solo móvil) ---------- */
+	.balance-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 110;
+		background: rgba(2, 7, 18, 0.5);
+	}
+
+	/* En pantallas estrechas la palabra "Saldo" empuja al botón de usuario
+	   fuera de pantalla, así que se queda solo la cifra. */
+	@media (max-width: 480px) {
+		.balance-chip {
+			padding: 6px 11px;
+			gap: 0;
+		}
+
+		.balance-label {
+			display: none;
+		}
+
+		.balance-value {
+			font-size: 0.82rem;
+		}
+
+		.balance-caret {
+			display: none;
+		}
+
+		/* En móvil el panel se ancla abajo para que el teclado no lo tape. */
+		.balance-menu,
+		.balance-form {
+			position: fixed;
+			left: 12px;
+			right: 12px;
+			top: auto;
+			bottom: 12px;
+			min-width: 0;
+		}
+	}
+</style>

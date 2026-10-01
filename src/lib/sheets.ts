@@ -378,7 +378,12 @@ export interface UserDocumentFields {
  */
 async function findUserRow(
 	username: string
-): Promise<{ sheets: ReturnType<typeof getSheetsClient>; idx: UserColumnIndexes; rowIndex: number } | null> {
+): Promise<{
+	sheets: ReturnType<typeof getSheetsClient>;
+	idx: UserColumnIndexes;
+	rowIndex: number;
+	rows: unknown[][];
+} | null> {
 	const sheets = getSheetsClient();
 
 	const res = await sheets.spreadsheets.values.get({
@@ -402,7 +407,7 @@ async function findUserRow(
 	);
 	if (rowIndex === -1) return null;
 
-	return { sheets, idx, rowIndex };
+	return { sheets, idx, rowIndex, rows };
 }
 
 /** Escribe una celda suelta de la fila de un usuario. */
@@ -609,6 +614,7 @@ export interface UserProfileFields {
 	neighborhood?: string;
 	city?: string;
 	phone?: string;
+
 	whatsapp?: string;
 }
 
@@ -679,4 +685,98 @@ function columnLetter(index: number): string {
 		n = Math.floor(n / 26) - 1;
 	} while (n >= 0);
 	return letter;
+}
+
+// ---------------------------------------------------------------------------
+// Operaciones sobre el saldo acumulado
+// ---------------------------------------------------------------------------
+
+/**
+ * Saldo en número de la celda "saldo acumulado".
+ *
+ * Acepta los formatos que conviven en la hoja (" $0", "150.00", "1.234,56").
+ * Devuelve 0 cuando la celda está vacía o no es un número legible, para que
+ * un valor corrupto nunca se interprete como saldo disponible.
+ */
+export function parseSheetBalance(raw: unknown): number {
+	const cleaned = String(raw ?? '').replace(/[^\d.,-]/g, '');
+	if (!cleaned) return 0;
+
+	const lastComma = cleaned.lastIndexOf(',');
+	const lastDot = cleaned.lastIndexOf('.');
+	const decimalAt = Math.max(lastComma, lastDot);
+
+	let normalized: string;
+	if (decimalAt === -1) {
+		normalized = cleaned;
+	} else {
+		const decimals = cleaned.length - decimalAt - 1;
+		const whole = cleaned.slice(0, decimalAt);
+		const otherSep = decimalAt === lastDot ? ',' : '.';
+		if (whole.includes(otherSep)) {
+			normalized = whole.replace(/[.,]/g, '') + '.' + cleaned.slice(decimalAt + 1);
+		} else if (decimals === 3 && whole.replace(/[.,]/g, '').length > 0) {
+			normalized = cleaned.replace(/[.,]/g, '');
+		} else {
+			normalized = whole.replace(/[.,]/g, '') + '.' + cleaned.slice(decimalAt + 1);
+		}
+	}
+
+	const value = Number(normalized);
+	return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Escribe un saldo nuevo en la fila del usuario.
+ *
+ * Se guarda sin símbolos y con punto decimal ("1234.5") para que la celda
+ * siga siendo numérica y se pueda sumar en la propia hoja. `valueInputOption:
+ * 'RAW'` evita que Sheets lo interprete como texto.
+ */
+export async function setSheetUserBalance(username: string, value: number): Promise<boolean> {
+	const found = await findUserRow(username);
+	if (!found || found.idx.balance === -1) return false;
+
+	await writeUserCell(found.sheets, found.rowIndex, found.idx.balance, String(value));
+	return true;
+}
+
+/**
+ * Resta saldo al usuario y, si `toUsername` no está vacío, lo suma a otro.
+ *
+ * Se usa para "retirar" (solo resta) y "enviar" (resta y suma). Devuelve
+ * `false` si el usuario no existe o no tiene saldo suficiente: en ese caso no
+ * se escribe nada, de modo que el saldo nunca queda en negativo por accidente.
+ */
+export async function moveBalance(
+	fromUsername: string,
+	amount: number,
+	toUsername?: string
+): Promise<boolean> {
+	if (!(amount > 0)) return false;
+
+	const from = await findUserRow(fromUsername);
+	if (!from || from.idx.balance === -1) return false;
+
+	const fromBalance = parseSheetBalance(from.rows[from.rowIndex]?.[from.idx.balance]);
+	if (fromBalance < amount) return false;
+
+	let to: Awaited<ReturnType<typeof findUserRow>> = null;
+	if (toUsername) {
+		const target = String(toUsername).trim().toLowerCase();
+		if (!target) return false;
+		// No se permite transferirse saldo a uno mismo: sería un no-op que
+		// solo genera confusion en el historial.
+		if (target === String(fromUsername).trim().toLowerCase()) return false;
+
+		to = await findUserRow(target);
+		if (!to || to.idx.balance === -1) return false;
+	}
+
+	await writeUserCell(from.sheets, from.rowIndex, from.idx.balance, String(fromBalance - amount));
+	if (to) {
+		const toBalance = parseSheetBalance(to.rows[to.rowIndex]?.[to.idx.balance]);
+		await writeUserCell(to.sheets, to.rowIndex, to.idx.balance, String(toBalance + amount));
+	}
+	return true;
 }

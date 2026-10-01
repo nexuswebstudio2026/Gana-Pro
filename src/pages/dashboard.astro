@@ -3,6 +3,7 @@ import { validateSession } from '../lib/session';
 import { getGoogleSheetUsers } from '../lib/sheets';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import DashboardSidebar from '../components/DashboardSidebar.astro';
+import BalanceChip from '../components/BalanceChip.astro';
 import Logo from '../components/Logo.astro';
 import Footer from '../components/Footer.astro';
 import type { User } from '../lib/types';
@@ -33,6 +34,10 @@ try {
 
 const effectiveRole = (userDetail?.role || session.role || '').trim().toLowerCase();
 const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
+
+// Saldo acumulado: se toma de la fila del usuario en Google Sheets.
+// Solo se muestra si esa fila existe (userDetail), nunca un valor inventado.
+const balance = userDetail?.balance ?? null;
 ---
 
 <!doctype html>
@@ -84,6 +89,7 @@ const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
 
 				<div class="header-actions">
 					<ThemeToggle />
+					<BalanceChip balance={balance} />
 					<div class="user-chip">
 						<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
 						<div class="user-meta">

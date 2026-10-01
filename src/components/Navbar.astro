@@ -1,7 +1,9 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
+import BalanceChip from './BalanceChip.astro';
 import { validateSession } from '../lib/session';
+import { getUserBalance } from '../lib/users';
 
 interface Props {
 	title?: string;
@@ -13,6 +15,18 @@ const token = Astro.cookies.get('auth_session')?.value;
 const session = validateSession(token);
 const username = session?.username?.trim() ?? '';
 const initial = username ? username.charAt(0).toUpperCase() : '';
+
+// Saldo acumulado leído de Google Sheets. Solo se devuelve si el usuario
+// conectado aparece en la hoja: si no está registrado allí, no se inventa
+// ninguna cifra. Un fallo de Sheets tampoco rompe la navegación.
+let balance: string | null = null;
+if (username) {
+	try {
+		balance = await getUserBalance(session!.username, session!.email);
+	} catch (e) {
+		console.error('No se pudo mostrar el saldo en la barra:', e);
+	}
+}
 ---
 
 <header class="navbar">
@@ -35,6 +49,7 @@ const initial = username ? username.charAt(0).toUpperCase() : '';
 
 		<div class="nav-actions">
 			<ThemeToggle />
+			<BalanceChip balance={balance} />
 			{username ? (
 				<a
 					href="/dashboard"

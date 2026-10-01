@@ -1,8 +1,10 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
+import BalanceChip from './BalanceChip.astro';
 import DashboardSidebar from './DashboardSidebar.astro';
 import Footer from './Footer.astro';
+import { getUserBalance } from '../lib/users';
 import type { Session } from '../lib/session';
 
 interface Props {
@@ -15,6 +17,15 @@ interface Props {
 
 const { session, title, eyebrow, description, isAdmin = true } = Astro.props;
 const roleLabel = session.role || 'Admin';
+
+// Saldo acumulado del administrador, verificado contra Google Sheets.
+// Si no esta registrado alli o la hoja falla, el chip no se muestra.
+let balance: string | null = null;
+try {
+	balance = await getUserBalance(session.username, session.email);
+} catch (e) {
+	console.error('No se pudo obtener el saldo en el panel:', e);
+}
 ---
 
 <!doctype html>
@@ -49,6 +60,7 @@ const roleLabel = session.role || 'Admin';
 					</div>
 					<div class="header-actions">
 						<ThemeToggle />
+						<BalanceChip balance={balance} />
 						<div class="user-chip">
 							<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
 							<div class="user-meta"><span class="user-name">{session.username}</span><span class="user-badge">{roleLabel}</span></div>
