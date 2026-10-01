@@ -38,6 +38,9 @@ const isAdmin = effectiveRole === 'admin' || effectiveRole === 'administrator';
 // Saldo acumulado: se toma de la fila del usuario en Google Sheets.
 // Solo se muestra si esa fila existe (userDetail), nunca un valor inventado.
 const balance = userDetail?.balance ?? null;
+const userLevel = userDetail?.level ?? null;
+const walletType = userDetail?.paymentMethod ?? null;
+const walletNumber = userDetail?.walletNumber ?? null;
 ---
 
 <!doctype html>
@@ -89,7 +92,7 @@ const balance = userDetail?.balance ?? null;
 
 				<div class="header-actions">
 					<ThemeToggle />
-					<BalanceChip balance={balance} />
+					<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} />
 					<div class="user-chip">
 						<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
 						<div class="user-meta">

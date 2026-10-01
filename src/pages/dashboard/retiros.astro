@@ -1,0 +1,382 @@
+---
+import { validateSession } from '../../lib/session';
+import { formatAppDateTime } from '../../lib/datetime';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import {
+	listWithdrawals,
+	WITHDRAWAL_STATUS,
+	type WithdrawalRequest,
+} from '../../lib/withdrawals';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+if (!session) {
+	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+}
+
+let userDetail: User | null = null;
+try {
+	const users = await getGoogleSheetUsers();
+	userDetail =
+		users.find(
+			(user) =>
+				user.username?.toLowerCase() === session.username.toLowerCase() ||
+				user.email?.toLowerCase() === session.email.toLowerCase()
+		) || null;
+} catch (error) {
+	console.error('Error al cargar el rol del usuario:', error);
+}
+
+const role = (userDetail?.role || session.role || '').trim().toLowerCase();
+const isAdmin = role === 'admin' || role === 'administrator';
+
+// Solo el administrador revisa las solicitudes.
+if (!isAdmin) {
+	return Astro.redirect('/dashboard?error=' + encodeURIComponent('No tienes permisos para ver los retiros.'), 303);
+}
+
+let requests: WithdrawalRequest[] = [];
+let loadError = false;
+try {
+	requests = await listWithdrawals();
+} catch (error) {
+	loadError = true;
+	console.error('Error al cargar las solicitudes de retiro:', error);
+}
+
+const pending = requests.filter((r) => r.status === WITHDRAWAL_STATUS.pendiente);
+const resolved = requests.filter((r) => r.status !== WITHDRAWAL_STATUS.pendiente);
+// Solo cuentan las comisiones de los retiros ya aprobados: una solicitud
+// pendiente todavía no le genera ganancia al administrador.
+const approved = requests.filter((r) => r.status === WITHDRAWAL_STATUS.aprobado);
+const totalCommission = approved.reduce((sum, r) => sum + r.commission, 0);
+const totalPaid = approved.reduce((sum, r) => sum + r.netAmount, 0);
+const statusMsg = Astro.url.searchParams.get('msg');
+const statusOk = Astro.url.searchParams.get('ok') === '1';
+
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+---
+
+<AdminPageLayout
+	session={session}
+	title="Solicitudes de Retiro"
+	eyebrow="REVISIÓN DEL ADMINISTRADOR"
+	description="Aprueba o rechaza las solicitudes de retiro. El saldo solo se descuenta cuando apruebas."
+>
+	{statusMsg && (
+		<p class:list={['account-alert', { ok: statusOk, ko: !statusOk }]} role="status">
+			{statusMsg}
+		</p>
+	)}
+
+	{loadError && (
+		<p class="account-alert ko" role="alert">
+			No se pudieron cargar las solicitudes de retiro en este momento.
+		</p>
+	)}
+
+	{approved.length > 0 && (
+		<div class="withdraw-total">
+			<span>
+				Comisiones generadas por <strong>{approved.length}</strong> retiro
+				{approved.length === 1 ? '' : 's'} aprobado{approved.length === 1 ? '' : 's'} (pagaste{' '}
+				{fmt(totalPaid)} a los usuarios)
+			</span>
+			<strong>{fmt(totalCommission)}</strong>
+		</div>
+	)}
+
+	<section class="luxury-card">
+		<header class="withdraw-head">
+			<h2 class="font-cinzel">Pendientes ({pending.length})</h2>
+			<span class="withdraw-count">{pending.length}</span>
+		</header>
+
+		{pending.length === 0 ? (
+			<p class="withdraw-empty">No hay solicitudes pendientes de retiro.</p>
+		) : (
+			<ul class="withdraw-list">
+				{pending.map((r) => (
+					<li class="withdraw-item">
+						<div class="withdraw-main">
+							<div class="withdraw-who">
+								<strong>{r.username}</strong>
+								<span>{r.email}</span>
+							</div>
+							<div class="withdraw-amount">{fmt(r.amount)}</div>
+							<dl class="withdraw-meta">
+								<div><dt>Billetera</dt><dd>{r.walletType}</dd></div>
+								<div><dt>Número</dt><dd>{r.walletNumber}</dd></div>
+								<div><dt>Nivel</dt><dd>{r.level}</dd></div>
+								<div><dt>Solicitado</dt><dd>{formatAppDateTime(r.createdAt)}</dd></div>
+								<div><dt>Solicitud</dt><dd>#{r.id}</dd></div>
+							</dl>
+							<dl class="withdraw-meta payout">
+								<div><dt>Pagas al usuario</dt><dd class="pay">{fmt(r.netAmount)}</dd></div>
+								<div><dt>Tu comisión (5%)</dt><dd class="earn">{fmt(r.commission)}</dd></div>
+							</dl>
+						</div>
+						<div class="withdraw-actions">
+							<button type="button" class="withdraw-btn approve" data-resolve="aprobar" data-id={r.id}>
+								Aprobar
+							</button>
+							<button type="button" class="withdraw-btn reject" data-resolve="rechazar" data-id={r.id}>
+								Rechazar
+							</button>
+						</div>
+					</li>
+				))}
+			</ul>
+		)}
+	</section>
+
+	{resolved.length > 0 && (
+		<section class="luxury-card">
+			<header class="withdraw-head">
+				<h2 class="font-cinzel">Procesadas ({resolved.length})</h2>
+			</header>
+			<ul class="withdraw-list">
+				{resolved.map((r) => (
+					<li class="withdraw-item done">
+						<div class="withdraw-main">
+							<div class="withdraw-who">
+								<strong>{r.username}</strong>
+								<span>{r.email}</span>
+							</div>
+							<div class="withdraw-amount">{fmt(r.amount)}</div>
+							<div class="withdraw-meta">
+								<div><dt>Billetera</dt><dd>{r.walletType} · {r.walletNumber}</dd></div>
+								<div><dt>Estado</dt><dd>{r.status}</dd></div>
+								<div><dt>Solicitado</dt><dd>{formatAppDateTime(r.createdAt)}</dd></div>
+							</div>
+						</div>
+					</li>
+				))}
+			</ul>
+		</section>
+	)}
+</AdminPageLayout>
+
+<style is:global>
+	.withdraw-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 18px;
+	}
+
+	.withdraw-head h2 {
+		font-size: 1.15rem;
+		margin: 0;
+	}
+
+	.withdraw-count {
+		font-family: 'Cinzel', serif;
+		font-weight: 800;
+		color: var(--gold-primary);
+	}
+
+	.withdraw-empty {
+		color: var(--text-secondary);
+		font-size: 0.9rem;
+		margin: 0;
+	}
+
+	.withdraw-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 14px;
+	}
+
+	.withdraw-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 16px;
+		flex-wrap: wrap;
+		padding: 16px;
+		border-radius: 12px;
+		border: 1px solid var(--gold-border);
+		background: rgba(2, 7, 18, 0.3);
+	}
+
+	.withdraw-item.done {
+		opacity: 0.7;
+	}
+
+	.withdraw-main {
+		flex: 1;
+		min-width: 240px;
+	}
+
+	.withdraw-who {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.withdraw-who strong {
+		color: var(--text-primary);
+		font-size: 1rem;
+	}
+
+	.withdraw-who span {
+		font-size: 0.78rem;
+		color: var(--text-secondary);
+	}
+
+	.withdraw-amount {
+		font-family: 'Cinzel', serif;
+		font-size: 1.4rem;
+		font-weight: 800;
+		color: var(--gold-primary);
+		margin: 6px 0;
+	}
+
+	.withdraw-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 18px;
+		margin: 0;
+	}
+
+	.withdraw-meta div {
+		display: flex;
+		gap: 6px;
+		font-size: 0.78rem;
+	}
+
+	.withdraw-meta dt {
+		color: var(--text-secondary);
+	}
+
+	.withdraw-meta dd {
+		margin: 0;
+		color: var(--text-primary);
+	}
+
+	/* Lo que el admin paga vs. lo que retiene como comisión. */
+	.withdraw-meta.payout {
+		margin-top: 8px;
+		padding-top: 8px;
+		border-top: 1px dashed var(--gold-border);
+	}
+
+	.withdraw-meta dd.pay {
+		color: #10b981;
+		font-weight: 700;
+	}
+
+	.withdraw-meta dd.earn {
+		color: var(--gold-primary);
+		font-weight: 700;
+	}
+
+	/* Total acumulado de comisiones. */
+	.withdraw-total {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+		margin: 0 0 18px;
+		padding: 14px 16px;
+		border-radius: 12px;
+		border: 1px solid var(--gold-border);
+		background: rgba(212, 175, 55, 0.1);
+		font-size: 0.9rem;
+	}
+
+	.withdraw-total strong {
+		font-family: 'Cinzel', serif;
+		font-size: 1.3rem;
+		color: var(--gold-primary);
+	}
+
+	.withdraw-actions {
+		display: flex;
+		gap: 10px;
+	}
+
+	.withdraw-btn {
+		padding: 10px 20px;
+		border-radius: 10px;
+		font: inherit;
+		font-size: 0.84rem;
+		font-weight: 700;
+		cursor: pointer;
+		border: 1px solid var(--gold-border);
+		background: transparent;
+		color: var(--text-primary);
+		transition: filter 0.2s ease, background 0.2s ease;
+	}
+
+	.withdraw-btn.approve {
+		background: var(--gold-primary);
+		border-color: var(--gold-primary);
+		color: #10233f;
+	}
+
+	.withdraw-btn.approve:hover {
+		filter: brightness(1.08);
+	}
+
+	.withdraw-btn.reject:hover {
+		background: rgba(239, 68, 68, 0.16);
+		border-color: #ef4444;
+	}
+
+	.withdraw-btn[disabled] {
+		opacity: 0.6;
+		cursor: progress;
+	}
+
+	@media (max-width: 600px) {
+		.withdraw-actions {
+			width: 100%;
+		}
+
+		.withdraw-btn {
+			flex: 1;
+		}
+	}
+</style>
+
+<script is:inline>
+	// Aprueba o rechaza una solicitud y recarga la lista al terminar.
+	document.querySelectorAll('[data-resolve]').forEach(function (btn) {
+		btn.addEventListener('click', async function () {
+			var id = btn.getAttribute('data-id');
+			var action = btn.getAttribute('data-resolve');
+			if (!id || !action) return;
+
+			if (action === 'aprobar' && !confirm('¿Aprobar este retiro y descontar el saldo del usuario?')) {
+				return;
+			}
+			if (action === 'rechazar' && !confirm('¿Rechazar esta solicitud de retiro?')) {
+				return;
+			}
+
+			btn.setAttribute('disabled', 'disabled');
+			try {
+				var res = await fetch('/api/admin/withdrawals', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ id: id, action: action }),
+				});
+				var data = await res.json().catch(function () { return {}; });
+				var url =
+					'/dashboard/retiros?ok=' + (data && data.ok ? '1' : '0') +
+					'&msg=' + encodeURIComponent((data && data.message) || 'No se pudo completar.');
+				window.location.href = url;
+			} catch (err) {
+				btn.removeAttribute('disabled');
+				alert('Error de conexión. Inténtalo de nuevo.');
+			}
+		});
+	});
+</script>

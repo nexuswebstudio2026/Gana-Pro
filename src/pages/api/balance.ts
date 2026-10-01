@@ -6,7 +6,13 @@ import {
 	parseSheetBalance,
 	setSheetUserBalance,
 } from '../../lib/sheets';
-import { getUserBalance } from '../../lib/users';
+import { createWithdrawal, adminCommission, netAmount } from '../../lib/withdrawals';
+import {
+	getUserBalance,
+	getSheetUserLevel,
+	getUserWallet,
+	canWithdraw,
+} from '../../lib/users';
 
 export const prerender = false;
 
@@ -17,22 +23,22 @@ const MAX_AMOUNT = 100_000_000;
  * Operaciones sobre el saldo acumulado.
  *
  * Recibe JSON: `{ op, amount, to }` y responde `{ ok, message }`.
- * El saldo se modifica de inmediato en Google Sheets.
+ *
+ * - "recargar" y "solicitar" acreditan el saldo de inmediato.
+ * - "retirar" crea una solicitud que debe aprobar el administrador; el saldo
+ *   no se descuenta hasta que él la apruebe.
+ * - "enviar" transfiere saldo entre dos usuarios de la hoja.
  */
 export const POST: APIRoute = async (Astro) => {
 	try {
 		const session = validateSession(Astro.cookies.get('auth_session')?.value);
 		if (!session) {
-			return new Response(JSON.stringify({ ok: false, message: 'Sesión no válida.' }), {
-				status: 401,
-			});
+			return json({ ok: false, message: 'Sesión no válida.' }, 401);
 		}
 
 		const body = await Astro.request.json().catch(() => null);
 		if (!body) {
-			return new Response(JSON.stringify({ ok: false, message: 'Datos inválidos.' }), {
-				status: 400,
-			});
+			return json({ ok: false, message: 'Datos inválidos.' }, 400);
 		}
 
 		const { op, amount, to } = body as { op?: unknown; amount?: unknown; to?: unknown };
@@ -59,15 +65,69 @@ export const POST: APIRoute = async (Astro) => {
 					: json({ ok: false, message: 'No se encontró tu fila en Google Sheets.' }, 404);
 			}
 
-			// --- Retirar: el usuario saca saldo de la plataforma ---
+			// --- Retirar: genera una solicitud para que la apruebe el admin ---
+			// El saldo NO se descuenta aquí: se descuenta cuando el admin aprueba.
+			// La comprobación de nivel y de billetera se hace en el servidor,
+			// que es la única capa que no se puede saltar desde el navegador.
 			case 'retirar': {
-				const ok = await moveBalance(username, value);
-				return ok
-					? json({ ok: true, message: `Retiraste ${fmt(value)} correctamente.` })
-					: json(
-							{ ok: false, message: 'Saldo insuficiente o usuario no encontrado en la hoja.' },
-							400
-						);
+				const level = await getSheetUserLevel(username, session.email);
+				if (!canWithdraw(level)) {
+					return json(
+						{
+							ok: false,
+							message:
+								'Para retirar saldo necesitas alcanzar el nivel Oro. ' +
+								'Tu nivel actual no cumple el requisito.',
+						},
+						403
+					);
+				}
+
+				// Sin billetera registrada no hay a dónde enviar el retiro.
+				const wallet = await getUserWallet(username, session.email);
+				if (!wallet || !wallet.walletType || !wallet.walletNumber) {
+					return json(
+						{
+							ok: false,
+							message:
+								'No tienes una billetera registrada. Actualiza tu medio de pago ' +
+								'desde tu información de cuenta antes de solicitar un retiro.',
+						},
+						400
+					);
+				}
+
+				// El saldo se valida al solicitar para no acumular solicitudes
+				// que el admin no podría aprobar después, pero no se descuenta.
+				const available = await currentBalance(username, session.email);
+				if (value > available) {
+					return json(
+						{
+							ok: false,
+							message: `Saldo insuficiente. Tienes ${fmt(available)} disponibles.`,
+						},
+						400
+					);
+				}
+
+				const request = await createWithdrawal({
+					username,
+					email: session.email,
+					amount: value,
+					commission: adminCommission(value),
+					netAmount: netAmount(value),
+					walletType: wallet.walletType,
+					walletNumber: wallet.walletNumber,
+					level: level ?? '',
+				});
+
+				return json({
+					ok: true,
+					message:
+						`Tu solicitud de retiro por ${fmt(value)} fue enviada al administrador. ` +
+						`Recibirás ${fmt(netAmount(value))} (comisión de ${fmt(adminCommission(value))}). ` +
+						`Referencia: solicitud #${request.id}.`,
+				});
 			}
 
 			// --- Enviar: transfiere saldo a otro usuario registrado ---

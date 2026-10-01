@@ -58,8 +58,81 @@ export function formatBalance(raw: string | null | undefined): string | null {
 	return `$${Math.round(value).toLocaleString('es-CO')}`;
 }
 
-function normalize(value: string | undefined): string {
+function normalize(value: string | null | undefined): string {
 	return (value || '').trim().toLowerCase();
+}
+
+/**
+ * Escala de niveles de Gana Pro: cinco niveles con nombre de piedra precious.
+ *
+ * El orden es de menor a mayor valor: el nivel 1 es la pieza mas basica y el
+ * nivel 5, la de maximo nivel.
+ */
+export const LEVELS = [
+	{ number: 1, name: 'Bronce' },
+	{ number: 2, name: 'Plata' },
+	{ number: 3, name: 'Rubi' },
+	{ number: 4, name: 'Diamante' },
+	{ number: 5, name: 'Oro' },
+] as const;
+
+/** Nivel que exige la plataforma para poder retirar saldo. */
+export const WITHDRAWAL_MIN_LEVEL = 5;
+
+/**
+ * Normaliza cualquier variante escrita a su número de nivel.
+ *
+ * La hoja guarda el nombre ("Oro", "Rubi"...) pero también hay filas antiguas
+ * con los nombres anteriores de metales y con números. Todos se reconocen para
+ * que ningún usuario pierda su nivel al cambiar la escala:
+ *
+ *   metals antiguos  -> nivel actual
+ *   Bronce    -> 1     Plata     -> 2
+ *   Gold     -> 3     Platino   -> 4
+ *
+ * Un valor desconocido devuelve 0 (sin nivel), que nunca habilita un retiro.
+ */
+const LEVEL_ALIASES: Record<string, number> = {
+	// Escala vigente
+	bronce: 1,
+	bronze: 1,
+	plata: 2,
+	silver: 2,
+	rubi: 3,
+	ruby: 3,
+	diamante: 4,
+	oro: 5,
+	// Nombres antiguos, conservados por compatibilidad
+	gold: 3,
+	platinum: 4,
+};
+
+export function toLevelNumber(value: string | null | undefined): number {
+	// Se quitan tildes: "Rubí" y "Rubi" deben ser el mismo nivel.
+	const raw = normalize(value)
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '');
+	if (!raw) return 0;
+
+	// Formato numérico ("1".."5").
+	if (/^\d+$/.test(raw)) {
+		const n = Number(raw);
+		return Number.isFinite(n) && n > 0 ? n : 0;
+	}
+
+	return LEVEL_ALIASES[raw] ?? 0;
+}
+
+/** Nombre del nivel a partir de cualquier valor de la hoja. */
+export function levelName(value: string | null | undefined): string {
+	const n = toLevelNumber(value);
+	return LEVELS.find((l) => l.number === n)?.name ?? '';
+}
+
+/** ¿El usuario puede retirar saldo? Solo desde el nivel requerido. */
+export function canWithdraw(level: string | null | undefined): boolean {
+	const n = toLevelNumber(level);
+	return n >= WITHDRAWAL_MIN_LEVEL;
 }
 
 /**
@@ -137,6 +210,55 @@ export async function getUserBalance(username: string, email: string): Promise<s
 		return balance || null;
 	} catch (err) {
 		console.error('No se pudo obtener el saldo del usuario:', err);
+		return null;
+	}
+}
+
+/**
+ * Nivel registrado en Google Sheets para el usuario conectado.
+ *
+ * Se lee solo de la hoja: si el usuario no aparece allí devuelve `null` y no
+ * se le concede ningún nivel, para que un registro local no habilite retiros.
+ */
+export async function getSheetUserLevel(username: string, email: string): Promise<string | null> {
+	try {
+		const sheetUsers = await getGoogleSheetUsers();
+		const user = sheetUsers.find((u) => isSameUser(u, username, email));
+		if (!user) return null;
+
+		const level = String(user.level ?? '').trim();
+		return level || null;
+	} catch (err) {
+		console.error('No se pudo obtener el nivel del usuario:', err);
+		return null;
+	}
+}
+
+/**
+ * Datos de billetera con los que el usuario cobra un retiro.
+ *
+ * Se leen de la hoja y **no se pueden editar desde el formulario**: el tipo y
+ * el número son los que el usuario registró al abrir su cuenta, para que la
+ * plata salga a la billetera que él mismo definió.
+ */
+export interface UserWallet {
+	walletType: string;
+	walletNumber: string;
+}
+
+export async function getUserWallet(username: string, email: string): Promise<UserWallet | null> {
+	try {
+		const sheetUsers = await getGoogleSheetUsers();
+		const user = sheetUsers.find((u) => isSameUser(u, username, email));
+		if (!user) return null;
+
+		const walletType = String(user.paymentMethod ?? '').trim();
+		const walletNumber = String(user.walletNumber ?? '').trim();
+		if (!walletType && !walletNumber) return null;
+
+		return { walletType, walletNumber };
+	} catch (err) {
+		console.error('No se pudo obtener la billetera del usuario:', err);
 		return null;
 	}
 }

@@ -1,5 +1,5 @@
 ---
-import { formatBalance } from '../lib/users';
+import { formatBalance, canWithdraw } from '../lib/users';
 
 interface Props {
 	/**
@@ -7,14 +7,30 @@ interface Props {
 	 * Si viene vacío o no es un número, el chip no se muestra.
 	 */
 	balance?: string | number | null;
+	/**
+	 * Nivel del usuario en Google Sheets. Si no alcanza el nivel requerido,
+	 * la opción "Retirar" aparece bloqueada con el motivo.
+	 */
+	level?: string | null;
+	/**
+	 * Tipo de billetera y número con los que el usuario cobra. Se muestran
+	 * solo en "Retirar" y son de solo lectura: provienen de la hoja de usuarios.
+	 */
+	walletType?: string | null;
+	walletNumber?: string | null;
 }
 
-const { balance } = Astro.props;
+const { balance, level, walletType, walletNumber } = Astro.props;
 const label = formatBalance(balance == null ? null : String(balance));
+const withdrawalAllowed = canWithdraw(level ?? null);
+
+/** El retiro necesita una billetera registrada para poder pagarse. */
+const hasWallet = Boolean(walletType && walletNumber);
 
 /**
  * Las cuatro operaciones de saldo. `needsRecipient` marca las que piden el
- * usuario de destino (solo "enviar").
+ * usuario de destino (solo "enviar"). `requiresLevel` marca las que exigen
+ * un nivel mínimo, en cuyo caso se desactivan con su motivo visible.
  */
 const OPERATIONS = [
 	{
@@ -23,13 +39,19 @@ const OPERATIONS = [
 		hint: 'Agrega fondos a tu saldo acumulado.',
 		field: 'Monto a recargar',
 		needsRecipient: false,
+		requiresLevel: false,
 	},
 	{
 		id: 'retirar',
 		title: 'Retirar',
-		hint: 'Retira fondos de tu saldo a tu medio de pago.',
+		hint: !withdrawalAllowed
+? 'Disponible solo para nivel Oro.'
+: !hasWallet
+? 'Registra una billetera en tu cuenta para retirar.'
+: 'Solicita un retiro; lo aprueba el administrador.',
 		field: 'Monto a retirar',
 		needsRecipient: false,
+		requiresLevel: true,
 	},
 	{
 		id: 'enviar',
@@ -37,6 +59,7 @@ const OPERATIONS = [
 		hint: 'Transfiere saldo a otro miembro registrado.',
 		field: 'Monto a enviar',
 		needsRecipient: true,
+		requiresLevel: false,
 	},
 	{
 		id: 'solicitar',
@@ -44,6 +67,7 @@ const OPERATIONS = [
 		hint: 'Solicita un incremento de saldo a la plataforma.',
 		field: 'Monto a solicitar',
 		needsRecipient: false,
+		requiresLevel: false,
 	},
 ] as const;
 ---
@@ -51,68 +75,100 @@ const OPERATIONS = [
 {
 	label && (
 		<div class="balance" data-balance>
-			<button
-				type="button"
-				class="balance-chip"
-				data-balance-toggle
-				aria-expanded="false"
-				aria-haspopup="true"
-				title="Saldo acumulado registrado en Google Sheets"
-				aria-label={`Saldo acumulado: ${label}. Opciones de saldo`}
-			>
-				<span class="balance-label">Saldo</span>
-				<span class="balance-value">{label}</span>
-				<svg
-					class="balance-caret"
-					width="12"
-					height="12"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="3"
-					aria-hidden="true"
-				>
-					<polyline points="6 9 12 15 18 9"></polyline>
-				</svg>
-			</button>
+<button
+type="button"
+class="balance-chip"
+data-balance-toggle
+aria-expanded="false"
+aria-haspopup="true"
+title="Saldo acumulado registrado en Google Sheets"
+aria-label={`Saldo acumulado: ${label}. Opciones de saldo`}
+>
+<span class="balance-label">Saldo</span>
+<span class="balance-value">{label}</span>
+<svg
+class="balance-caret"
+width="12"
+height="12"
+viewBox="0 0 24 24"
+fill="none"
+stroke="currentColor"
+stroke-width="3"
+aria-hidden="true"
+>
+<polyline points="6 9 12 15 18 9"></polyline>
+</svg>
+</button>
 
-			<div class="balance-menu" data-balance-menu hidden>
-				<p class="balance-menu-title">Operaciones de saldo</p>
-				{OPERATIONS.map((op) => (
-					<button
-						type="button"
-						class="balance-op"
-						data-op={op.id}
-						data-title={op.title}
-						data-field={op.field}
-						data-hint={op.hint}
-						data-needs-recipient={String(op.needsRecipient)}
-					>
-						<span class="balance-op-title">{op.title}</span>
-						<span class="balance-op-hint">{op.hint}</span>
-					</button>
-				))}
-			</div>
+<div class="balance-menu" data-balance-menu hidden>
+<p class="balance-menu-title">Operaciones de saldo</p>
+{OPERATIONS.map((op) => {
+const locked = op.requiresLevel && !withdrawalAllowed;
+return (
+<button
+type="button"
+class="balance-op"
+class:list={{ locked }}
+data-op={op.id}
+data-title={op.title}
+data-field={op.field}
+data-hint={op.hint}
+data-needs-recipient={String(op.needsRecipient)}
+data-requires-level={String(op.requiresLevel)}
+disabled={locked}
+aria-disabled={locked ? 'true' : undefined}
+>
+<span class="balance-op-title">
+{op.title}
+{locked && <span class="balance-lock" aria-label="Bloqueado">Bloqueado</span>}
+</span>
+<span class="balance-op-hint">{op.hint}</span>
+</button>
+);
+})}
+</div>
 
-			<form class="balance-form" data-balance-form hidden>
-				<h3 class="balance-form-title" data-form-title>Operación</h3>
-				<p class="balance-form-hint" data-form-hint></p>
+<form class="balance-form" data-balance-form hidden data-has-wallet={hasWallet ? '' : undefined}>
+<h3 class="balance-form-title" data-form-title>Operación</h3>
+<p class="balance-form-hint" data-form-hint></p>
 
-				<label class="balance-form-label" data-amount-label>Monto</label>
-				<input type="number" class="balance-input" data-amount min="1" step="1" placeholder="0" required />
+<label class="balance-form-label" data-amount-label>Monto</label>
+<input type="number" class="balance-input" data-amount min="1" step="1" placeholder="0" required />
 
-				<label class="balance-form-label" data-to-label hidden>Usuario que recibe</label>
-				<input type="text" class="balance-input" data-to placeholder="usuario" autocomplete="off" hidden />
+{/* Comisión del administrador: se muestra antes de enviar para que el
+    usuario sepa cuánto recibirá exactamente. */}
+<div class="balance-wallet commission" data-commission hidden>
+<span class="balance-wallet-label">Comisión de la plataforma (5%)</span>
+<span class="balance-net">Recibirás <strong data-net-amount>$0</strong></span>
+<span class="balance-wallet-note">Del monto que elijas se descuenta la comisión al aprobar el retiro.</span>
+</div>
 
-				<p class="balance-form-msg" data-form-msg hidden></p>
+{/* Destino del retiro: viene de la hoja de usuarios y no se edita
+aquí, para que el admin pague a la billetera que el usuario
+mismo registró. */}
+<div class="balance-wallet" data-wallet-box hidden>
+<span class="balance-wallet-label">Se enviará a tu billetera registrada</span>
+<span class="balance-wallet-type">{walletType}</span>
+<span class="balance-wallet-number">
+N.º <strong>{walletNumber}</strong>
+</span>
+<span class="balance-wallet-note">
+El administrador revisa y aprueba tu solicitud antes de enviar el dinero.
+</span>
+</div>
 
-				<div class="balance-form-actions">
-					<button type="button" class="balance-btn ghost" data-cancel>Cancelar</button>
-					<button type="submit" class="balance-btn solid">Confirmar</button>
-				</div>
-			</form>
+<label class="balance-form-label" data-to-label hidden>Usuario que recibe</label>
+<input type="text" class="balance-input" data-to placeholder="usuario" autocomplete="off" hidden />
 
-			<div class="balance-backdrop" data-balance-backdrop hidden></div>
+<p class="balance-form-msg" data-form-msg hidden></p>
+
+<div class="balance-form-actions">
+<button type="button" class="balance-btn ghost" data-cancel>Cancelar</button>
+<button type="submit" class="balance-btn solid">Confirmar</button>
+</div>
+</form>
+
+<div class="balance-backdrop" data-balance-backdrop hidden></div>
 		</div>
 	)
 }
@@ -133,6 +189,12 @@ var toLabel = root.querySelector('[data-to-label]');
 var amountLabel = root.querySelector('[data-amount-label]');
 var formTitle = root.querySelector('[data-form-title]');
 var formHint = root.querySelector('[data-form-hint]');
+var walletBox = root.querySelector('[data-wallet-box]');
+var commissionBox = root.querySelector('[data-commission]');
+var netEl = root.querySelector('[data-net-amount]');
+// El atributo data-has-wallet vive en el <form>, no en el contenedor:
+// consultarlo desde root daba siempre false y la billetera no se mostraba.
+var hasWallet = form ? form.getAttribute('data-has-wallet') !== null : false;
 var msg = root.querySelector('[data-form-msg]');
 var submitBtn = form ? form.querySelector('button[type="submit"]') : null;
 
@@ -181,8 +243,9 @@ btn.addEventListener('click', function (event) {
 event.stopPropagation();
 currentOp = btn.dataset.op || '';
 var needsRecipient = btn.dataset.needsRecipient === 'true';
+var isWithdraw = currentOp === 'retirar';
 
-if (formTitle) formTitle.textContent = btn.dataset.title || 'Operacion';
+if (formTitle) formTitle.textContent = btn.dataset.title || 'Operación';
 if (formHint) formHint.textContent = btn.dataset.hint || '';
 if (amountLabel) amountLabel.textContent = btn.dataset.field || 'Monto';
 
@@ -193,6 +256,10 @@ to.value = '';
 }
 if (toLabel instanceof HTMLElement) toLabel.hidden = !needsRecipient;
 
+// La billetera solo aparece en el retiro, que es donde importa.
+if (walletBox instanceof HTMLElement) walletBox.hidden = !(isWithdraw && hasWallet);
+if (commissionBox instanceof HTMLElement) commissionBox.hidden = !isWithdraw;
+
 amount.value = '';
 amount.focus();
 if (msg instanceof HTMLElement) msg.hidden = true;
@@ -201,6 +268,18 @@ menu.hidden = true;
 form.hidden = false;
 });
 });
+
+// Muestra en vivo cuanto recibe el usuario tras la comision del 5 %.
+var COMMISSION_RATE = 0.05;
+function updateNet() {
+if (!(netEl instanceof HTMLElement)) return;
+var n = Number(amount.value);
+if (!Number.isFinite(n) || n <= 0) { netEl.textContent = '$0'; return; }
+var net = Math.round(n - Math.round(n * COMMISSION_RATE));
+netEl.textContent = '$' + net.toLocaleString('es-CO');
+}
+amount.addEventListener('input', updateNet);
+updateNet();
 
 var cancelBtn = form.querySelector('[data-cancel]');
 if (cancelBtn) cancelBtn.addEventListener('click', closeAll);
@@ -238,13 +317,24 @@ to: to instanceof HTMLInputElement && !to.hidden ? to.value : undefined
 var data = await response.json().catch(function () { return {}; });
 
 if (data && data.ok) {
-showMessage(data.message || 'Operacion realizada.', 'ok');
-setTimeout(function () { window.location.reload(); }, 900);
+showMessage(data.message || 'Operación realizada.', 'ok');
+
+// El retiro no descuenta saldo todavía (lo aprueba el admin), así que solo
+// recargamos cuando el saldo pudo cambiar de verdad. En cualquier caso se
+// espera a que el usuario lea el mensaje antes de cerrar el panel.
+var reload = currentOp !== 'retirar';
+setTimeout(function () {
+if (reload) {
+window.location.reload();
 } else {
-showMessage((data && data.message) || 'No se pudo completar la operacion.', 'error');
+closeAll();
+}
+}, 1800);
+} else {
+showMessage((data && data.message) || 'No se pudo completar la operación.', 'error');
 }
 } catch (err) {
-showMessage('Error de conexion. Intentalo de nuevo.', 'error');
+showMessage('Error de conexión. Inténtalo de nuevo.', 'error');
 } finally {
 if (submitBtn instanceof HTMLButtonElement) submitBtn.disabled = false;
 }
@@ -377,6 +467,35 @@ document.addEventListener('astro:page-load', initBalanceMenus);
 		color: var(--text-secondary);
 	}
 
+	/* Opción bloqueada por nivel insuficiente: se ve, pero no es clicable y
+	   explica por qué, para que el usuario sepa qué le falta. */
+	.balance-op.locked,
+	.balance-op[disabled] {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.balance-op.locked:hover,
+	.balance-op[disabled]:hover {
+		background: transparent;
+	}
+
+	.balance-lock {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 2px 7px;
+		border-radius: 999px;
+		border: 1px solid var(--gold-border);
+		background: rgba(212, 175, 55, 0.14);
+		font-family: 'Montserrat', sans-serif;
+		font-size: 0.6rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+		vertical-align: middle;
+	}
+
 	/* ---------- Formulario ---------- */
 	.balance-form {
 		min-width: 300px;
@@ -446,6 +565,62 @@ document.addEventListener('astro:page-load', initBalanceMenus);
 		border: 1px solid rgba(239, 68, 68, 0.4);
 	}
 
+	/* ---------- Destino del retiro (billetera) ---------- */
+	.balance-wallet {
+		display: grid;
+		gap: 3px;
+		margin: 0 0 12px;
+		padding: 11px 13px;
+		border-radius: 10px;
+		background: rgba(212, 175, 55, 0.08);
+		border: 1px dashed var(--gold-border);
+	}
+
+	.balance-wallet[hidden] {
+		display: none;
+	}
+
+	/* Bloque de la comisión: verde para el neto que recibe el usuario. */
+	.balance-net {
+		font-size: 0.86rem;
+		color: var(--text-primary);
+	}
+
+	.balance-net strong {
+		font-family: 'Cinzel', Georgia, serif;
+		font-size: 1rem;
+		font-weight: 800;
+		color: #10b981;
+	}
+
+	.balance-wallet-label {
+		font-size: 0.66rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.balance-wallet-type {
+		font-family: 'Cinzel', Georgia, serif;
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+	}
+
+	.balance-wallet-number {
+		font-size: 0.84rem;
+		color: var(--text-primary);
+		letter-spacing: 0.04em;
+	}
+
+	.balance-wallet-note {
+		margin-top: 5px;
+		font-size: 0.72rem;
+		line-height: 1.4;
+		color: var(--text-secondary);
+	}
+
 	.balance-form-actions {
 		display: flex;
 		gap: 8px;
@@ -501,31 +676,31 @@ document.addEventListener('astro:page-load', initBalanceMenus);
 	   fuera de pantalla, así que se queda solo la cifra. */
 	@media (max-width: 480px) {
 		.balance-chip {
-			padding: 6px 11px;
-			gap: 0;
+padding: 6px 11px;
+gap: 0;
 		}
 
 		.balance-label {
-			display: none;
+display: none;
 		}
 
 		.balance-value {
-			font-size: 0.82rem;
+font-size: 0.82rem;
 		}
 
 		.balance-caret {
-			display: none;
+display: none;
 		}
 
 		/* En móvil el panel se ancla abajo para que el teclado no lo tape. */
 		.balance-menu,
 		.balance-form {
-			position: fixed;
-			left: 12px;
-			right: 12px;
-			top: auto;
-			bottom: 12px;
-			min-width: 0;
+position: fixed;
+left: 12px;
+right: 12px;
+top: auto;
+bottom: 12px;
+min-width: 0;
 		}
 	}
 </style>

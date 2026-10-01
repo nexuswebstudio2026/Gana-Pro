@@ -4,7 +4,7 @@ import Logo from './Logo.astro';
 import BalanceChip from './BalanceChip.astro';
 import DashboardSidebar from './DashboardSidebar.astro';
 import Footer from './Footer.astro';
-import { getUserBalance } from '../lib/users';
+import { getUserBalance, getSheetUserLevel, getUserWallet } from '../lib/users';
 import type { Session } from '../lib/session';
 
 interface Props {
@@ -21,8 +21,21 @@ const roleLabel = session.role || 'Admin';
 // Saldo acumulado del administrador, verificado contra Google Sheets.
 // Si no esta registrado alli o la hoja falla, el chip no se muestra.
 let balance: string | null = null;
+let userLevel: string | null = null;
+let walletType: string | null = null;
+let walletNumber: string | null = null;
 try {
 	balance = await getUserBalance(session.username, session.email);
+
+	// Nivel en la hoja: decide si la opcion "Retirar" aparece bloqueada.
+	userLevel = await getSheetUserLevel(session.username, session.email);
+	
+	// Billetera de destino: se muestra en el formulario de retiro.
+	const wallet = await getUserWallet(session.username, session.email);
+	if (wallet) {
+		walletType = wallet.walletType || null;
+		walletNumber = wallet.walletNumber || null;
+	}
 } catch (e) {
 	console.error('No se pudo obtener el saldo en el panel:', e);
 }
@@ -60,7 +73,7 @@ try {
 					</div>
 					<div class="header-actions">
 						<ThemeToggle />
-						<BalanceChip balance={balance} />
+						<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} />
 						<div class="user-chip">
 							<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
 							<div class="user-meta"><span class="user-name">{session.username}</span><span class="user-badge">{roleLabel}</span></div>

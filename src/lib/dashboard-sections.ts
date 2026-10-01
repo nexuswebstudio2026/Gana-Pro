@@ -14,6 +14,11 @@ export const DASHBOARD_PAGES = {
 		eyebrow: 'Gana Pro',
 		description: 'Administra la información de las cuentas registradas en la plataforma.',
 	},
+	retiros: {
+		title: 'Solicitudes de Retiro',
+		eyebrow: 'Revisión del administrador',
+		description: 'Aprueba o rechaza las solicitudes de retiro enviadas por los miembros.',
+	},
 	ingresos: {
 		title: 'Ingresos',
 		eyebrow: 'Contabilidad',

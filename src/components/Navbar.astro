@@ -3,7 +3,7 @@ import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
 import BalanceChip from './BalanceChip.astro';
 import { validateSession } from '../lib/session';
-import { getUserBalance } from '../lib/users';
+import { getUserBalance, getSheetUserLevel, getUserWallet } from '../lib/users';
 
 interface Props {
 	title?: string;
@@ -20,9 +20,15 @@ const initial = username ? username.charAt(0).toUpperCase() : '';
 // conectado aparece en la hoja: si no está registrado allí, no se inventa
 // ninguna cifra. Un fallo de Sheets tampoco rompe la navegación.
 let balance: string | null = null;
+let userLevel: string | null = null;
+let walletType: string | null = null;
+let walletNumber: string | null = null;
 if (username) {
 	try {
 		balance = await getUserBalance(session!.username, session!.email);
+		userLevel = await getSheetUserLevel(session!.username, session!.email);
+			const wallet = await getUserWallet(session!.username, session!.email);
+			if (wallet) { walletType = wallet.walletType || null; walletNumber = wallet.walletNumber || null; }
 	} catch (e) {
 		console.error('No se pudo mostrar el saldo en la barra:', e);
 	}
@@ -49,7 +55,7 @@ if (username) {
 
 		<div class="nav-actions">
 			<ThemeToggle />
-			<BalanceChip balance={balance} />
+			<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} />
 			{username ? (
 				<a
 					href="/dashboard"
