@@ -2,14 +2,34 @@
 > teal-shell@0.0.1 dev
 > astro dev
 
-Another astro dev server is already running.
-
-  URL:  http://localhost:4321
-  PID:  17844
-
-Run `astro dev stop` to stop it, or use `astro dev --force` to replace it.
-  [1mLocation:[22m
-    [4mC:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\astro\dist\cli\dev\index.js:156:13[24m
-  [1mStack trace:[22m
-[2m    at dev (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/cli/dev/index.js:156:13)
-    at async runCommand (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/cli/index.js:183:22)[22m
+[2m20:51:51[22m [34m[vite][39m connected.
+[2m20:51:51[22m [34m[types][39m Generated [2m2ms[22m
+[2m20:51:51[22m [34m[vite][39m connected.
+[2m20:51:51[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[42m[1m astro [22m[49m [32mv7.3.5[39m [2mready in[22m 1099 [2mms[22m
+[2m┃[22m Local    [36mhttp://localhost:4321/[39m
+[2m┃[22m Network  [2muse --host to expose[22m
+[2m20:51:51[22m [32mwatching for file changes...[39m
+[2m20:51:59[22m [33m[303][39m [33mPOST[39m /api/logout [2m9ms[22m
+[2m20:51:59[22m [34m[200][39m /login [2m49ms[22m
+[2m20:52:13[22m [33m[303][39m /dashboard [2m14ms[22m
+[2m20:52:13[22m [34m[200][39m /login [2m3ms[22m
+[2m20:52:14[22m [33m[303][39m [33mPOST[39m /api/login [2m1049ms[22m
+[2m20:52:15[22m [34m[200][39m /dashboard [2m486ms[22m
+[2m20:52:19[22m [33m[303][39m /dashboard [2m3ms[22m
+[2m20:52:42[22m [34m[200][39m /dashboard [2m861ms[22m
+[2m20:53:05[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m20:53:07[22m [34m[200][39m /dashboard [2m1132ms[22m
+[2m20:53:27[22m [34m[200][39m [34mPOST[39m /api/balance [2m2770ms[22m
+[2m20:53:28[22m [34m[200][39m /dashboard [2m518ms[22m
+[2m20:54:15[22m [33m[303][39m /dashboard [2m3ms[22m
+[2m20:54:15[22m [34m[200][39m /login [2m12ms[22m
+[2m20:54:57[22m [34m[200][39m / [2m60ms[22m
+[2m20:55:15[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m20:55:16[22m [34m[200][39m /dashboard [2m967ms[22m
+[2m20:56:06[22m [34m[200][39m / [2m19ms[22m
+[2m20:56:08[22m [34m[200][39m / [2m4ms[22m
+[2m20:56:21[22m [33m[303][39m /dashboard [2m2ms[22m
+[2m20:56:21[22m [34m[200][39m /login [2m12ms[22m
+[2m20:57:57[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m20:57:59[22m [34m[200][39m /dashboard [2m1004ms[22m
