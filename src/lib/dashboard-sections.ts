@@ -14,6 +14,11 @@ export const DASHBOARD_PAGES = {
 		eyebrow: 'Gana Pro',
 		description: 'Administra la información de las cuentas registradas en la plataforma.',
 	},
+	recargas: {
+		title: 'Solicitudes de Recarga',
+		eyebrow: 'Revisión del administrador',
+		description: 'Compara el monto solicitado con el comprobante y aprueba la recarga.',
+	},
 	retiros: {
 		title: 'Solicitudes de Retiro',
 		eyebrow: 'Revisión del administrador',

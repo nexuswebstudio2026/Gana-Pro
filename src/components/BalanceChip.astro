@@ -18,9 +18,22 @@ interface Props {
 	 */
 	walletType?: string | null;
 	walletNumber?: string | null;
+	/**
+	 * Billetera del ADMINISTRADOR, a la que el usuario debe transferir al
+	 * recargar. Es la que se muestra en el formulario de recarga.
+	 */
+	adminWalletType?: string | null;
+	adminWalletNumber?: string | null;
 }
 
-const { balance, level, walletType, walletNumber } = Astro.props;
+const {
+	balance,
+	level,
+	walletType,
+	walletNumber,
+	adminWalletType,
+	adminWalletNumber,
+} = Astro.props;
 const label = formatBalance(balance == null ? null : String(balance));
 const withdrawalAllowed = canWithdraw(level ?? null);
 
@@ -36,7 +49,7 @@ const OPERATIONS = [
 	{
 		id: 'recargar',
 		title: 'Recargar',
-		hint: 'Agrega fondos a tu saldo acumulado.',
+		hint: 'Envía tu comprobante y el administrador aprueba la recarga.',
 		field: 'Monto a recargar',
 		needsRecipient: false,
 		requiresLevel: false,
@@ -143,6 +156,28 @@ aria-disabled={locked ? 'true' : undefined}
 <span class="balance-wallet-note">Del monto que elijas se descuenta la comisión al aprobar el retiro.</span>
 </div>
 
+{/* Recarga: la billetera del ADMIN, a la que se debe transferir, y el
+    comprobante que valida el monto. */}
+<div class="balance-wallet admin" data-topup-box hidden>
+<span class="balance-wallet-label">Transfiere a esta billetera</span>
+<span class="balance-wallet-type">{adminWalletType || 'Billetera del administrador'}</span>
+<span class="balance-wallet-number">
+N.º <strong>{adminWalletNumber || 'No configurada'}</strong>
+</span>
+
+<label class="balance-form-label" for="topup-receipt">Comprobante de la transferencia</label>
+<input
+type="file"
+class="balance-input balance-file"
+id="topup-receipt"
+data-receipt
+accept="image/jpeg,image/png,image/webp,application/pdf"
+/>
+<span class="balance-wallet-note">
+El administrador compara el monto con tu comprobante antes de acreditarlo.
+</span>
+</div>
+
 {/* Destino del retiro: viene de la hoja de usuarios y no se edita
 aquí, para que el admin pague a la billetera que el usuario
 mismo registró. */}
@@ -191,6 +226,8 @@ var formTitle = root.querySelector('[data-form-title]');
 var formHint = root.querySelector('[data-form-hint]');
 var walletBox = root.querySelector('[data-wallet-box]');
 var commissionBox = root.querySelector('[data-commission]');
+var topupBox = root.querySelector('[data-topup-box]');
+var receiptInput = root.querySelector('[data-receipt]');
 var netEl = root.querySelector('[data-net-amount]');
 // El atributo data-has-wallet vive en el <form>, no en el contenedor:
 // consultarlo desde root daba siempre false y la billetera no se mostraba.
@@ -259,6 +296,15 @@ if (toLabel instanceof HTMLElement) toLabel.hidden = !needsRecipient;
 // La billetera solo aparece en el retiro, que es donde importa.
 if (walletBox instanceof HTMLElement) walletBox.hidden = !(isWithdraw && hasWallet);
 if (commissionBox instanceof HTMLElement) commissionBox.hidden = !isWithdraw;
+		// La recarga necesita el comprobante; el resto de operaciones no.
+			var isTopup = currentOp === 'recargar';
+			if (topupBox instanceof HTMLElement) topupBox.hidden = !isTopup;
+			// El comprobante es obligatorio para recargar: se marca como
+			// requerido solo en ese caso para que el navegador lo exija.
+			if (receiptInput instanceof HTMLInputElement) {
+				receiptInput.value = '';
+				receiptInput.required = isTopup;
+			}
 
 amount.value = '';
 amount.focus();
@@ -305,7 +351,19 @@ return;
 if (submitBtn instanceof HTMLButtonElement) submitBtn.disabled = true;
 
 try {
-var response = await fetch('/api/balance', {
+// La recarga envía el comprobante en multipart; el resto, JSON.
+var url = '/api/balance';
+var options;
+if (currentOp === 'recargar') {
+url = '/api/balance/topup';
+var fd = new FormData();
+fd.append('amount', String(value));
+if (receiptInput instanceof HTMLInputElement && receiptInput.files && receiptInput.files[0]) {
+fd.append('receipt', receiptInput.files[0]);
+}
+options = { method: 'POST', body: fd };
+} else {
+options = {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
@@ -313,7 +371,10 @@ op: currentOp,
 amount: value,
 to: to instanceof HTMLInputElement && !to.hidden ? to.value : undefined
 })
-});
+};
+}
+
+var response = await fetch(url, options);
 var data = await response.json().catch(function () { return {}; });
 
 if (data && data.ok) {
@@ -322,7 +383,8 @@ showMessage(data.message || 'Operación realizada.', 'ok');
 // El retiro no descuenta saldo todavía (lo aprueba el admin), así que solo
 // recargamos cuando el saldo pudo cambiar de verdad. En cualquier caso se
 // espera a que el usuario lea el mensaje antes de cerrar el panel.
-var reload = currentOp !== 'retirar';
+// Ni recarga ni retiro acreditan al instante: ambos espera aprobacion.
+var reload = currentOp !== 'retirar' && currentOp !== 'recargar';
 setTimeout(function () {
 if (reload) {
 window.location.reload();
@@ -591,6 +653,30 @@ document.addEventListener('astro:page-load', initBalanceMenus);
 		font-size: 1rem;
 		font-weight: 800;
 		color: #10b981;
+	}
+
+	.balance-wallet.admin {
+		border-style: solid;
+	}
+
+	/* Campo de archivo del comprobante. */
+	.balance-file {
+		font-size: 0.76rem;
+		padding: 8px 10px;
+		cursor: pointer;
+	}
+
+	.balance-file::file-selector-button {
+		margin-right: 10px;
+		padding: 6px 12px;
+		border: 0;
+		border-radius: 8px;
+		background: var(--gold-primary);
+		color: #10233f;
+		font: inherit;
+		font-size: 0.74rem;
+		font-weight: 700;
+		cursor: pointer;
 	}
 
 	.balance-wallet-label {

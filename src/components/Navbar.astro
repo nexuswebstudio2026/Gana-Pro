@@ -3,7 +3,7 @@ import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
 import BalanceChip from './BalanceChip.astro';
 import { validateSession } from '../lib/session';
-import { getUserBalance, getSheetUserLevel, getUserWallet } from '../lib/users';
+import { getUserBalance, getSheetUserLevel, getUserWallet, getAdminWallet } from '../lib/users';
 
 interface Props {
 	title?: string;
@@ -23,12 +23,17 @@ let balance: string | null = null;
 let userLevel: string | null = null;
 let walletType: string | null = null;
 let walletNumber: string | null = null;
+let adminWalletType: string | null = null;
+let adminWalletNumber: string | null = null;
 if (username) {
 	try {
 		balance = await getUserBalance(session!.username, session!.email);
 		userLevel = await getSheetUserLevel(session!.username, session!.email);
-			const wallet = await getUserWallet(session!.username, session!.email);
-			if (wallet) { walletType = wallet.walletType || null; walletNumber = wallet.walletNumber || null; }
+		const wallet = await getUserWallet(session!.username, session!.email);
+		if (wallet) { walletType = wallet.walletType || null; walletNumber = wallet.walletNumber || null; }
+		// Billetera del admin: es a la que se transfiere para recargar.
+		const adminWallet = await getAdminWallet();
+		if (adminWallet) { adminWalletType = adminWallet.walletType || null; adminWalletNumber = adminWallet.walletNumber || null; }
 	} catch (e) {
 		console.error('No se pudo mostrar el saldo en la barra:', e);
 	}
@@ -55,7 +60,7 @@ if (username) {
 
 		<div class="nav-actions">
 			<ThemeToggle />
-			<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} />
+			<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} adminWalletType={adminWalletType} adminWalletNumber={adminWalletNumber} />
 			{username ? (
 				<a
 					href="/dashboard"

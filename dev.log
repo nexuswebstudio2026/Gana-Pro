@@ -33,3 +33,659 @@
 [2m20:56:21[22m [34m[200][39m /login [2m12ms[22m
 [2m20:57:57[22m [34m[watch][39m src/components/BalanceChip.astro
 [2m20:57:59[22m [34m[200][39m /dashboard [2m1004ms[22m
+[2m21:05:14[22m [34m[200][39m /dashboard [2m916ms[22m
+[2m21:05:21[22m [34m[200][39m /dashboard [2m830ms[22m
+[2m21:05:27[22m [34m[200][39m /dashboard [2m852ms[22m
+[2m21:05:35[22m [34m[200][39m /dashboard [2m919ms[22m
+[2m21:05:46[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:05:48[22m [34m[200][39m /dashboard [2m993ms[22m
+[2m21:05:54[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:05:56[22m [34m[200][39m /dashboard [2m912ms[22m
+[2m21:06:04[22m [34m[watch][39m /src/components/BalanceChip.astro?astro&type=style&index=0&lang.css
+[2m21:06:12[22m [34m[watch][39m /src/pages/dashboard.astro?astro&type=style&index=0&lang.css
+[2m21:06:13[22m [34m[200][39m /dashboard [2m818ms[22m
+[2m21:06:30[22m [34m[200][39m /dashboard [2m1005ms[22m
+[2m21:06:39[22m [34m[200][39m /dashboard [2m887ms[22m
+[2m21:10:34[22m [34m[200][39m /dashboard [2m1035ms[22m
+[2m21:10:57[22m [34m[200][39m /dashboard [2m1302ms[22m
+[2m21:11:06[22m [34m[200][39m [34mPOST[39m /api/balance [2m1604ms[22m
+[2m21:11:07[22m [34m[200][39m /dashboard [2m428ms[22m
+[2m21:14:29[22m [34m[200][39m /dashboard [2m1290ms[22m
+[2m21:14:42[22m [34m[200][39m /dashboard [2m1156ms[22m
+[2m21:14:52[22m [34m[200][39m /dashboard [2m899ms[22m
+[2m21:14:59[22m [34m[200][39m /dashboard [2m836ms[22m
+[2m21:15:15[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:15:17[22m [34m[200][39m /dashboard [2m967ms[22m
+[2m21:15:23[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:15:25[22m [34m[200][39m /dashboard [2m892ms[22m
+[2m21:15:32[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:15:34[22m [34m[200][39m /dashboard [2m1008ms[22m
+[2m21:15:45[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:15:48[22m [34m[200][39m /dashboard [2m1646ms[22m
+[2m21:15:52[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:15:54[22m [34m[200][39m /dashboard [2m1182ms[22m
+[2m21:16:09[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:16:11[22m [34m[200][39m /dashboard [2m1383ms[22m
+[2m21:16:14[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:16:15[22m [34m[200][39m /dashboard [2m522ms[22m
+[2m21:16:19[22m [34m[watch][39m src/components/BalanceChip.astro
+[31m[1m21:16:20[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m21:16:25[22m [34m[watch][39m src/components/BalanceChip.astro
+[31m[1m21:16:26[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:16:43[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:16:53[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:16:59[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m21:17:04[22m [34m[watch][39m /src/pages/dashboard.astro?astro&type=style&index=0&lang.css
+[31m[1m21:17:04[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:17:49[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m21:18:10[22m [34m[watch][39m src/components/DashboardSidebar.astro
+[31m[1m21:18:11[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:18:26[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:18:38[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:19:15[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:19:33[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:19:40[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:21:56[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:22:08[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:22:14[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:22:37[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:22:52[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:23:02[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:23:12[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:23:38[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:23:50[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m21:25:05[22m [34m[watch][39m src/components/BalanceChip.astro
+[31m[1m21:25:07[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:25:07[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:132:33
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m21:25:07[22m [ERROR][39m [31m[CompilerError][39m Unterminated string
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m21:25:18[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:25:20[22m [34m[200][39m /dashboard [2m1117ms[22m
+[2m21:25:24[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:25:26[22m [34m[200][39m /dashboard [2m817ms[22m
+[2m21:25:36[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:25:38[22m [34m[200][39m /dashboard [2m838ms[22m
+[2m21:29:59[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:30:01[22m [34m[200][39m /dashboard [2m1600ms[22m
+[2m21:30:35[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:30:37[22m [34m[200][39m /dashboard [2m870ms[22m
+[2m21:36:06[22m [34m[200][39m /dashboard [2m1076ms[22m
+[2m21:36:14[22m [34m[200][39m /dashboard [2m952ms[22m
+[2m21:36:30[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:36:31[22m [34m[200][39m /dashboard [2m862ms[22m
+[2m21:37:47[22m [34m[200][39m /dashboard [2m1036ms[22m
+[2m21:41:51[22m [34m[200][39m /dashboard [2m1227ms[22m
+[2m21:41:59[22m [34m[200][39m /dashboard [2m1021ms[22m
+[2m21:42:05[22m [34m[200][39m /dashboard [2m953ms[22m
+[2m21:42:24[22m [34m[200][39m /dashboard [2m939ms[22m
+[2m21:42:40[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:42:42[22m [34m[200][39m /dashboard [2m812ms[22m
+[2m21:42:51[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:42:52[22m [34m[200][39m /dashboard [2m939ms[22m
+[2m21:43:10[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:43:11[22m [34m[200][39m /dashboard [2m884ms[22m
+[2m21:44:00[22m [34m[200][39m /dashboard [2m1019ms[22m
+[2m21:44:11[22m [34m[200][39m /dashboard [2m897ms[22m
+[2m21:44:21[22m [33m[303][39m [33mPOST[39m /api/logout [2m192ms[22m
+[2m21:44:21[22m [34m[200][39m /login [2m459ms[22m
+[2m21:44:32[22m [33m[303][39m [33mPOST[39m /api/login [2m980ms[22m
+[2m21:44:32[22m [34m[200][39m /dashboard [2m457ms[22m
+[2m21:46:52[22m [34m[200][39m /dashboard [2m1040ms[22m
+[2m21:52:29[22m [34m[200][39m /dashboard [2m1355ms[22m
+[2m21:52:40[22m [34m[200][39m /dashboard [2m966ms[22m
+[2m21:53:55[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:53:57[22m [34m[200][39m /dashboard [2m941ms[22m
+[2m21:54:05[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:54:06[22m [34m[200][39m /dashboard [2m963ms[22m
+[2m21:54:12[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:54:14[22m [34m[200][39m /dashboard [2m849ms[22m
+[2m21:54:20[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m21:54:22[22m [34m[200][39m /dashboard [2m883ms[22m
+[2m21:54:28[22m [34m[watch][39m /src/components/BalanceChip.astro?astro&type=style&index=0&lang.css
+[2m22:07:09[22m [34m[200][39m /dashboard [2m2387ms[22m
+Error al leer de Google Sheets: GaxiosError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+    at Gaxios._request (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\gaxios\src\gaxios.ts:229:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\getToken.js:52:26)
+    at async TokenHandler.getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\tokenHandler.js:83:27)
+    at async JWT.refreshTokenNoCache (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\jwtclient.js:189:23)
+    at async JWT.getRequestMetadataAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:372:17)
+    at async JWT.requestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:457:23)
+    at async createAPIRequestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\googleapis-common\build\src\apirequest.js:312:25)
+    at async getGoogleSheetUsers (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:146:20)
+    at async eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:39:17) {
+  config: {
+    method: 'POST',
+    url: URL {
+      href: 'https://oauth2.googleapis.com/token',
+      origin: 'https://oauth2.googleapis.com',
+      protocol: 'https:',
+      username: '',
+      password: '',
+      host: 'oauth2.googleapis.com',
+      hostname: 'oauth2.googleapis.com',
+      port: '',
+      pathname: '/token',
+      search: '',
+      searchParams: URLSearchParams {},
+      hash: ''
+    },
+    data: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    responseType: 'json',
+    retryConfig: {
+      httpMethodsToRetry: [Array],
+      currentRetryAttempt: 2,
+      retry: 3,
+      noResponseRetries: 2,
+      retryDelayMultiplier: 2,
+      timeOfFirstRequest: 1790824246781,
+      totalTimeout: 9007199254740991,
+      maxRetryDelay: 9007199254740991,
+      statusCodesToRetry: [Array]
+    },
+    body: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor],
+    duplex: 'half',
+    headers: Headers {
+      accept: 'application/json',
+      'x-goog-api-client': 'gl-node/24.19.0',
+      'User-Agent': 'google-api-nodejs-client/11.1.0'
+    }
+  },
+  response: undefined,
+  code: 'ENOTFOUND',
+  status: undefined,
+  error: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  },
+  Symbol(gaxios-gaxios-error): '7.3.1',
+  [cause]: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  }
+}
+Error fetching user detail in dashboard: GaxiosError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+    at Gaxios._request (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\gaxios\src\gaxios.ts:229:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\getToken.js:52:26)
+    at async TokenHandler.getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\tokenHandler.js:83:27)
+    at async JWT.refreshTokenNoCache (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\jwtclient.js:189:23)
+    at async JWT.getRequestMetadataAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:372:17)
+    at async JWT.requestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:457:23)
+    at async createAPIRequestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\googleapis-common\build\src\apirequest.js:312:25)
+    at async getGoogleSheetUsers (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:146:20)
+    at async eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:39:17) {
+  config: {
+    method: 'POST',
+    url: URL {
+      href: 'https://oauth2.googleapis.com/token',
+      origin: 'https://oauth2.googleapis.com',
+      protocol: 'https:',
+      username: '',
+      password: '',
+      host: 'oauth2.googleapis.com',
+      hostname: 'oauth2.googleapis.com',
+      port: '',
+      pathname: '/token',
+      search: '',
+      searchParams: URLSearchParams {},
+      hash: ''
+    },
+    data: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    responseType: 'json',
+    retryConfig: {
+      httpMethodsToRetry: [Array],
+      currentRetryAttempt: 2,
+      retry: 3,
+      noResponseRetries: 2,
+      retryDelayMultiplier: 2,
+      timeOfFirstRequest: 1790824246781,
+      totalTimeout: 9007199254740991,
+      maxRetryDelay: 9007199254740991,
+      statusCodesToRetry: [Array]
+    },
+    body: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor],
+    duplex: 'half',
+    headers: Headers {
+      accept: 'application/json',
+      'x-goog-api-client': 'gl-node/24.19.0',
+      'User-Agent': 'google-api-nodejs-client/11.1.0'
+    }
+  },
+  response: undefined,
+  code: 'ENOTFOUND',
+  status: undefined,
+  error: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  },
+  Symbol(gaxios-gaxios-error): '7.3.1',
+  [cause]: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  }
+}
+[2m22:10:47[22m [34m[200][39m /dashboard [2m838ms[22m
+Error al leer de Google Sheets: GaxiosError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+    at Gaxios._request (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\gaxios\src\gaxios.ts:229:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\getToken.js:52:26)
+    at async TokenHandler.getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\tokenHandler.js:83:27)
+    at async JWT.refreshTokenNoCache (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\jwtclient.js:189:23)
+    at async JWT.getRequestMetadataAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:372:17)
+    at async JWT.requestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:457:23)
+    at async createAPIRequestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\googleapis-common\build\src\apirequest.js:312:25)
+    at async getGoogleSheetUsers (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:146:20)
+    at async eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:39:17) {
+  config: {
+    method: 'POST',
+    url: URL {
+      href: 'https://oauth2.googleapis.com/token',
+      origin: 'https://oauth2.googleapis.com',
+      protocol: 'https:',
+      username: '',
+      password: '',
+      host: 'oauth2.googleapis.com',
+      hostname: 'oauth2.googleapis.com',
+      port: '',
+      pathname: '/token',
+      search: '',
+      searchParams: URLSearchParams {},
+      hash: ''
+    },
+    data: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    responseType: 'json',
+    retryConfig: {
+      httpMethodsToRetry: [Array],
+      currentRetryAttempt: 2,
+      retry: 3,
+      noResponseRetries: 2,
+      retryDelayMultiplier: 2,
+      timeOfFirstRequest: 1790824526605,
+      totalTimeout: 9007199254740991,
+      maxRetryDelay: 9007199254740991,
+      statusCodesToRetry: [Array]
+    },
+    body: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor],
+    duplex: 'half',
+    headers: Headers {
+      accept: 'application/json',
+      'x-goog-api-client': 'gl-node/24.19.0',
+      'User-Agent': 'google-api-nodejs-client/11.1.0'
+    }
+  },
+  response: undefined,
+  code: 'ENOTFOUND',
+  status: undefined,
+  error: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  },
+  Symbol(gaxios-gaxios-error): '7.3.1',
+  [cause]: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  }
+}
+Error fetching user detail in dashboard: GaxiosError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+    at Gaxios._request (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\gaxios\src\gaxios.ts:229:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\getToken.js:52:26)
+    at async TokenHandler.getToken (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\gtoken\tokenHandler.js:83:27)
+    at async JWT.refreshTokenNoCache (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\jwtclient.js:189:23)
+    at async JWT.getRequestMetadataAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:372:17)
+    at async JWT.requestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\google-auth-library\build\src\auth\oauth2client.js:457:23)
+    at async createAPIRequestAsync (C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\node_modules\googleapis-common\build\src\apirequest.js:312:25)
+    at async getGoogleSheetUsers (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:146:20)
+    at async eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:39:17) {
+  config: {
+    method: 'POST',
+    url: URL {
+      href: 'https://oauth2.googleapis.com/token',
+      origin: 'https://oauth2.googleapis.com',
+      protocol: 'https:',
+      username: '',
+      password: '',
+      host: 'oauth2.googleapis.com',
+      hostname: 'oauth2.googleapis.com',
+      port: '',
+      pathname: '/token',
+      search: '',
+      searchParams: URLSearchParams {},
+      hash: ''
+    },
+    data: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    responseType: 'json',
+    retryConfig: {
+      httpMethodsToRetry: [Array],
+      currentRetryAttempt: 2,
+      retry: 3,
+      noResponseRetries: 2,
+      retryDelayMultiplier: 2,
+      timeOfFirstRequest: 1790824526605,
+      totalTimeout: 9007199254740991,
+      maxRetryDelay: 9007199254740991,
+      statusCodesToRetry: [Array]
+    },
+    body: URLSearchParams {
+      'grant_type' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.',
+      'assertion' => '<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.' },
+    validateStatus: [Function: validateStatus],
+    errorRedactor: [Function: defaultErrorRedactor],
+    duplex: 'half',
+    headers: Headers {
+      accept: 'application/json',
+      'x-goog-api-client': 'gl-node/24.19.0',
+      'User-Agent': 'google-api-nodejs-client/11.1.0'
+    }
+  },
+  response: undefined,
+  code: 'ENOTFOUND',
+  status: undefined,
+  error: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  },
+  Symbol(gaxios-gaxios-error): '7.3.1',
+  [cause]: FetchError: request to https://oauth2.googleapis.com/token failed, reason: getaddrinfo ENOTFOUND oauth2.googleapis.com
+      at ClientRequest.<anonymous> (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/gaxios/node_modules/node-fetch/src/index.js:108:11)
+      at ClientRequest.emit (node:events:521:24)
+      at emitErrorEvent (node:_http_client:112:11)
+      at TLSSocket.socketErrorListener (node:_http_client:745:5)
+      at TLSSocket.emit (node:events:509:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    type: 'system',
+    errno: 'ENOTFOUND',
+    code: 'ENOTFOUND',
+    erroredSysCall: 'getaddrinfo'
+  }
+}
+[2m22:15:27[22m [34m[200][39m /dashboard [2m662ms[22m
+[2m22:16:05[22m [34m[200][39m /dashboard [2m1305ms[22m
+[2m22:18:15[22m [34m[200][39m /dashboard [2m1413ms[22m
+[2m22:24:07[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:24:09[22m [34m[200][39m /dashboard [2m1291ms[22m
+[2m22:24:16[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:24:17[22m [34m[200][39m /dashboard [2m892ms[22m
+[2m22:24:25[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:24:27[22m [34m[200][39m /dashboard [2m920ms[22m
+[2m22:24:41[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:24:43[22m [34m[200][39m /dashboard [2m899ms[22m
+[2m22:24:51[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:24:53[22m [34m[200][39m /dashboard [2m923ms[22m
+[2m22:25:07[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:25:08[22m [34m[200][39m /dashboard [2m1061ms[22m
+[2m22:25:14[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:25:16[22m [34m[200][39m /dashboard [2m940ms[22m
+[2m22:25:28[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:25:30[22m [34m[200][39m /dashboard [2m937ms[22m
+[2m22:25:48[22m [34m[200][39m /dashboard [2m867ms[22m
+[2m22:25:57[22m [34m[watch][39m /src/components/BalanceChip.astro?astro&type=style&index=0&lang.css
+[2m22:30:37[22m [34m[200][39m /dashboard [2m1608ms[22m
+[2m22:31:48[22m [34m[200][39m /dashboard [2m932ms[22m
+[2m22:31:56[22m [34m[200][39m /dashboard [2m1096ms[22m
+[2m22:32:06[22m [34m[200][39m /dashboard [2m1151ms[22m
+[2m22:32:35[22m [34m[watch][39m /src/pages/dashboard.astro?astro&type=style&index=0&lang.css
+[31m[1m22:32:37[22m [ERROR][39m ReferenceError: adminWalletType is not defined
+    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:78:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async callComponentAsTemplateResultOrResponse (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:236:25)
+    at async renderToAsyncIterable (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:268:26)
+    at async renderPage (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:55:24)
+    at async handlePages (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:40:20)
+    at async callMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:16:10)
+    at async handleMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:54:16)
+    at async render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:99:18)
+    at async DevFacadeApp.render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:280:18)
+[31m[1m22:32:37[22m [ERROR][39m adminWalletType is not defined
+  [1mStack trace:[22m
+[2m    at C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro\eval at runInlinedModule (file:\C:\Users\JAC%20ROSABLANCA\Documents\GitHub\gana-pro\node_modules\vite\dist\node\module-runner.js:811:9
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m22:32:49[22m [34m[watch][39m /src/pages/dashboard.astro?astro&type=style&index=0&lang.css
+[31m[1m22:32:50[22m [ERROR][39m ReferenceError: getAdminWallet is not defined
+    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:51:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async callComponentAsTemplateResultOrResponse (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:236:25)
+    at async renderToAsyncIterable (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:268:26)
+    at async renderPage (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:55:24)
+    at async handlePages (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:40:20)
+    at async callMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:16:10)
+    at async handleMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:54:16)
+    at async render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:99:18)
+    at async DevFacadeApp.render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:280:18)
+[31m[1m22:32:50[22m [ERROR][39m getAdminWallet is not defined
+  [1mStack trace:[22m
+[2m    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:51:22)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m22:32:50[22m [ERROR][39m ReferenceError: getAdminWallet is not defined
+    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:51:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async callComponentAsTemplateResultOrResponse (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:236:25)
+    at async renderToAsyncIterable (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:268:26)
+    at async renderPage (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:55:24)
+    at async handlePages (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:40:20)
+    at async callMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:16:10)
+    at async handleMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:54:16)
+    at async render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:99:18)
+    at async DevFacadeApp.render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:280:18)
+[31m[1m22:32:50[22m [ERROR][39m getAdminWallet is not defined
+  [1mStack trace:[22m
+[2m    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:51:22)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m22:33:06[22m [ERROR][39m ReferenceError: getAdminWallet is not defined
+    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:51:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async callComponentAsTemplateResultOrResponse (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:236:25)
+    at async renderToAsyncIterable (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:268:26)
+    at async renderPage (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:55:24)
+    at async handlePages (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:40:20)
+    at async callMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:16:10)
+    at async handleMiddleware (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:54:16)
+    at async render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:99:18)
+    at async DevFacadeApp.render (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:280:18)
+[31m[1m22:33:06[22m [ERROR][39m getAdminWallet is not defined
+  [1mStack trace:[22m
+[2m    at eval (eval at runInlinedModule (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/vite/dist/node/module-runner.js:811:9), <anonymous>:51:22)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m22:33:11[22m [34m[watch][39m /src/pages/dashboard.astro?astro&type=style&index=0&lang.css
+[2m22:33:12[22m [34m[200][39m /dashboard [2m1396ms[22m
+[2m22:33:12[22m [34m[200][39m /dashboard [2m1507ms[22m
+[2m22:39:09[22m [34m[watch][39m src/components/DashboardSidebar.astro
+[2m22:39:14[22m [34m[200][39m /dashboard [2m4065ms[22m
+[2m22:39:19[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m22:39:20[22m [34m[200][39m /dashboard [2m1420ms[22m
+[2m23:09:07[22m [34m[200][39m /dashboard [2m2073ms[22m
+[2m23:09:15[22m [34m[200][39m /dashboard [2m1247ms[22m
+[2m23:13:06[22m [34m[watch][39m src/components/BalanceChip.astro
+[31m[1m23:13:07[22m [ERROR][39m [31m[CompilerError][39m Invalid Unicode escape sequence
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m23:13:26[22m [34m[watch][39m src/components/BalanceChip.astro
+[31m[1m23:13:26[22m [ERROR][39m [31m[CompilerError][39m Invalid Unicode escape sequence
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:303:2
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m23:13:26[22m [ERROR][39m [31m[CompilerError][39m Invalid Unicode escape sequence
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m23:13:43[22m [ERROR][39m [31m[CompilerError][39m Invalid Unicode escape sequence
+  [1mStack trace:[22m
+[2m    at C:/Users/JAC ROSABLANCA/Documents/GitHub/gana-pro/src/components/BalanceChip.astro:303:2
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m23:13:45[22m [ERROR][39m [31m[CompilerError][39m Invalid Unicode escape sequence
+  [1mStack trace:[22m
+[2m    at handleCompileResultErrors (file:///C:/Users/JAC%20ROSABLANCA/Documents/GitHub/gana-pro/node_modules/astro/dist/core/compile/compile.js:73:11)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m23:13:59[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m23:14:01[22m [34m[200][39m /dashboard [2m1448ms[22m
+[2m23:14:01[22m [34m[200][39m /dashboard [2m1455ms[22m
+[2m23:14:11[22m [34m[watch][39m src/components/BalanceChip.astro
+[2m23:14:13[22m [34m[200][39m /dashboard [2m1544ms[22m

@@ -54,16 +54,20 @@ export const POST: APIRoute = async (Astro) => {
 		const username = session.username;
 
 		switch (op) {
-			// --- Recargar: la plataforma acredita saldo al usuario ---
-			case 'recargar': {
-				const ok = await setSheetUserBalance(
-					username,
-					(await currentBalance(username, session.email)) + value
+			// --- Recargar: vive en /api/balance/topup ---
+			// Exigir comprobante es obligatorio, así que aquí se rechaza: si se
+		// aceptara, bastaría con llamar a este endpoint para saltarse la
+		// validación del comprobante.
+			case 'recargar':
+				return json(
+					{
+						ok: false,
+						message:
+							'La recarga requiere comprobante. Usa el formulario de recarga ' +
+							'para adjuntar la evidencia de la transferencia.',
+					},
+					400
 				);
-				return ok
-					? json({ ok: true, message: `Recargaste ${fmt(value)} correctamente.` })
-					: json({ ok: false, message: 'No se encontró tu fila en Google Sheets.' }, 404);
-			}
 
 			// --- Retirar: genera una solicitud para que la apruebe el admin ---
 			// El saldo NO se descuenta aquí: se descuenta cuando el admin aprueba.

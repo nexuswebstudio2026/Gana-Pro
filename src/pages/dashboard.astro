@@ -1,6 +1,7 @@
 ---
 import { validateSession } from '../lib/session';
 import { getGoogleSheetUsers } from '../lib/sheets';
+import { getAdminWallet } from '../lib/users';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import DashboardSidebar from '../components/DashboardSidebar.astro';
 import BalanceChip from '../components/BalanceChip.astro';
@@ -41,6 +42,10 @@ const balance = userDetail?.balance ?? null;
 const userLevel = userDetail?.level ?? null;
 const walletType = userDetail?.paymentMethod ?? null;
 const walletNumber = userDetail?.walletNumber ?? null;
+// Billetera del admin: es a la que el usuario transfiere para recargar.
+const adminWallet = await getAdminWallet();
+const adminWalletType = adminWallet?.walletType ?? null;
+const adminWalletNumber = adminWallet?.walletNumber ?? null;
 ---
 
 <!doctype html>
@@ -92,7 +97,7 @@ const walletNumber = userDetail?.walletNumber ?? null;
 
 				<div class="header-actions">
 					<ThemeToggle />
-					<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} />
+					<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} adminWalletType={adminWalletType} adminWalletNumber={adminWalletNumber} />
 					<div class="user-chip">
 						<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
 						<div class="user-meta">

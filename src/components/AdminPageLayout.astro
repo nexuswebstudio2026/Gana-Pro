@@ -4,7 +4,7 @@ import Logo from './Logo.astro';
 import BalanceChip from './BalanceChip.astro';
 import DashboardSidebar from './DashboardSidebar.astro';
 import Footer from './Footer.astro';
-import { getUserBalance, getSheetUserLevel, getUserWallet } from '../lib/users';
+import { getUserBalance, getSheetUserLevel, getUserWallet, getAdminWallet } from '../lib/users';
 import type { Session } from '../lib/session';
 
 interface Props {
@@ -24,6 +24,8 @@ let balance: string | null = null;
 let userLevel: string | null = null;
 let walletType: string | null = null;
 let walletNumber: string | null = null;
+let adminWalletType: string | null = null;
+let adminWalletNumber: string | null = null;
 try {
 	balance = await getUserBalance(session.username, session.email);
 
@@ -35,6 +37,13 @@ try {
 	if (wallet) {
 		walletType = wallet.walletType || null;
 		walletNumber = wallet.walletNumber || null;
+	}
+
+	// Billetera del admin: es a la que se transfiere para recargar.
+	const adminWallet = await getAdminWallet();
+	if (adminWallet) {
+		adminWalletType = adminWallet.walletType || null;
+		adminWalletNumber = adminWallet.walletNumber || null;
 	}
 } catch (e) {
 	console.error('No se pudo obtener el saldo en el panel:', e);
@@ -73,7 +82,7 @@ try {
 					</div>
 					<div class="header-actions">
 						<ThemeToggle />
-						<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} />
+						<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} adminWalletType={adminWalletType} adminWalletNumber={adminWalletNumber} />
 						<div class="user-chip">
 							<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
 							<div class="user-meta"><span class="user-name">{session.username}</span><span class="user-badge">{roleLabel}</span></div>

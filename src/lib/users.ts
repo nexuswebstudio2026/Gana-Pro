@@ -246,6 +246,32 @@ export interface UserWallet {
 	walletNumber: string;
 }
 
+/**
+ * Billera del administrador: la cuenta a la que los usuarios transfieren
+ * cuando recargan saldo.
+ *
+ * Se busca por rol, no por nombre fijo, para que el cambio de cuenta
+ * administrativa no requiera tocar el código.
+ */
+export async function getAdminWallet(): Promise<UserWallet | null> {
+	try {
+		const users = await getGoogleSheetUsers();
+		const admin = users.find((u) => {
+			const role = normalize(u.role);
+			return role === 'admin' || role === 'administrator';
+		});
+		if (!admin) return null;
+
+		return {
+			walletType: String(admin.paymentMethod ?? '').trim(),
+			walletNumber: String(admin.walletNumber ?? '').trim(),
+		};
+	} catch (err) {
+		console.error('No se pudo obtener la billetera del administrador:', err);
+		return null;
+	}
+}
+
 export async function getUserWallet(username: string, email: string): Promise<UserWallet | null> {
 	try {
 		const sheetUsers = await getGoogleSheetUsers();
