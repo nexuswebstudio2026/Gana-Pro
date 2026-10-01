@@ -1,4 +1,4 @@
-import { getEnvValue, getSheetsClient } from './sheets';
+import { getEnvValue, getSheetsClient, SPREADSHEET_ID } from './sheets';
 import { saveFile, saveTestimonialImage, type StoredImage } from './image-storage';
 
 /** Carpeta (en el almacén) donde se guardan los documentos de identidad. */
@@ -76,7 +76,14 @@ export async function uploadRutDocument(
 import { toZonedIso } from './datetime';
 import type { Testimonial } from './types';
 
-const SHEET_ID = getEnvValue('GOOGLE_SHEET_ID') || '';
+/**
+ * Se reutiliza el mismo ID que el resto de la aplicación (`sheets.ts`), que
+ * además trae un valor por defecto. Antes este módulo resolvía el ID por su
+ * cuenta y, si `GOOGLE_SHEET_ID` no estaba definida (por ejemplo en Vercel),
+ * se quedaba con un id vacío y Google respondía "Requested entity was not
+ * found", dejando los testimonios sin cargar.
+ */
+const SHEET_ID = SPREADSHEET_ID;
 const TESTIMONIAL_TAB = getEnvValue('GOOGLE_SHEET_TESTIMONIALS_TAB') || 'valoracion';
 
 /** Columnas de la hoja "valoracion", en orden. */

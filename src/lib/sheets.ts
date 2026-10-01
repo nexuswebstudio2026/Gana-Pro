@@ -4,6 +4,13 @@ import { toZonedIso } from './datetime';
 import fs from 'node:fs';
 import path from 'node:path';
 
+/**
+ * Lee una variable de entorno.
+ *
+ * Primero mira `process.env` (Vercel, CI, `astro dev` con `--env`) y, si no
+ * está, analiza el archivo `.env` del proyecto, que es la única fuente
+ * disponible en desarrollo local.
+ */
 export function getEnvValue(key: string): string | undefined {
 	if (process.env[key]) return process.env[key];
 	try {
@@ -12,13 +19,18 @@ export function getEnvValue(key: string): string | undefined {
 			const content = fs.readFileSync(envPath, 'utf-8');
 			const lines = content.split(/\r?\n/);
 			for (const line of lines) {
-				if (line.startsWith(key + '=')) {
-					let val = line.slice(key.length + 1).trim();
-					if (val.startsWith('"') && val.endsWith('"')) {
-						val = val.slice(1, -1);
-					}
-					return val;
+				// Se admite el prefijo "export " habitual en archivos .env.
+				const normalized = line.trim().startsWith('export ') ? line.trim().slice(7) : line;
+				// Se ignoran comentarios y líneas en blanco.
+				if (!normalized.startsWith(key)) continue;
+				const rest = normalized.slice(key.length);
+				if (!rest.startsWith('=')) continue;
+
+				let val = rest.slice(1).trim();
+				if (val.startsWith('"') && val.endsWith('"')) {
+					val = val.slice(1, -1);
 				}
+				return val;
 			}
 		}
 	} catch {
@@ -40,7 +52,17 @@ export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 
 export function getSheetsClient() {
 	if (!SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
-		throw new Error('Las credenciales de Google Service Account no están configuradas.');
+		// Se nombra la variable que falta: en producción es el error más común
+		// (credenciales no añadidas en el panel de Vercel) y sin este detalle
+		// el fallo solo se manifiesta como "no se pudieron cargar los datos".
+		const missing = [
+			...(!SERVICE_ACCOUNT_EMAIL ? ['GOOGLE_SERVICE_ACCOUNT_EMAIL'] : []),
+			...(!PRIVATE_KEY ? ['GOOGLE_PRIVATE_KEY'] : []),
+		];
+		throw new Error(
+			`Las credenciales de Google Service Account no están configuradas. ` +
+				`Falta definir: ${missing.join(', ')} en las variables de entorno del servidor.`
+		);
 	}
 
 	const auth = new google.auth.JWT({
