@@ -4,7 +4,6 @@ import {
 	getGoogleSheetUsers,
 	moveBalance,
 	parseSheetBalance,
-	setSheetUserBalance,
 } from '../../lib/sheets';
 import { createWithdrawal, adminCommission, netAmount } from '../../lib/withdrawals';
 import {
@@ -24,7 +23,8 @@ const MAX_AMOUNT = 100_000_000;
  *
  * Recibe JSON: `{ op, amount, to }` y responde `{ ok, message }`.
  *
- * - "recargar" y "solicitar" acreditan el saldo de inmediato.
+ * - "recargar" no se atiende aquí: vive en /api/balance/topup, que exige
+ *   comprobante y deja la solicitud pendiente de aprobación.
  * - "retirar" crea una solicitud que debe aprobar el administrador; el saldo
  *   no se descuenta hasta que él la apruebe.
  * - "enviar" transfiere saldo entre dos usuarios de la hoja.
@@ -159,17 +159,6 @@ export const POST: APIRoute = async (Astro) => {
 							{ ok: false, message: 'Saldo insuficiente o destinatario inválido.' },
 							400
 						);
-			}
-
-			// --- Solicitar: acumulado pendiente de aprobación del admin ---
-			case 'solicitar': {
-				const ok = await setSheetUserBalance(
-					username,
-					(await currentBalance(username, session.email)) + value
-				);
-				return ok
-					? json({ ok: true, message: `Solicitud de ${fmt(value)} registrada correctamente.` })
-					: json({ ok: false, message: 'No se encontró tu fila en Google Sheets.' }, 404);
 			}
 
 			default:

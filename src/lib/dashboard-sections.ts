@@ -14,6 +14,16 @@ export const DASHBOARD_PAGES = {
 		eyebrow: 'Gana Pro',
 		description: 'Administra la información de las cuentas registradas en la plataforma.',
 	},
+	'niveles-ascenso': {
+		title: 'Niveles de Ascenso',
+		eyebrow: 'Gana Pro',
+		description: 'Consulta la escala de niveles y los requisitos para ascender en la organización.',
+		cards: [
+			{ title: 'Escala de niveles', text: 'Revisa los niveles disponibles: Bronce, Plata, Rubí, Diamante y Oro.' },
+			{ title: 'Requisitos de ascenso', text: 'Consulta las condiciones que debe cumplir un miembro para subir de nivel.' },
+			{ title: 'Beneficios por nivel', text: 'Mira qué operaciones habilita cada nivel dentro de la plataforma.' },
+		],
+	},
 	recargas: {
 		title: 'Solicitudes de Recarga',
 		eyebrow: 'Revisión del administrador',

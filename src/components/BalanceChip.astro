@@ -41,7 +41,7 @@ const withdrawalAllowed = canWithdraw(level ?? null);
 const hasWallet = Boolean(walletType && walletNumber);
 
 /**
- * Las cuatro operaciones de saldo. `needsRecipient` marca las que piden el
+ * Las tres operaciones de saldo. `needsRecipient` marca las que piden el
  * usuario de destino (solo "enviar"). `requiresLevel` marca las que exigen
  * un nivel mínimo, en cuyo caso se desactivan con su motivo visible.
  */
@@ -72,14 +72,6 @@ const OPERATIONS = [
 		hint: 'Transfiere saldo a otro miembro registrado.',
 		field: 'Monto a enviar',
 		needsRecipient: true,
-		requiresLevel: false,
-	},
-	{
-		id: 'solicitar',
-		title: 'Solicitar',
-		hint: 'Solicita un incremento de saldo a la plataforma.',
-		field: 'Monto a solicitar',
-		needsRecipient: false,
 		requiresLevel: false,
 	},
 ] as const;

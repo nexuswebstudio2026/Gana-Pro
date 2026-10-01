@@ -3,66 +3,89 @@ interface Props {
 	isAdmin: boolean;
 }
 
-interface NavLink {
+interface NavChild {
+	href: string;
+	label: string;
+}
+
+interface NavItem {
 	href: string;
 	label: string;
 	icon?: string;
-	anchor?: string;
-}
-
-interface NavGroup {
-	title: string;
-	links: NavLink[];
 	adminOnly?: boolean;
+	/** Sub-elementos. El grupo se dibuja abierto siempre, sin desplegable. */
+	children?: NavChild[];
 }
 
 const { isAdmin } = Astro.props;
 const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/dashboard';
+const currentHash = Astro.url.hash.replace('#', '');
 const isActive = (path: string) => currentPath === path;
 
-const groups: NavGroup[] = [
+/**
+ * Estructura del menú lateral. Las secciones con sub-elementos se dibujan
+ * abiertas: no hay desplegables, la jerarquía se ve de un vistazo.
+ */
+const items: NavItem[] = [
+	{ href: '/dashboard', label: 'Inicio', icon: '⌂' },
 	{
-		title: 'Principal',
-		links: [{ href: '/dashboard', label: 'Inicio', icon: '⌂' }],
+		href: '/dashboard/organigrama-global',
+		label: 'Organigrama Global de Usuarios',
+		icon: '⌘',
+		adminOnly: true,
 	},
 	{
-		title: 'Administración',
+		href: '/dashboard/usuarios-registrados',
+		label: 'Usuarios Registrados',
+		icon: '♙',
 		adminOnly: true,
-		links: [
-			{ href: '/dashboard/organigrama-global', label: 'Organigrama Global', icon: '⌘' },
-			{ href: '/dashboard/usuarios-registrados', label: 'Usuarios Registrados', icon: '♙' },
+		children: [
+			{ href: '/dashboard/usuarios-registrados', label: 'Ver Usuarios' },
+			{ href: '/dashboard/niveles-ascenso', label: 'Niveles de Ascenso' },
 		],
 	},
 	{
-		title: 'Contabilidad',
+		href: '/dashboard/ingresos',
+		label: 'Ingresos',
+		icon: '＋',
 		adminOnly: true,
-		links: [
-			{ href: '/dashboard/recargas', label: 'Solicitudes de Recarga', icon: '↓' },
-			{ href: '/dashboard/retiros', label: 'Solicitudes de Retiro', icon: '↑' },
-			{ href: '/dashboard/ingresos', label: 'Ingresos', icon: '＋' },
-			{ href: '/dashboard/gastos', label: 'Gastos', icon: '－' },
+		children: [{ href: '/dashboard/recargas', label: 'Solicitudes de Recargas' }],
+	},
+	{
+		href: '/dashboard/gastos',
+		label: 'Gastos',
+		icon: '－',
+		adminOnly: true,
+		children: [{ href: '/dashboard/retiros', label: 'Solicitudes de Retiros' }],
+	},
+	{
+		href: '/dashboard/negocio',
+		label: 'Negocio',
+		icon: '▣',
+		adminOnly: true,
+		children: [
+			{ href: '/dashboard/negocio', label: 'Configuración del Negocio' },
 		],
 	},
 	{
-		title: 'Negocio',
-		adminOnly: true,
-		links: [
-			{ href: '/dashboard/negocio', label: 'Configuración del Negocio', icon: '▣' },
-			{ href: '/dashboard/negocio#rut-empresarial', label: 'RUT Empresarial', anchor: 'rut-empresarial' },
-		],
-	},
-	{
-		title: 'Mi cuenta',
-		links: [
-			{ href: '/dashboard/mi-organigrama', label: 'Mi organigrama', icon: '⌘' },
-			{ href: '/dashboard/informacion-cuenta', label: 'Información de la Cuenta', icon: '◉' },
-			{ href: '/dashboard/rut', label: 'NIT y RUT Personal', icon: '▤' },
-			{ href: '/dashboard/ubicacion', label: 'Mi Ubicación', icon: '◎' },
+		href: '/dashboard/mi-organigrama',
+		label: 'Mi Cuenta',
+		icon: '◉',
+		children: [
+			{ href: '/dashboard/mi-organigrama', label: 'Mi organigrama' },
+			{ href: '/dashboard/informacion-cuenta', label: 'Información del Perfil' },
+			{ href: '/dashboard/ubicacion', label: 'Ubicación' },
 		],
 	},
 ];
 
-const visibleGroups = groups.filter((group) => !group.adminOnly || isAdmin);
+const visibleItems = items.filter((item) => !item.adminOnly || isAdmin);
+
+/** Un sub-elemento está activo si su ruta o su ancla coincide con la URL. */
+const isChildActive = (href: string) => {
+	const [path, anchor] = href.split('#');
+	return anchor ? currentHash === anchor : isActive(path);
+};
 ---
 
 <button
@@ -80,35 +103,53 @@ const visibleGroups = groups.filter((group) => !group.adminOnly || isAdmin);
 
 <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Navegación del panel">
 	<nav class="sidebar-nav" aria-label="Secciones del panel">
-		{visibleGroups.map((group, groupIndex) => (
-			<div class:list={['nav-group', { 'nav-group-first': groupIndex === 0 }]}>
-				<span class="nav-group-title">{group.title}</span>
-				{group.links.map((link) => {
-					const linkPath = link.href.split('#')[0];
-					const active = link.anchor
-						? false
-						: linkPath === '/dashboard'
-							? isActive('/dashboard') && !Astro.url.hash
-							: isActive(linkPath);
-					const isChild = Boolean(link.anchor);
-					return (
-						<a
-							class:list={['sidebar-link', { active, 'nested-child': isChild }]}
-							href={link.href}
-							data-nav-link
-							data-home-link={linkPath === '/dashboard' ? true : undefined}
-							data-nav-anchor={link.anchor}
-							aria-current={active ? 'page' : undefined}
-						>
-							{link.icon && (
-								<span class="nav-icon" aria-hidden="true">{link.icon}</span>
-							)}
-							<span>{link.label}</span>
-						</a>
-					);
-				})}
-			</div>
-		))}
+		{visibleItems.map((item, index) => {
+			const path = item.href.split('#')[0];
+			const active = item.children
+				? false
+				: path === '/dashboard'
+					? isActive('/dashboard') && !currentHash
+					: isActive(path);
+			const groupActive = item.children
+				? item.children.some((child) => isChildActive(child.href))
+				: active;
+			return (
+				<div class:list={['nav-group', { 'nav-group-first': index === 0 }]}>
+					<a
+						class:list={['sidebar-link', { active: groupActive, 'nav-parent': Boolean(item.children) }]}
+						href={item.href}
+						data-nav-link
+						data-home-link={path === '/dashboard' ? true : undefined}
+						aria-current={groupActive ? 'page' : undefined}
+					>
+						{item.icon && (
+							<span class="nav-icon" aria-hidden="true">{item.icon}</span>
+						)}
+						<span>{item.label}</span>
+					</a>
+
+					{item.children && item.children.length > 0 && (
+						<div class="nav-children">
+							{item.children.map((child) => {
+								const childActive = isChildActive(child.href);
+								const childPath = child.href.split('#')[0];
+								return (
+									<a
+										class:list={['sidebar-link', 'nested-child', { active: childActive }]}
+										href={child.href}
+										data-nav-link
+										data-home-link={childPath === '/dashboard' ? true : undefined}
+										aria-current={childActive ? 'page' : undefined}
+									>
+										<span>{child.label}</span>
+									</a>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			);
+		})}
 	</nav>
 </aside>
 <div class="sidebar-backdrop" data-sidebar-backdrop></div>
@@ -156,7 +197,9 @@ const visibleGroups = groups.filter((group) => !group.adminOnly || isAdmin);
 		height: 100vh;
 		min-height: 100vh;
 		box-sizing: border-box;
-		padding: 18px 12px;
+		/* Sin padding ni margin a la izquierda: el panel vive pegado al borde. */
+		margin: 0;
+		padding: 18px 12px 18px 0;
 		background: var(--bg-surface);
 		border-right: 1px solid var(--gold-border);
 		backdrop-filter: blur(18px);
@@ -168,23 +211,41 @@ const visibleGroups = groups.filter((group) => !group.adminOnly || isAdmin);
 	.sidebar-nav {
 		height: 100%;
 		padding: 0;
+		margin: 0;
 		overflow-y: auto;
 		scrollbar-width: none;
 	}
 	.sidebar-nav::-webkit-scrollbar { display: none; }
-	.nav-group { margin-top: 18px; }
-	.nav-group:first-of-type, .nav-group-first { margin-top: 0; }
-	.nav-group-title { display: block; padding: 0 12px 8px; color: var(--gold-primary); font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
-	.sidebar-link { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; color: var(--text-secondary); font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
-	.sidebar-link:hover { color: var(--text-primary); background: rgba(212, 175, 55, 0.08); border-color: var(--gold-border); transform: translateX(2px); }
-	.sidebar-link.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.14); border-color: var(--gold-border); }
-	.sidebar-link.nested { min-height: 40px; padding-left: 18px; font-size: 12px; font-weight: 500; }
-	.sidebar-link.nested-child { min-height: 36px; padding-left: 52px; font-size: 11px; line-height: 1.4; }
-	.nav-icon { width: 22px; flex: 0 0 22px; display: grid; place-items: center; color: currentColor; font-size: 19px; line-height: 1; }
+	.nav-group { margin: 0; padding: 0; }
+	.nav-group + .nav-group { margin-top: 6px; }
+	.nav-group-first { margin-top: 0; }
+	.sidebar-link {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 42px;
+		margin: 0;
+		padding: 9px 10px 9px 12px;
+		border: 1px solid transparent;
+		border-left: 2px solid transparent;
+		border-radius: 0 10px 10px 0;
+		color: var(--text-secondary);
+		font-size: 13px;
+		font-weight: 600;
+		text-decoration: none;
+		transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+	}
+	.sidebar-link:hover { color: var(--text-primary); background: rgba(212, 175, 55, 0.08); border-color: var(--gold-border); border-left-color: var(--gold-primary); }
+	.sidebar-link.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.14); border-color: var(--gold-border); border-left-color: var(--gold-primary); }
+	.sidebar-link.nav-parent { font-weight: 700; color: var(--text-primary); }
+	.nav-children { display: flex; flex-direction: column; margin: 2px 0 0; padding: 0; border-left: 1px solid var(--gold-border); }
+	.sidebar-link.nested-child { min-height: 38px; padding: 8px 10px 8px 16px; font-size: 12.5px; font-weight: 500; border-left: 2px solid transparent; border-radius: 0 8px 8px 0; }
+	.sidebar-link.nested-child.active { border-left-color: var(--gold-primary); }
+	.nav-icon { width: 20px; flex: 0 0 20px; display: grid; place-items: center; color: currentColor; font-size: 17px; line-height: 1; }
 	.sidebar-mobile-toggle, .sidebar-backdrop { display: none; }
 
 	@media (max-width: 1024px) {
-		.dashboard-sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, calc(100vw - 36px)); transform: translateX(-105%); transition: transform 0.25s ease; box-shadow: 18px 0 45px rgba(0, 0, 0, 0.28); }
+		.dashboard-sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, calc(100vw - 36px)); margin: 0; padding: 18px 12px 18px 0; transform: translateX(-105%); transition: transform 0.25s ease; box-shadow: 18px 0 45px rgba(0, 0, 0, 0.28); }
 		.dashboard-sidebar.is-open { transform: translateX(0); }
 		.sidebar-mobile-toggle { display: grid; place-items: center; position: fixed; top: 16px; left: 16px; z-index: 70; width: 42px; height: 42px; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg-surface); color: var(--gold-primary); cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); transition: opacity 0.2s ease, transform 0.2s ease; }
 		.sidebar-mobile-toggle svg { width: 21px; height: 21px; }
