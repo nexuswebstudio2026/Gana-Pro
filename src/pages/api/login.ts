@@ -55,7 +55,25 @@ export const POST: APIRoute = async (Astro) => {
 		// Redirect to dashboard
 		return Astro.redirect('/dashboard', 303);
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		return new Response('ERROR: ' + msg, { status: 500 });
+		// El detalle va al log del servidor; al usuario solo se le muestra un
+		// mensaje generico. Volcar `err.message` en el cuerpo filtraba nombres de
+		// variables de entorno y la estructura interna del servidor.
+		console.error('[login] Error al iniciar sesion:', err);
+
+		// Un fallo de configuracion (p. ej. sin SESSION_SECRET) no es culpa del
+		// usuario: se le devuelve al formulario en vez de un 500 en crudo.
+		const misconfigured =
+			err instanceof Error && /SESSION_SECRET/i.test(err.message);
+		if (misconfigured) {
+			return Astro.redirect(
+				'/login?error=' +
+					encodeURIComponent(
+						'El servicio no esta disponible temporalmente. Intenta de nuevo en unos minutos.'
+					),
+				303
+			);
+		}
+
+		return new Response('ERROR: No se pudo iniciar sesion.', { status: 500 });
 	}
 };

@@ -174,7 +174,9 @@ export const POST: APIRoute = async (Astro) => {
 		// Redirect to login on success
 		return Astro.redirect('/login?registered=1', 303);
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		return new Response('ERROR: ' + msg, { status: 500 });
+		// Igual que en el login: el detalle va al log del servidor y al usuario
+		// solo se le devuelve un mensaje generico.
+		console.error('[register] Error al registrar:', err);
+		return new Response('ERROR: No se pudo completar el registro.', { status: 500 });
 	}
 };
