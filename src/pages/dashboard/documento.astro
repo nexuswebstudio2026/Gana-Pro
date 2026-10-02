@@ -2,7 +2,7 @@
 import { validateSession } from '../../lib/session';
 import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers } from '../../lib/sheets';
-import { DOCUMENT_STATUS } from '../../lib/testimonials';
+import { DOCUMENT_STATUS, DOCUMENT_TYPES, documentTypeLabel } from '../../lib/testimonials';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import type { User } from '../../lib/types';
 
@@ -22,47 +22,42 @@ try {
 			user.email?.toLowerCase() === session.email.toLowerCase()
 	) || null;
 } catch (error) {
-	console.error('Error al cargar el RUT:', error);
+	console.error('Error al cargar el RUT personal:', error);
 }
 
 const isAdmin = isAdminRole(userDetail?.role || session.role);
-
-// El NIT y el RUT de la DIAN son del negocio: los declara el administrador.
-// Si un miembro llega aquí por la URL, se le manda a su documento de identidad,
-// que es lo que le corresponde.
-if (!isAdmin) {
-	return Astro.redirect('/dashboard/documento', 303);
-}
-
 const docResult = Astro.url.searchParams.get('doc');
 const docMessage = Astro.url.searchParams.get('msg');
 const docStatus = (userDetail?.documentStatus || DOCUMENT_STATUS.pendiente).trim();
-const nitValue = (userDetail?.nit || '').trim();
-const documentLink = (userDetail?.rutLink || userDetail?.documentLink || '').trim();
+// Tipo y número de identidad que el usuario declaró al registrarse.
+const docTypeValue = (userDetail?.documentType || '').trim();
+const docNumberValue = (userDetail?.documentNumber || '').trim();
+const identityLabel = docTypeValue ? documentTypeLabel(docTypeValue) : '';
+const documentLink = (userDetail?.documentLink || userDetail?.rutLink || '').trim();
 const documentFileName = (
-	userDetail?.scannedRut ||
 	userDetail?.scannedDocument ||
-	'rut.pdf'
+	userDetail?.scannedRut ||
+	'documento.pdf'
 ).trim();
 const isPdf = documentFileName.toLowerCase().endsWith('.pdf');
 const docApproved = docStatus === DOCUMENT_STATUS.aprobado;
 const docRejected = docStatus === DOCUMENT_STATUS.rechazado;
-const hasRut = documentLink !== '';
+const hasDocument = documentLink !== '';
 ---
 
 <AdminPageLayout
 	session={session}
 	isAdmin={isAdmin}
-	title="RUT del negocio"
-	eyebrow="Configuración · Negocio"
-	description="Registra el NIT y sube el RUT emitido por la DIAN para Gana Pro."
+	title="Documento de Identidad"
+	eyebrow="Configuración · Usuario"
+	description="Consulta el estado de tu registro y sube tu documento de identidad."
 >
-	<section class="luxury-card doc-box" aria-labelledby="rut-title">
+	<section class="luxury-card doc-box" aria-labelledby="personal-rut-title">
 		<div class="doc-heading">
 			<div>
-				<h2 class="detail-title font-cinzel" id="rut-title">RUT emitido por la DIAN</h2>
+				<h2 class="detail-title font-cinzel" id="personal-rut-title">Documento de Identidad</h2>
 				<p class="doc-lead">
-					Identificación tributaria del negocio ante la DIAN. Puedes adjuntar una imagen o un PDF de hasta 5 MB.
+					Sube tu documento de identidad para completar la verificación de la cuenta. Puedes adjuntar una imagen o un PDF de hasta 5 MB.
 				</p>
 			</div>
 			<span class:list={['doc-badge', { ok: docApproved, ko: docRejected, wait: !docApproved && !docRejected }]}>
@@ -71,73 +66,88 @@ const hasRut = documentLink !== '';
 		</div>
 
 		{docResult === 'ok' && (
-			<div class="doc-alert ok" role="status">RUT recibido. Queda pendiente de revisión.</div>
+			<div class="doc-alert ok" role="status">Documento recibido. Queda pendiente de revisión por un administrador.</div>
 		)}
 		{docResult === 'error' && (
-			<div class="doc-alert ko" role="alert">{docMessage || 'No se pudo guardar el RUT.'}</div>
+			<div class="doc-alert ko" role="alert">{docMessage || 'No se pudo guardar tu documento.'}</div>
 		)}
 		{docResult === 'config' && (
 			<div class="doc-alert ko" role="alert">{docMessage || 'El almacenamiento no está disponible en el servidor.'}</div>
 		)}
 
-		{nitValue && (
-			<div class="doc-current">
-				<div class="doc-current-info">
-					<span class="doc-label">NIT (Identificación Tributaria DIAN)</span>
-					<code class="doc-file">{nitValue}</code>
+		{identityLabel && (
+				<div class="doc-current">
+					<div class="doc-current-info">
+						<span class="doc-label">Documento de identidad</span>
+						<code class="doc-file">{identityLabel}</code>
+					</div>
+					{docNumberValue && <span class="doc-view">{docNumberValue}</span>}
 				</div>
-			</div>
-		)}
-		{hasRut && (
-			<div class="doc-current">
-				<div class="doc-current-info">
-					<span class="doc-label">Archivo del RUT</span>
-					<code class="doc-file">{documentFileName}</code>
-				</div>
-				<a href={documentLink} target="_blank" rel="noopener noreferrer" class="doc-view">
-					{isPdf ? 'Ver PDF' : 'Ver imagen'}
-				</a>
-			</div>
-		)}
-
-		<form method="POST" action="/api/rut" enctype="multipart/form-data" class="doc-form">
-			<div class="doc-field">
-				<label for="nit">NIT (Identificación Tributaria DIAN)</label>
-				<input
-					type="text"
-					id="nit"
-					name="nit"
-					value={nitValue}
-					placeholder="Ej: 900123456"
-					inputmode="numeric"
-					required
-					minlength="6"
-					maxlength="20"
-					pattern="[0-9]*"
-					title="Solo números, entre 6 y 20 dígitos"
-				/>
-			</div>
-			<div class="doc-field">
-				<label for="rut">Archivo del RUT</label>
-				<input
-					type="file"
-					id="rut"
-					name="rut"
-					accept="image/jpeg,image/png,image/webp,application/pdf"
-					required={!hasRut}
-				/>
-				<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
-			</div>
-			<button type="submit" class="gold-button">
-				{hasRut ? 'Actualizar RUT' : 'Subir RUT'}
-			</button>
-			{docApproved && (
-				<p class="doc-hint">
-					Tu RUT está verificado. Si lo subes de nuevo, volverá a la lista de
-					pendientes para que un administrador lo revise otra vez.
-				</p>
 			)}
-		</form>
+			{hasDocument && (
+				<div class="doc-current">
+					<div class="doc-current-info">
+						<span class="doc-label">Archivo del documento</span>
+						<code class="doc-file">{documentFileName}</code>
+					</div>
+					<a href={documentLink} target="_blank" rel="noopener noreferrer" class="doc-view">
+						{isPdf ? 'Ver PDF' : 'Ver imagen'}
+					</a>
+				</div>
+			)}
+
+		{/* El formulario se muestra siempre, también con el documento ya aprobado:
+		    el aviso de arriba promete que se puede actualizar, y sin formulario ese
+		    aviso sería falso. El endpoint vuelve a poner el estado en "pendiente". */}
+		<form method="POST" action="/api/documento" enctype="multipart/form-data" class="doc-form">
+				<div class="doc-field">
+					<label for="tipoDocumento">Tipo de Documento</label>
+					<select id="tipoDocumento" name="tipoDocumento" required>
+						{DOCUMENT_TYPES.map((tipo) => (
+							<option value={tipo.code} selected={docTypeValue === tipo.code}>
+								{tipo.code} — {tipo.label}
+							</option>
+						))}
+					</select>
+				</div>
+				<div class="doc-field">
+					<label for="numeroDocumento">Número de Documento</label>
+					<input
+						type="text"
+						id="numeroDocumento"
+						name="numeroDocumento"
+						value={docNumberValue}
+						placeholder="Ej: 1020304050"
+						inputmode="numeric"
+						required
+						minlength="6"
+						maxlength="20"
+						pattern="[0-9]*"
+						title="Solo numeros, entre 6 y 20 digitos"
+					/>
+					<span class="doc-hint">Solo numeros, entre 6 y 20 digitos.</span>
+				</div>
+				<div class="doc-field">
+					<label for="documento">Archivo del documento</label>
+					<input
+						type="file"
+						id="documento"
+						name="documento"
+						accept="image/jpeg,image/png,image/webp,application/pdf"
+						required={!hasDocument}
+					/>
+					<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
+				</div>
+				<button type="submit" class="gold-button">
+					{hasDocument || docApproved ? 'Actualizar documento' : 'Subir documento'}
+				</button>
+				{docApproved && (
+					<p class="doc-hint">
+						Tu documento está verificado. Si lo subes de nuevo, volverá a la lista de
+						pendientes para que un administrador lo revise otra vez.
+					</p>
+				)}
+			</form>
 	</section>
 </AdminPageLayout>
 

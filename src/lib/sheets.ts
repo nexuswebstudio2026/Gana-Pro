@@ -178,18 +178,46 @@ interface UserColumnIndexes {
  * mapa: si el administrador reordena o inserta columnas —por ejemplo los datos
  * de contacto— ninguna parte escribe en la columna de otra.
  */
-function userColumnIndexes(headers: string[]): UserColumnIndexes {
+export function userColumnIndexes(headers: string[]): UserColumnIndexes {
 	// "Contacto WhatsApp" también contiene "whatsapp", así que se localiza
 	// primero para no usarlo como teléfono.
 	const whatsapp = headers.findIndex((h) => h.includes('whatsapp'));
+
+	// Columna del número del documento de identidad ("Número Documento").
+	const documentNumber = headers.findIndex(
+		(h) => (h.includes('numero') || h.includes('num')) && h.includes('doc')
+	);
+
+	// El NIT era una columna propia ("NIT") y pasó a llamarse "Numero de
+	// Documento" al unificar la hoja. Se aceptan ambos nombres; si no está
+	// ninguna de las dos, se usa la columna del documento, que para el
+	// administrador guarda ese mismo dato.
+	// Importa distinguir las dos: "Número Documento" y "Numero de Documento" se
+	// diferencian solo por el "de", y es justamente lo que las separa.
+	const nitPropia = headers.findIndex((h) => h === 'nit' || h.includes('nit'));
+	const nitRenombrada = headers.findIndex((h) => h.includes('numero de documento'));
+	const nit =
+		nitPropia !== -1 ? nitPropia : nitRenombrada !== -1 ? nitRenombrada : documentNumber;
+
+	const documentLink = headers.findIndex((h) => h.includes('enlace') && h.includes('doc'));
+	const scannedDocument = headers.findIndex((h) => h.includes('escaneado'));
+
+	// "Escaneado RUT" y "Enlace RUT" se renombraron a "Documento Escaneado" y
+	// "Enlace Documento", que ya son las columnas del documento de identidad.
+	// Si la hoja conserva las antiguas se usan; si no, se apuntan a las nuevas
+	// para no dejar de leer lo ya escrito.
+	const scannedRutPropio = headers.findIndex(
+		(h) =>
+			(h.includes('escaneado') || h.includes('archivo') || h.includes('nombre')) && h.includes('rut')
+	);
+	const rutLinkPropio = headers.findIndex((h) => h.includes('enlace') && h.includes('rut'));
+
 	return {
 		id: headers.indexOf('id'),
 		registeredAt: headers.findIndex((h) => h.includes('fecha')),
 		role: headers.indexOf('rol'),
 		documentType: headers.findIndex((h) => h.includes('tipo') && h.includes('doc')),
-		documentNumber: headers.findIndex(
-			(h) => (h.includes('numero') || h.includes('num')) && h.includes('doc')
-		),
+		documentNumber,
 		address: headers.findIndex((h) => h.includes('direccion')),
 		neighborhood: headers.findIndex((h) => h.includes('barrio')),
 		city: headers.findIndex((h) => h.includes('ciudad')),
@@ -212,13 +240,11 @@ function userColumnIndexes(headers: string[]): UserColumnIndexes {
 		referralCode: headers.findIndex((h) => h.includes('referido')),
 		ownCode: headers.findIndex((h) => h.includes('propio')),
 		documentStatus: headers.findIndex((h) => h.includes('estado') && h.includes('doc')),
-		documentLink: headers.findIndex((h) => h.includes('enlace') && h.includes('doc')),
-		scannedDocument: headers.findIndex((h) => h.includes('escaneado')),
-		nit: headers.findIndex((h) => h === 'nit' || h.includes('nit')),
-		scannedRut: headers.findIndex(
-			(h) => (h.includes('escaneado') || h.includes('archivo') || h.includes('nombre')) && h.includes('rut')
-		),
-		rutLink: headers.findIndex((h) => h.includes('enlace') && h.includes('rut')),
+		documentLink,
+		scannedDocument,
+		nit,
+		scannedRut: scannedRutPropio !== -1 ? scannedRutPropio : scannedDocument,
+		rutLink: rutLinkPropio !== -1 ? rutLinkPropio : documentLink,
 	};
 }
 
@@ -608,13 +634,16 @@ export async function updateSheetUserDocument(
  * no crear una columna que ya exista con otro nombre (p. ej. "RUT escaneado").
  */
 export const USER_DOCUMENT_COLUMNS: { header: string; match: (normalized: string) => boolean }[] = [
-	{ header: 'NIT', match: (h) => h === 'nit' || h.includes('nit') },
+	// "Numero de Documento" es el NIT renombrado. Se distingue de "Número
+	// Documento" (la del documento de identidad) por el "de"; sin esa
+	// distinción se apuntaría a la columna equivocada.
+	{ header: 'Numero de Documento', match: (h) => h.includes('numero de documento') },
 	{
-		header: 'Escaneado RUT',
+		header: 'Documento Escaneado',
 		match: (h) =>
-			(h.includes('escaneado') || h.includes('archivo') || h.includes('nombre')) && h.includes('rut'),
+			h.includes('escaneado') || h.includes('archivo') || h.includes('nombre'),
 	},
-	{ header: 'Enlace RUT', match: (h) => h.includes('enlace') && h.includes('rut') },
+	{ header: 'Enlace Documento', match: (h) => h.includes('enlace') && h.includes('doc') },
 ];
 
 /**

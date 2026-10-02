@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseSheetBalance, registrationContactColumnIndexes } from './sheets';
+import {
+	parseSheetBalance,
+	registrationContactColumnIndexes,
+	userColumnIndexes,
+} from './sheets';
 
 /**
  * El encabezado tal y como está en Google Sheets. Se reproduce completo,
@@ -48,6 +52,89 @@ function normalize(header: string): string {
 }
 
 const normalizedHeaders = REAL_HEADERS.map(normalize);
+
+/**
+ * Encabezado actual de la hoja "Usuarios", después de unificar columnas: se
+ * quitaron las largas de contacto y "NIT", "RUT escaneado" y "Enlace RUT"
+ * pasaron a llamarse "Numero de Documento", "Documento Escaneado" y
+ * "Enlace Documento".
+ */
+const CURRENT_HEADERS = [
+	'ID',
+	'Fecha de Registro',
+	'Rol',
+	'Tipo Documento',
+	'Número Documento',
+	'Direccion',
+	'Barrio',
+	'Ciudad',
+	'Telefono',
+	'Whatsapp',
+	'Email',
+	'Usuario',
+	'Contraseña',
+	'Método de Pago',
+	'Número de Billetera',
+	'Saldo Acumulado',
+	'Level',
+	'Código Referido',
+	'Código Propio',
+	'Estado Documento',
+	'Enlace Documento',
+	'Documento Escaneado',
+	'Numero de Documento',
+	'Documento Escaneado',
+	'Enlace Documento',
+];
+
+describe('userColumnIndexes con el encabezado actual', () => {
+	const idx = userColumnIndexes(CURRENT_HEADERS.map(normalize));
+
+	it('no deja ninguna columna sin resolver', () => {
+		// Un `-1` no da error: la escritura se salta en silencio y el dato se
+		// pierde. Este es el aviso más barato de que algo se rompió.
+		const sinResolver = Object.entries(idx).filter(([, i]) => i === -1);
+		expect(sinResolver).toEqual([]);
+	});
+
+	it('separa "Número Documento" de "Numero de Documento" (el NIT)', () => {
+		// Solo se distinguen por el "de". Sin esa precisión, ambas caían en la 4.
+		expect(idx.documentNumber).toBe(4);
+		expect(idx.nit).toBe(22);
+	});
+
+	it('lee el NIT aunque la columna ya no se llame "NIT"', () => {
+		expect(idx.nit).toBe(22);
+	});
+
+	it('apunta el enlace y el archivo a las columnas de documento', () => {
+		expect(idx.documentLink).toBe(20);
+		expect(idx.scannedDocument).toBe(21);
+		// Sin columna propia, el par del RUT se apoya en las del documento.
+		expect(idx.rutLink).toBe(idx.documentLink);
+		expect(idx.scannedRut).toBe(idx.scannedDocument);
+	});
+
+	it('sigue escribiendo en las columnas cortas de contacto y billetera', () => {
+		expect(idx.address).toBe(5);
+		expect(idx.neighborhood).toBe(6);
+		expect(idx.city).toBe(7);
+		expect(idx.phone).toBe(8);
+		expect(idx.whatsapp).toBe(9);
+		expect(idx.paymentMethod).toBe(13);
+		expect(idx.walletNumber).toBe(14);
+	});
+});
+
+describe('userColumnIndexes con el encabezado anterior', () => {
+	const idx = userColumnIndexes(normalizedHeaders);
+
+	it('mantiene las columnas propias de NIT y RUT', () => {
+		expect(idx.nit).toBe(27);
+		expect(idx.scannedRut).toBe(28);
+		expect(idx.rutLink).toBe(29);
+	});
+});
 
 describe('registrationContactColumnIndexes', () => {
 	const idx = registrationContactColumnIndexes(normalizedHeaders);

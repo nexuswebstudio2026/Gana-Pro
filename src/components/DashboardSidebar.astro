@@ -75,7 +75,11 @@ const items: NavItem[] = [
 			{ href: '/dashboard/mi-organigrama', label: 'Mi organigrama' },
 			{ href: '/dashboard/informacion-cuenta', label: 'Información del Perfil' },
 			{ href: '/dashboard/ubicacion', label: 'Ubicación' },
-			{ href: '/dashboard/rut', label: 'Documento de Identidad' },
+			// El RUT (DIAN) es del negocio, así que solo se ofrece al admin. El
+			// resto de miembros se identifica con su documento de identidad.
+			isAdmin
+				? { href: '/dashboard/rut', label: 'RUT (DIAN)' }
+				: { href: '/dashboard/documento', label: 'Documento de Identidad' },
 		],
 	},
 ];
