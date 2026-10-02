@@ -75,7 +75,16 @@ const memorySessions = new Map<string, Session>();
  */
 function getSessions(): Session[] {
 	try {
-		return readJSON<Session[]>('sessions.json', []);
+		const parsed = readJSON<unknown>('sessions.json', []);
+		// El archivo puede quedar mal formado (por ejemplo, con un unico objeto
+		// en vez de un array) y `readJSON` solo protege contra JSON invalido. Sin
+		// esta comprobacion, el `.filter` de mas abajo lanza `TypeError` y el
+		// login deja de funcionar del todo.
+		if (Array.isArray(parsed)) return parsed as Session[];
+		console.error(
+			'[session] sessions.json no contiene un array de sesiones: se ignora.'
+		);
+		return [];
 	} catch {
 		return Array.from(memorySessions.values());
 	}
