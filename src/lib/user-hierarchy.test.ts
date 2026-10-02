@@ -74,6 +74,21 @@ describe('buildUserHierarchy', () => {
 		]);
 		const ids: string[] = [];
 		const visit = (node: ReturnType<typeof buildUserHierarchy>) => {
+			ids.push(node.id);
+			node.children.forEach(visit);
+		};
+		visit(root);
+		expect(new Set(ids).size).toBe(ids.length);
+	});
+
+	it('numera las posiciones de forma consecutiva desde la raíz', () => {
+		const root = buildUserHierarchy([user('ana'), user('beto')]);
+		expect(root.position).toBe(1);
+		expect(root.children.map((c) => c.position)).toEqual([2, 3]);
+	});
+});
+
+
 
 describe('countByLevel y maxOrganizationDepth', () => {
 	it('cuenta los nodos por profundidad, incluida la raíz', () => {
@@ -111,6 +126,54 @@ describe('findUserNode', () => {
 });
 
 describe('buildPersonalHierarchy', () => {
+	it('el administrador ve el árbol en vez de una vista vacía', () => {
+		// El admin es la raíz de GANA PRO y queda fuera del árbol global, así que
+		// sin este caso su organigrama personal salía vacío.
+		const usuarios = [user('ganapro'), user('ana'), user('beto')];
+		const personal = buildPersonalHierarchy(usuarios, {
+			username: 'ganapro',
+			email: 'admin@test.com',
+		});
+		expect(personal.orphan).toBe(false);
+		expect(personal.root.name).toBe('GANA PRO');
+		expect(personal.team.length).toBeGreaterThan(0);
+	});
+
+	it('un miembro normal sigue viendo solo su rama', () => {
+		// Regresión: si la detección de raíz no exige ser el usuario raíz, un
+		// miembro normal acabaría viendo el árbol completo.
+		const usuarios = [user('ganapro'), user('ana'), user('beto')];
+		const personal = buildPersonalHierarchy(usuarios, {
+			username: 'ana',
+			email: 'ana@test.com',
+		});
+		expect(personal.root.name).toBe('ana');
+	});
+
+	it('el miembro ve toda su rama, no solo los usuarios directos', () => {
+		// Regresión: antes la rama se recortaba al primer nivel y un miembro no
+		// veía a los usuarios de sus usuarios.
+		// Hacen falta muchos usuarios para que un nodo tenga nietos: la raíz
+		// toma 5, sus hijos toman 5 cada uno (25), y solo entonces los nietos
+		// del primero reciben los siguientes.
+		const usuarios = [
+			user('ganapro'),
+			...Array.from({ length: 40 }, (_, i) => user(`u${i}`)),
+		];
+		const personal = buildPersonalHierarchy(usuarios, { username: 'u0', email: 'u0@test.com' });
+
+		const niveles: number[] = [];
+		const recorrer = (n: ReturnType<typeof buildUserHierarchy>) => {
+			niveles.push(n.depth);
+			n.children.forEach(recorrer);
+		};
+		recorrer(personal.root);
+
+		// La rama de u0 incluye a los usuarios de sus usuarios: hay al menos
+		// un nodo a dos niveles de distancia.
+		expect(niveles.some((d) => d >= 2)).toBe(true);
+	});
+
 	it('marca como huérfano a un usuario que aún no está en la hoja', () => {
 		const personal = buildPersonalHierarchy([user('ana')], {
 			username: 'recien-registrado',
@@ -156,18 +219,5 @@ describe('buildPersonalHierarchy', () => {
 			(globalNode?.children ?? []).slice(0, MAX_DIRECT_TEAM).map((n) => n.name)
 		);
 	});
-});
 
-			ids.push(node.id);
-			node.children.forEach(visit);
-		};
-		visit(root);
-		expect(new Set(ids).size).toBe(ids.length);
-	});
-
-	it('numera las posiciones de forma consecutiva desde la raíz', () => {
-		const root = buildUserHierarchy([user('ana'), user('beto')]);
-		expect(root.position).toBe(1);
-		expect(root.children.map((c) => c.position)).toEqual([2, 3]);
-	});
 });

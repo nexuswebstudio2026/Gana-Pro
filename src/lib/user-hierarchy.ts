@@ -160,6 +160,27 @@ export function buildPersonalHierarchy(
 	identity: UserIdentity
 ): PersonalHierarchy {
 	const globalRoot = buildUserHierarchy(users);
+
+	// El administrador es la raíz de GANA PRO y, por diseño, queda FUERA del
+	// árbol global (su lugar lo ocupa el nodo "GANA PRO"). Sin este caso
+	// especial `findUserNode` no lo encontraba nunca y el admin veía siempre un
+	// organigrama vacío: su rama es justamente el árbol entero.
+	//
+	// La comprobación exige `isRootUser`: con solo comparar contra la lista de
+	// usuarios daría true para cualquiera, y todos verían el árbol completo.
+	const identidad = (user: User): boolean =>
+		(normalize(identity.username) !== '' && normalize(user.username) === normalize(identity.username)) ||
+		(normalize(identity.email) !== '' && normalize(user.email) === normalize(identity.email));
+	const esRaiz = users.some((user) => isRootUser(user) && identidad(user));
+	if (esRaiz) {
+		const root: OrganizationNode = {
+			...globalRoot,
+			depth: 0,
+			children: globalRoot.children.slice(0, MAX_DIRECT_TEAM),
+		};
+		return { root, team: root.children, orphan: false };
+	}
+
 	const node = findUserNode(globalRoot, identity);
 
 	if (!node) {
@@ -178,13 +199,25 @@ export function buildPersonalHierarchy(
 		};
 	}
 
-	// El nodo encontrado se convierte en la raíz: sus hijos pasan a ser el
-	// segundo nivel y se descarta el resto de la rama.
+	// El nodo encontrado se convierte en la raíz de la vista personal. Ya no se
+	// recorta su rama a los cinco directos: el miembro ve TODA su rama, con los
+	// usuarios de sus usuarios y los de los siguientes niveles.
 	const root: OrganizationNode = {
 		...node,
 		depth: 0,
-		children: node.children.slice(0, MAX_DIRECT_TEAM),
+		children: node.children,
 	};
+
+	// Al mover el nodo a la raíz hay que rebasar la profundidad de su rama: si
+	// el usuario estaba en el nivel 2 del árbol global, sus hijos venían con
+	// profundidad 3 y al dibujarlos como equipo directo quedarían descolgados
+	// un nivel por debajo. Antes se conservaba la profundidad original y el
+	// organigrama personal mostraba los niveles mal alineados.
+	const rebasar = (current: OrganizationNode, depth: number): void => {
+		current.depth = depth;
+		current.children.forEach((child) => rebasar(child, depth + 1));
+	};
+	rebasar(root, 0);
 
 	return {
 		root,

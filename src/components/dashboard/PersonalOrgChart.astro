@@ -1,6 +1,7 @@
 ---
-import type { PersonalHierarchy } from '../../lib/user-hierarchy';
+import type { OrganizationNode, PersonalHierarchy } from '../../lib/user-hierarchy';
 import { MAX_DIRECT_TEAM } from '../../lib/user-hierarchy';
+import OrgTreeNode from './OrgTreeNode.astro';
 
 interface Props {
 	personal: PersonalHierarchy;
@@ -19,15 +20,21 @@ const initials = (name: string) =>
 		.join('') || '·';
 
 const emptySlots = Math.max(0, MAX_DIRECT_TEAM - team.length);
+
+/** Cuántas personas hay en total en la rama, a cualquier nivel. */
+function contarRama(node: OrganizationNode): number {
+	return node.children.reduce((total, child) => total + 1 + contarRama(child), 0);
+}
+const totalRama = contarRama(root);
 ---
 
 <section class="myorg luxury-card" aria-label="Mi organigrama">
 	<div class="myorg-head">
 		<div>
 			<h2>Mi organigrama</h2>
-			<p>Tus usuarios directos según el orden de registro. Máximo {MAX_DIRECT_TEAM} por persona.</p>
-		</div>
-		<span class="myorg-total">{team.length}/{MAX_DIRECT_TEAM}</span>
+			<p>Toda tu rama: tus usuarios directos y los que estos trajeron, en todos los niveles.</p>
+			</div>
+		<span class="myorg-total">{totalRama} en tu rama</span>
 	</div>
 
 	{loadFailed ? (
@@ -50,16 +57,8 @@ const emptySlots = Math.max(0, MAX_DIRECT_TEAM - team.length);
 			{team.length > 0 && <span class="myorg-link" aria-hidden="true"></span>}
 
 			<div class="myorg-team">
-				{team.map((member, index) => (
-					<div class="myorg-node myorg-member">
-						<span class="myorg-slot">Puesto {index + 1} de {MAX_DIRECT_TEAM}</span>
-						<span class="myorg-avatar" aria-hidden="true">{initials(member.name)}</span>
-						<div class="myorg-copy">
-							<strong>{member.name}</strong>
-							<span>{[member.level, member.role].filter(Boolean).join(' · ') || `Registro #${member.position}`}</span>
-							{member.email && <span class="myorg-email">{member.email}</span>}
-						</div>
-					</div>
+				{team.map((member) => (
+					<OrgTreeNode node={member} first />
 				))}
 
 				{Array.from({ length: emptySlots }, (_, i) => (

@@ -162,11 +162,10 @@ const referralWhatsappUrl = referralUrl
 					{/* Sin esto el QR solo se veía en pantalla y no había forma de
 					    guardarlo ni enviarlo: que es justo para lo que se pide. */}
 					<div class="referral-actions">
-						<a
-							href={referralUrl}
-							download={`QR-referido-${referralCode}.svg`}
-							class="referral-btn"
-						>
+						<a href="/dashboard/invitacion" class="referral-btn">
+							Invitación en PDF
+						</a>
+						<a href={referralUrl} download={`QR-referido-${referralCode}.svg`} class="referral-btn">
 							Descargar QR
 						</a>
 						{referralWhatsappUrl && (

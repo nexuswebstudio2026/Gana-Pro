@@ -1,0 +1,126 @@
+﻿---
+import { isAdminRole } from '../../lib/auth';
+import { formatAppDateTime } from '../../lib/datetime';
+import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
+import { ownCodeOf } from '../../lib/referrals';
+import { COMMISSION_PER_REFERRAL } from '../../lib/referrals';
+import { formatCOP } from '../../lib/referrals';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = Astro.locals.user!;
+
+let userDetail: User | null = null;
+try {
+	const users = await getGoogleSheetUsers();
+	userDetail =
+		users.find(
+			(user) =>
+				user.username?.toLowerCase() === session.username.toLowerCase() ||
+				user.email?.toLowerCase() === session.email.toLowerCase()
+		) || null;
+} catch (error) {
+	console.error('Error al cargar los datos de la invitaciÃ³n:', error);
+}
+
+const isAdmin = isAdminRole(userDetail?.role || session.role);
+if (!isAdmin && !userDetail) {
+	return Astro.redirect('/dashboard', 303);
+}
+
+// El QR se sirve desde /api/referral-qr, que ya devuelve el SVG del usuario
+// conectado con el dominio pÃºblico correcto.
+const referralCode = userDetail
+	? ownCodeOf(userDetail)
+	: String(session.username || '').trim();
+const siteUrl = getPublicSiteUrl(Astro.request);
+const referralUrl = `${siteUrl}/register?ref=${encodeURIComponent(referralCode)}`;
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="noindex" />
+		<link rel="stylesheet" href="/invitacion.css" />
+		<title>InvitaciÃ³n GANA PRO â€” {referralCode}</title>
+		
+	</head>
+
+<body>
+		<div class="screen-actions no-print">
+			<button type="button" onclick="window.print()" class="btn-print">Descargar / Imprimir PDF</button>
+			<a href="/dashboard/informacion-cuenta" class="btn-back">Volver a Mi Cuenta</a>
+			<p class="hint">
+				En el diÃ¡logo elige <strong>Â«Guardar como PDFÂ»</strong> como destino. El QR queda
+				vectorial, asÃ­ que se escanea nÃ­tido a cualquier tamaÃ±o.
+			</p>
+		</div>
+
+		<article class="sheet">
+			<header class="head">
+				<span class="brand font-cinzel">GANA <em>PRO</em></span>
+				<h1>Te invito a GANA PRO</h1>
+				<p class="lead">
+					Gana {formatCOP(COMMISSION_PER_REFERRAL)} por cada persona que se registre con mi
+					cÃ³digo, cuando su primera recarga sea aprobada.
+				</p>
+			</header>
+
+			<section class="qr-block">
+				<div class="qr-frame">
+					<img
+						src="/api/referral-qr"
+						alt={`CÃ³digo QR de registro con el cÃ³digo ${referralCode}`}
+						width="300"
+						height="300"
+					/>
+				</div>
+				<p class="qr-caption">Escanea con la cÃ¡mara del telÃ©fono</p>
+			</section>
+
+			<section class="code-block">
+				<span class="label">Mi cÃ³digo</span>
+				<code class="code">{referralCode}</code>
+				<span class="label">O entra directo en</span>
+				<code class="link">{referralUrl}</code>
+			</section>
+
+			<section class="steps">
+				<h2 class="font-cinzel">Instala la app en tu telÃ©fono</h2>
+				<p class="steps-lead">
+					La app se instala desde el navegador, sin buscar nada en una tienda. Tarda unos
+					segundos y luego se abre como una aplicaciÃ³n normal.
+				</p>
+
+				<h3>En Android (Chrome)</h3>
+				<ol>
+					<li>Abre <strong>gana-pro.vercel.app</strong> en Chrome.</li>
+					<li>Pulsa los <strong>tres puntos</strong> (â‹®) de la esquina superior derecha.</li>
+					<li>Elige <strong>Â«Instalar aplicaciÃ³nÂ»</strong> o <strong>Â«AÃ±adir a la pantalla de inicioÂ»</strong>.</li>
+					<li>Confirma con <strong>InstalarÂ»</strong>. TeDownloadAparecerÃ¡ un Ã­cono con el escudo de GANA PRO.</li>
+				</ol>
+
+				<h3>En iPhone (Safari)</h3>
+				<ol>
+					<li>Abre la pÃ¡gina en <strong>Safari</strong> (no funciona en Chrome).</li>
+					<li>Pulsa el botÃ³n <strong>Compartir</strong> (el cuadro con la flecha hacia arriba).</li>
+					<li>Elige <strong>Â«AÃ±adir a pantalla de inicioÂ»</strong>.</li>
+					<li>Pulsa <strong>AÃ±adir</strong> arriba a la derecha.</li>
+				</ol>
+
+				<p class="steps-note">
+					<i class="fa-solid fa-circle-info"></i> Si no aparece la opciÃ³n de instalar, revisa que
+					estÃ©s en el sitio principal (no en una vista previa) y actualiza la pÃ¡gina.
+				</p>
+			</section>
+
+			<footer class="foot">
+				<span>GANA PRO â€” Plataforma de Ã©lite y alta rentabilidad</span>
+				<span class="foot-code">CÃ³digo: {referralCode}</span>
+			</footer>
+		</article>
+	</body>
+</html>

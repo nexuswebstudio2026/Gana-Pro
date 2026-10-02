@@ -1,0 +1,63 @@
+---
+import type { OrganizationNode } from '../../lib/user-hierarchy';
+// Un componente recursivo tiene que importarse a si mismo para que Astro lo
+// resuelva al compilar; sin esta linea el nombre no existe dentro del archivo.
+import OrgTreeNode from './OrgTreeNode.astro';
+
+interface Props {
+	node: OrganizationNode;
+	/** Es el primer nodo de una rama: no lleva sangría. */
+	first?: boolean;
+}
+
+const { node, first = false } = Astro.props;
+const initials = (name: string) =>
+	String(name || '')
+		.split(/[\s_.-]+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part.charAt(0).toUpperCase())
+		.join('') || '·';
+---
+
+{/*
+	Nodo recursivo: se llama a si mismo con los hijos, de modo que se dibuja
+	toda la rama y no solo los usuarios directos. La profundidad del árbol
+	global se usa parainyectar el nivel dentro de la rama propia.
+*/}
+<li class="org-branch-item" style={first ? undefined : `--nivel: ${Math.max(0, node.depth)}`}>
+	<div class="myorg-node myorg-member">
+		<span class="myorg-slot">Nivel {node.depth + 1}</span>
+		<span class="myorg-avatar" aria-hidden="true">{initials(node.name)}</span>
+		<div class="myorg-copy">
+			<strong>{node.name}</strong>
+			<span>
+				{[node.level, node.role].filter(Boolean).join(' · ') || `Registro #${node.position}`}
+			</span>
+			{node.email && <span class="myorg-email">{node.email}</span>}
+		</div>
+	</div>
+
+	{node.children.length > 0 && (
+		<ul class="org-branch-children">
+			{node.children.map((child) => <OrgTreeNode node={child} />)}
+		</ul>
+	)}
+</li>
+
+<style>
+	.org-branch-item {
+		list-style: none;
+	}
+
+	/* Cada nivel se desplaza un poco para que se lea la jerarquía sin
+	   apilarla en una sola columna. */
+	.org-branch-children {
+		margin: 10px 0 0;
+		padding-left: 22px;
+		border-left: 1px solid var(--gold-border);
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+</style>
