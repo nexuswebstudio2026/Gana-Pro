@@ -2,9 +2,9 @@
  * Registro de comisiones de referido.
  *
  * La comisión se acredita al SALDO de quien trae el alta, no al del referido:
- * quien capta es quien gana. Son dos pagos independientes de $1.000: uno
- * cuando se aprueba el registro y otro cuando el referido hace su primera
- * recarga aprobada.
+ * quien capta es quien gana. El alta por sí sola NO paga nada: el código queda
+ * guardado en la columna "Código Referido" y la comisión de $1.000 se acredita
+ * cuando el referido hace su primera recarga aprobada.
  * Cada pago queda anotado en la pestaña `Comisiones`. Esa fila es además la
  * que evita el doble pago: antes de acreditar se comprueba que no exista ya un
  * pago con el mismo (referido, concepto), de modo que repetir la operación sea
@@ -25,9 +25,8 @@ import type { User } from './types';
 /** Pestaña donde queda la trazabilidad de las comisiones pagadas. */
 export const COMMISSIONS_TAB = 'Comisiones';
 
-/** Los dos momentos en los que se paga. */
+/** Momento en el que se paga la comisión. El alta no paga: solo la recarga. */
 export const COMMISSION_CONCEPT = {
-	registro: 'Registro aprobado',
 	primeraRecarga: 'Primera recarga',
 } as const;
 
@@ -191,13 +190,12 @@ async function credit(referred: User, concept: CommissionConcept): Promise<Commi
 	};
 }
 
-/** Comisión por aprobarse el registro del referido. */
-export function creditOnRegistrationApproved(referred: User): Promise<CommissionResult> {
-	return credit(referred, COMMISSION_CONCEPT.registro);
-}
-
 /**
  * Comisión por la primera recarga aprobada del referido.
+ *
+ * Es el único momento en el que se paga una comisión por referido: el alta no
+ * paga nada, se guarda solo el código. Aquí la recarga ya está aprobada, así que
+ * el referido es un usuario real de la plataforma.
  *
  * Solo paga la primera: si el referido ya tenía otra recarga aprobada, esta
  * comisión ya se pagó antes y no se acredita nada.
@@ -215,4 +213,47 @@ export async function creditOnFirstTopupApproved(
 		return { ...NOTHING, reason: 'El referido ya tenía una recarga aprobada.' };
 	}
 	return credit(referred, COMMISSION_CONCEPT.primeraRecarga);
+}
+
+/** Una comisión ya pagada, tal y como figura en la pestaña. */
+export interface CommissionRecord {
+	/** Fecha del pago (texto de la hoja). */
+	date: string;
+	/** Usuario que recibió la comisión. */
+	referrer: string;
+	/** Usuario que trajo. */
+	referred: string;
+	/** Por qué se pagó ("Primera recarga"). */
+	concept: string;
+	/** Monto, en pesos. */
+	amount: number;
+}
+
+/**
+ * Lista las comisiones pagadas, de la más reciente a la más antigua.
+ *
+ * Devuelve `[]` si la hoja no se puede leer: la página avisa por separado, igual
+ * que el resto de listados del panel.
+ */
+export async function listCommissions(): Promise<CommissionRecord[]> {
+	const res = await getSheetsClient().spreadsheets.values.get({
+		spreadsheetId: SPREADSHEET_ID,
+		range: RANGE,
+	});
+	const rows = (res.data.values || []).slice(1);
+
+	const records: CommissionRecord[] = [];
+	for (const row of rows) {
+		const cells = row.map((c) => String(c ?? '').trim());
+		const amount = Number(cells[4]?.replace(/[^\d.-]/g, ''));
+		records.push({
+			date: cells[0] ?? '',
+			referrer: cells[1] ?? '',
+			referred: cells[2] ?? '',
+			concept: cells[3] ?? '',
+			amount: Number.isFinite(amount) ? amount : 0,
+		});
+	}
+
+	return records.reverse();
 }

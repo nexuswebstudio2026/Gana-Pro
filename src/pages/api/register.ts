@@ -188,6 +188,11 @@ export const POST: APIRoute = async (Astro) => {
 			// Ignore local store error on serverless environments
 		}
 
+		// El alta NO paga comisión. La comisión se acredita a quien trajo el referido
+		// cuando este hace su primera recarga aprobada (ver `api/admin/topups.ts`).
+		// Aquí el código de referido solo se guarda en la columna "Código Referido",
+		// que es lo que luego usa esa operación para saber a quién acreditar.
+
 		// Redirect to login on success
 		return Astro.redirect('/login?registered=1', 303);
 	} catch (err) {

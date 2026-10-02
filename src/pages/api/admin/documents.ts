@@ -13,7 +13,6 @@ import {
 	MAX_DOCUMENT_BYTES,
 } from '../../../lib/testimonials';
 import { ImageStorageNotConfiguredError } from '../../../lib/image-storage';
-import { creditOnRegistrationApproved } from '../../../lib/referral-commissions';
 
 export const prerender = false;
 
@@ -151,28 +150,9 @@ export const POST: APIRoute = async (Astro) => {
 			return fail(`No se encontró el registro de ${username}.`);
 		}
 
-		// Al aprobar el registro se paga la primera comisión: el referido queda
-		// verificado y su referente recibe $1.000 en su saldo.
-		if (status === DOCUMENT_STATUS.aprobado && existingUser) {
-			try {
-				const commission = await creditOnRegistrationApproved(existingUser);
-				if (commission.credited) {
-					return done(
-						`Documento de ${username} aprobado. ` +
-							`Comisión de $1.000 acreditada a ${commission.referrer}.`
-					);
-				}
-				console.log('Comisión de registro no acreditada:', commission.reason);
-			} catch (commissionErr) {
-				// La aprobación ya quedó guardada: un fallo aquí no debe
-				// hacer que el admin repita la operación sobre el documento.
-				console.error('Error al pagar la comisión de referido:', commissionErr);
-				return done(
-					`Documento de ${username} aprobado, pero la comisión de referido ` +
-						'no pudo acreditarse. Revísala en la pestaña Comisiones.'
-				);
-			}
-		}
+		// La comisión del alta ya se pagó al registrarse (ver `api/register.ts`).
+		// Aquí solo se marca el estado: volver a pagarla desde la aprobación haría
+		// que el referente cobrara dos veces por el mismo alta.
 
 		return done(`Documento de ${username} marcado como ${status}.`);
 	} catch (err) {

@@ -1,0 +1,265 @@
+---
+import { isAdminRole } from '../../lib/auth';
+import { formatAppDateTime } from '../../lib/datetime';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { listCommissions, COMMISSION_PER_REFERRAL } from '../../lib/referral-commissions';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+// El middleware ya resolvió la sesión y comprobó que hay una válida.
+const session = Astro.locals.user!;
+
+let userDetail: User | null = null;
+try {
+	const users = await getGoogleSheetUsers();
+	userDetail =
+		users.find(
+			(user) =>
+				user.username?.toLowerCase() === session.username.toLowerCase() ||
+				user.email?.toLowerCase() === session.email.toLowerCase()
+		) || null;
+} catch (error) {
+	console.error('Error al cargar el rol del usuario:', error);
+}
+
+// El rol de la hoja manda sobre el de la sesión: si el administrador acaba de
+// degradar a esta persona, deja de ver las comisiones sin esperar a que caduque
+// su cookie.
+const isAdmin = isAdminRole(userDetail?.role || session.role);
+
+// Solo el administrador revisa las comisiones: son movimientos de dinero.
+if (!isAdmin) {
+	return Astro.redirect(
+		'/dashboard?error=' + encodeURIComponent('No tienes permisos para ver las comisiones.'),
+		303
+	);
+}
+
+let records: Awaited<ReturnType<typeof listCommissions>> = [];
+let loadError = false;
+try {
+	records = await listCommissions();
+} catch (error) {
+	loadError = true;
+	console.error('Error al cargar las comisiones:', error);
+}
+
+// Cuánto se le pagó a cada usuario, ordenado de mayor a menor.
+const porUsuario = new Map<string, { total: number; referidos: number }>();
+for (const r of records) {
+	const actual = porUsuario.get(r.referrer) ?? { total: 0, referidos: 0 };
+	actual.total += r.amount;
+	actual.referidos += 1;
+	porUsuario.set(r.referrer, actual);
+}
+const ranking = [...porUsuario.entries()].sort((a, b) => b[1].total - a[1].total);
+
+const totalPagado = records.reduce((sum, r) => sum + r.amount, 0);
+
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Comisiones de Referidos"
+	eyebrow="REVISIÓN DEL ADMINISTRADOR"
+	description="Historial de las comisiones acreditadas a los usuarios que trajeron referred usuarios."
+>
+	{loadError && (
+		<p class="account-alert ko" role="alert">
+			No se pudieron cargar las comisiones en este momento.
+		</p>
+	)}
+
+	<div class="com-total">
+		<span>
+			Comisiones pagadas: <strong>{records.length}</strong>
+			{records.length === 1 ? 'pago' : 'pagos'} por un total de
+		</span>
+		<strong>{fmt(totalPagado)}</strong>
+	</div>
+
+	<p class="com-note">
+		Se acredita {fmt(COMMISSION_PER_REFERRAL)} a quien trae cuando su referido hace su
+		primera recarga aprobada. El registro no paga comisión: solo guarda el código.
+	</p>
+
+	{ranking.length > 0 && (
+		<section class="luxury-card com-block">
+			<header class="com-head">
+				<h2 class="font-cinzel">Total por usuario</h2>
+			</header>
+			<div class="com-table-wrap">
+				<table class="com-table">
+					<thead>
+						<tr>
+							<th scope="col">Usuario</th>
+							<th scope="col">Referidos</th>
+							<th scope="col">Total recibido</th>
+						</tr>
+					</thead>
+					<tbody>
+						{ranking.map(([nombre, datos]) => (
+							<tr>
+								<td><strong>{nombre}</strong></td>
+								<td>{datos.referidos}</td>
+								<td class="com-amount">{fmt(datos.total)}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	)}
+
+	<section class="luxury-card com-block">
+		<header class="com-head">
+			<h2 class="font-cinzel">Historial</h2>
+			<span class="com-count">{records.length}</span>
+		</header>
+
+		{records.length === 0 ? (
+			<p class="com-empty">
+				Todavía no se ha pagado ninguna comisión. Aparecerán aquí cuando se apruebe la
+				primera recarga de un usuario registrado con código de referido.
+			</p>
+		) : (
+			<div class="com-table-wrap">
+				<table class="com-table">
+					<thead>
+						<tr>
+							<th scope="col">Fecha</th>
+							<th scope="col">Recibió</th>
+							<th scope="col">Trajo a</th>
+							<th scope="col">Concepto</th>
+							<th scope="col">Monto</th>
+						</tr>
+					</thead>
+					<tbody>
+						{records.map((r) => (
+							<tr>
+								<td>{r.date ? formatAppDateTime(r.date) : '—'}</td>
+								<td><strong>{r.referrer || '—'}</strong></td>
+								<td>{r.referred || '—'}</td>
+								<td>{r.concept || '—'}</td>
+								<td class="com-amount">{fmt(r.amount)}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		)}
+	</section>
+</AdminPageLayout>
+
+<style>
+	.com-total {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+		margin: 0 0 14px;
+		padding: 14px 16px;
+		border-radius: 12px;
+		border: 1px solid var(--gold-border);
+		background: rgba(212, 175, 55, 0.1);
+		font-size: 0.9rem;
+	}
+
+	.com-total strong {
+		font-family: 'Cinzel', serif;
+		font-size: 1.3rem;
+		color: var(--gold-primary);
+	}
+
+	.com-note {
+		margin: 0 0 18px;
+		font-size: 0.85rem;
+		color: var(--text-secondary);
+		line-height: 1.5;
+	}
+
+	.com-block {
+		padding: 24px;
+		margin-bottom: 18px;
+	}
+
+	.com-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	.com-head h2 {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+
+	.com-count {
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+	}
+
+	.com-empty {
+		margin: 0;
+		color: var(--text-secondary);
+		font-size: 0.9rem;
+		line-height: 1.6;
+	}
+
+	/* La tabla se desplaza en horizontal en pantallas estrechas en vez de
+	   romper el panel. */
+	.com-table-wrap {
+		overflow-x: auto;
+	}
+
+	.com-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.88rem;
+	}
+
+	.com-table th,
+	.com-table td {
+		padding: 10px 12px;
+		text-align: left;
+		border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+		white-space: nowrap;
+	}
+
+	.com-table th {
+		font-size: 0.72rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--text-secondary);
+	}
+
+	.com-table tbody tr:hover {
+		background: rgba(212, 175, 55, 0.06);
+	}
+
+	.com-amount {
+		font-family: 'Cinzel', serif;
+		font-weight: 700;
+		color: var(--gold-primary);
+		text-align: right;
+	}
+
+	@media (max-width: 640px) {
+		.com-block {
+			padding: 18px 14px;
+		}
+
+		.com-total {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 6px;
+		}
+	}
+</style>

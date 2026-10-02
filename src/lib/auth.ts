@@ -52,6 +52,7 @@ const ADMIN_DASHBOARD_SECTIONS: readonly string[] = [
 	'gastos',
 	'negocio',
 	'usuario',
+	'comisiones',
 ];
 
 /** ¿Esta ruta es un endpoint de administración? (`/api/admin...`) */

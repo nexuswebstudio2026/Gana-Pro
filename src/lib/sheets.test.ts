@@ -4,7 +4,7 @@ import {
 	registrationContactColumnIndexes,
 	userColumnIndexes,
 } from './sheets';
-import { getPublicSiteUrl, siteUrlFromHeaders } from './sheets';
+import { siteUrlFromHeaders } from './sheets';
 
 /**
  * El encabezado tal y como está en Google Sheets. Se reproduce completo,
