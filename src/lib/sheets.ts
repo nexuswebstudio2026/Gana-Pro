@@ -50,8 +50,17 @@ export function getEnvValue(key: string): string | undefined {
  *
  * Se resuelve en este orden:
  *   1. `PUBLIC_SITE_URL` del entorno (con o sin https://).
- *   2. El dominio del despliegue en Vercel, vía los encabezados del proxy.
- *   3. El origen de la petición, como último recurso.
+ *   2. El host por el que entró la visita (`x-forwarded-host` / `host`).
+ *   3. El despliegue de Vercel, como último recurso.
+ *   4. El origen de la petición.
+ *
+ * El orden importa y antes estaba mal: se preguntaba por
+ * `x-vercel-deployment-url` antes que por el host real. Ese encabezado
+ * identifica **un despliegue concreto** (`...-hash-equipo.vercel.app`), no el
+ * sitio, así que un QR generado desde una vista previa quedaba apuntando a esa
+ * dirección. Al eliminarse la vista previa —que es lo que pasa en cuanto se
+ * despliega—, el QR llevaba a un error de Vercel en lugar de al sitio. Para un
+ * enlace que se comparte y escanea gente, tiene que usarse la dirección estable.
  */
 export function getPublicSiteUrl(request?: Request): string {
 	const configured = (getEnvValue('PUBLIC_SITE_URL') || '').trim();
@@ -60,19 +69,8 @@ export function getPublicSiteUrl(request?: Request): string {
 		return withProtocol.replace(/\/+$/, '');
 	}
 
-	const headers = request?.headers;
-	const host =
-		headers?.get('x-vercel-deployment-url') ||
-		headers?.get('x-forwarded-host') ||
-		headers?.get('host') ||
-		'';
-	if (host) {
-		// x-forwarded-host puede traer una lista separada por comas.
-		const hostname = host.split(',')[0].trim();
-		if (hostname && !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(hostname)) {
-			return `https://${hostname}`;
-		}
-	}
+	const fromHeaders = siteUrlFromHeaders(request?.headers);
+	if (fromHeaders) return fromHeaders;
 
 	// Último recurso: el origen de la petición (localhost en desarrollo).
 	try {
@@ -80,6 +78,35 @@ export function getPublicSiteUrl(request?: Request): string {
 	} catch {
 		return 'http://localhost:4321';
 	}
+}
+
+/**
+ * Dominio que se deduce de los encabezados de la petición, o `null` si no hay
+ * uno utilizable.
+ *
+ * Va aparte de `getPublicSiteUrl` para poder comprobarla en los tests sin que
+ * `PUBLIC_SITE_URL` —que tiene prioridad— los condicione.
+ */
+export function siteUrlFromHeaders(headers: Headers | undefined): string | null {
+	if (!headers) return null;
+
+	const candidates = [
+		headers.get('x-forwarded-host'),
+		headers.get('host'),
+		// Solo si no se conoce el host de entrada: sirve para despliegues sin
+		// proxy delante, nunca por delante de los anteriores.
+		headers.get('x-vercel-deployment-url'),
+	];
+
+	for (const candidate of candidates) {
+		// x-forwarded-host puede traer una lista separada por comas.
+		const hostname = String(candidate || '').split(',')[0].trim();
+		if (hostname && !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(hostname)) {
+			return `https://${hostname}`;
+		}
+	}
+
+	return null;
 }
 
 const SHEET_ID = getEnvValue('GOOGLE_SHEET_ID') || '15I3EAN5rcdG034Mu4mT6uuF6bolzCxQd-FKW9oiDyJo';

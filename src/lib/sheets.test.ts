@@ -4,6 +4,7 @@ import {
 	registrationContactColumnIndexes,
 	userColumnIndexes,
 } from './sheets';
+import { getPublicSiteUrl, siteUrlFromHeaders } from './sheets';
 
 /**
  * El encabezado tal y como está en Google Sheets. Se reproduce completo,
@@ -133,6 +134,58 @@ describe('userColumnIndexes con el encabezado anterior', () => {
 		expect(idx.nit).toBe(27);
 		expect(idx.scannedRut).toBe(28);
 		expect(idx.rutLink).toBe(29);
+	});
+});
+
+describe('siteUrlFromHeaders', () => {
+	// Se prueba esta función y no `getPublicSiteUrl` porque `PUBLIC_SITE_URL`
+	// tiene prioridad y cortocircuitaría la lógica de encabezados.
+	const h = (headers: Record<string, string>) => new Headers(headers);
+
+	it('usa el host real de la visita, no el URL del despliegue', () => {
+		// Este es el bug que rompía el QR: se preguntaba antes por
+		// `x-vercel-deployment-url`, que apunta a una vista previa que luego
+		// desaparece, y el QR acababa en un error de Vercel.
+		expect(
+			siteUrlFromHeaders(
+				h({
+					'x-vercel-deployment-url': 'gana-pro-abc123-equipo.vercel.app',
+					'x-forwarded-host': 'gana-pro.vercel.app',
+					host: 'gana-pro.vercel.app',
+				})
+			)
+		).toBe('https://gana-pro.vercel.app');
+	});
+
+	it('usa el host si no hay forwarded-host', () => {
+		expect(
+			siteUrlFromHeaders(
+				h({ 'x-vercel-deployment-url': 'preview-1.vercel.app', host: 'gana-pro.vercel.app' })
+			)
+		).toBe('https://gana-pro.vercel.app');
+	});
+
+	it('recurre al despliegue solo cuando no hay host de entrada', () => {
+		expect(
+			siteUrlFromHeaders(h({ 'x-vercel-deployment-url': 'preview-1.vercel.app' }))
+		).toBe('https://preview-1.vercel.app');
+	});
+
+	it('toma el primero de una lista de x-forwarded-host', () => {
+		expect(
+			siteUrlFromHeaders(h({ 'x-forwarded-host': 'gana-pro.vercel.app, proxy.interno' }))
+		).toBe('https://gana-pro.vercel.app');
+	});
+
+	it('nunca devuelve localhost como dominio público', () => {
+		expect(
+			siteUrlFromHeaders(h({ 'x-forwarded-host': 'localhost:4321', host: 'localhost:4321' }))
+		).toBeNull();
+	});
+
+	it('devuelve null si no hay nada utilizable', () => {
+		expect(siteUrlFromHeaders(h({}))).toBeNull();
+		expect(siteUrlFromHeaders(undefined)).toBeNull();
 	});
 });
 
