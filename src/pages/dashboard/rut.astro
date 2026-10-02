@@ -2,7 +2,7 @@
 import { validateSession } from '../../lib/session';
 import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers } from '../../lib/sheets';
-import { DOCUMENT_STATUS, documentTypeLabel } from '../../lib/testimonials';
+import { DOCUMENT_STATUS, DOCUMENT_TYPES, documentTypeLabel } from '../../lib/testimonials';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import type { User } from '../../lib/types';
 
@@ -75,39 +75,45 @@ const hasRut = rutLink !== '';
 			<div class="doc-alert ko" role="alert">{docMessage || 'El almacenamiento no está disponible en el servidor.'}</div>
 		)}
 
-		{identityLabel && (
-			<div class="doc-current">
-				<div class="doc-current-info">
-					<span class="doc-label">Documento de identidad (registro)</span>
-					<code class="doc-file">{identityLabel}</code>
+		{/* El NIT solo se muestra a quien lo tiene: es un dato del negocio, no de
+		    cada miembro, así que no debe aparecerle a un usuario normal. */}
+			{isAdmin && nitValue && (
+				<div class="doc-current">
+					<div class="doc-current-info">
+						<span class="doc-label">NIT (Identificación Tributaria DIAN)</span>
+						<code class="doc-file">{nitValue}</code>
+					</div>
 				</div>
-				{docNumberValue && <span class="doc-view">{docNumberValue}</span>}
-			</div>
-		)}
-		{nitValue && (
-			<div class="doc-current">
-				<div class="doc-current-info">
-					<span class="doc-label">NIT (Identificación Tributaria DIAN)</span>
-					<code class="doc-file">{nitValue}</code>
+			)}
+			{!isAdmin && identityLabel && (
+				<div class="doc-current">
+					<div class="doc-current-info">
+						<span class="doc-label">Documento de identidad</span>
+						<code class="doc-file">{identityLabel}</code>
+					</div>
+					{docNumberValue && <span class="doc-view">{docNumberValue}</span>}
 				</div>
-			</div>
-		)}
-		{hasRut && (
-			<div class="doc-current">
-				<div class="doc-current-info">
-					<span class="doc-label">RUT emitido por la DIAN</span>
-					<code class="doc-file">{rutFileName}</code>
+			)}
+			{hasRut && (
+				<div class="doc-current">
+					<div class="doc-current-info">
+						<span class="doc-label">Archivo del documento</span>
+						<code class="doc-file">{rutFileName}</code>
+					</div>
+					<a href={rutLink} target="_blank" rel="noopener noreferrer" class="doc-view">
+						{isPdf ? 'Ver PDF' : 'Ver imagen'}
+					</a>
 				</div>
-				<a href={rutLink} target="_blank" rel="noopener noreferrer" class="doc-view">
-					{isPdf ? 'Ver PDF' : 'Ver imagen'}
-				</a>
-			</div>
-		)}
+			)}
 
 		{/* El formulario se muestra siempre, también con el documento ya aprobado:
 		    el aviso de arriba promete que se puede actualizar, y sin formulario ese
 		    aviso sería falso. El endpoint vuelve a poner el estado en "pendiente". */}
 		<form method="POST" action="/api/documents" enctype="multipart/form-data" class="doc-form">
+			{/* El NIT (Identificación Tributaria DIAN) es un dato del negocio y
+			    solo lo declara el administrador. El resto de miembros se identifica
+			    con su documento de identidad: cédula (CC/TI/CE) o permiso (PEP). */}
+			{isAdmin ? (
 				<div class="doc-field">
 					<label for="nit">NIT (Identificación Tributaria DIAN)</label>
 					<input
@@ -121,22 +127,53 @@ const hasRut = rutLink !== '';
 						minlength="6"
 						maxlength="20"
 						pattern="[0-9]*"
-						title="Solo números, entre 6 y 20 dígitos"
+						title="Solo numeros, entre 6 y 20 digitos"
 					/>
-					<span class="doc-hint">Opcional. Si no tienes NIT, puedes dejar solo el documento de arriba.</span>
+					<span class="doc-hint">Identificación tributaria del negocio ante la DIAN.</span>
 				</div>
-				<div class="doc-field">
-					<label for="rut">Documento de identidad</label>
-					<input
-						type="file"
-						id="rut"
-						name="rut"
-						accept="image/jpeg,image/png,image/webp,application/pdf"
-						required={!hasRut}
-					/>
-					<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
-				</div>
-				<button type="submit" class="gold-button">
+			) : (
+				<>
+					<div class="doc-field">
+						<label for="tipoDocumento">Tipo de Documento</label>
+						<select id="tipoDocumento" name="tipoDocumento" required>
+							{DOCUMENT_TYPES.map((tipo) => (
+								<option value={tipo.code} selected={docTypeValue === tipo.code}>
+									{tipo.code} — {tipo.label}
+								</option>
+							))}
+						</select>
+					</div>
+					<div class="doc-field">
+						<label for="numeroDocumento">Número de Documento</label>
+						<input
+							type="text"
+							id="numeroDocumento"
+							name="numeroDocumento"
+							value={docNumberValue}
+							placeholder="Ej: 1020304050"
+							inputmode="numeric"
+							required
+							minlength="6"
+							maxlength="20"
+							pattern="[0-9]*"
+							title="Solo numeros, entre 6 y 20 digitos"
+						/>
+						<span class="doc-hint">Solo numeros, entre 6 y 20 digitos.</span>
+					</div>
+				</>
+			)}
+			<div class="doc-field">
+				<label for="rut">Archivo del documento</label>
+				<input
+					type="file"
+					id="rut"
+					name="rut"
+					accept="image/jpeg,image/png,image/webp,application/pdf"
+					required={!hasRut}
+				/>
+				<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
+			</div>
+			<button type="submit" class="gold-button">
 				{hasRut || docApproved ? 'Actualizar documento' : 'Subir documento'}
 			</button>
 			{docApproved && (
