@@ -1,6 +1,7 @@
 import { randomBytes, createHmac } from 'node:crypto';
 import type { APIContext } from 'astro';
 import { readJSON, writeJSON } from './store';
+import { getEnvValue } from './sheets';
 
 export interface Session {
 	token: string;
@@ -37,7 +38,11 @@ export const SESSION_COOKIE = 'auth_session';
  * predecible.
  */
 const SECRET = ((): string | null => {
-	const configured = process.env.SESSION_SECRET?.trim();
+	// Se lee con `getEnvValue` y no con `process.env` directo para que se
+	// comporte como el resto de variables del proyecto (Sheets, testimonios,
+	// imagenes), que ademas consultan el archivo `.env` cuando `process.env`
+	// no las tiene.
+	const configured = getEnvValue('SESSION_SECRET')?.trim();
 	if (configured) return configured;
 
 	if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
