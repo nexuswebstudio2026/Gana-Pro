@@ -134,7 +134,17 @@ const formatDate = (value: string): string => formatAppDateTime(value);
 							<span class="field-hint">JPG, PNG, WEBP o GIF. Máximo 5 MB.</span>
 						</div>
 
-						<button type="submit" class="gold-button btn-full">Publicar Testimonio</button>
+						<button type="submit" class="gold-button btn-full" data-publish>
+						Publicar Testimonio
+					</button>
+					{/*
+						Subir una imagen a Vercel Blob tarda varios segundos. Sin esto el
+						botón sigue activo y un doble clic creaba dos testimonios.
+					*/}
+					<div class="upload-progress" data-progress hidden>
+						<div class="upload-bar"><span data-progress-bar></span></div>
+						<p class="upload-text" data-progress-text>Subiendo tu testimonio…</p>
+					</div>
 						<p class="form-note">
 							Publicando como <strong>{session.username}</strong>. Tu valoración se mostrará tal cual, sea
 							positiva o negativa.
@@ -196,7 +206,120 @@ const formatDate = (value: string): string => formatAppDateTime(value);
 	</div>
 </section>
 
+<script>
+	// `fetch` no informa el progreso de la subida, asi que se usa
+	// XMLHttpRequest: sin esto no habria forma de saber cuanto falta ni de
+	// deshabilitar el boton mientras dura el envio.
+	const form = document.querySelector<HTMLFormElement>('form.tform');
+	const boton = document.querySelector<HTMLButtonElement>('[data-publish]');
+	const caja = document.querySelector<HTMLElement>('[data-progress]');
+	const barra = document.querySelector<HTMLElement>('[data-progress-bar]');
+	const texto = document.querySelector<HTMLElement>('[data-progress-text]');
+
+	form?.addEventListener('submit', (event) => {
+		if (!form || !boton) return;
+
+		event.preventDefault();
+
+		// Segundo clic mientras el primero sigue en vuelo: se ignora.
+		if (boton.hasAttribute('disabled')) return;
+
+		const datos = new FormData(form);
+		const xhr = new XMLHttpRequest();
+		xhr.open('POST', '/api/testimonials');
+
+		if (caja) caja.hidden = false;
+		if (boton) {
+			boton.setAttribute('disabled', 'disabled');
+			boton.textContent = 'Publicando…';
+		}
+
+		// Se mueve despacio al principio (subir el archivo domina el tiempo) y se
+		// completa al recibir la respuesta, que es cuando el alta ya esta hecha.
+		xhr.upload.addEventListener('progress', (ev) => {
+			if (!ev.lengthComputable || !barra) return;
+			const pct = Math.min(92, Math.round((ev.loaded / ev.total) * 100));
+			barra.style.width = pct + '%';
+			if (texto) texto.textContent = 'Subiendo tu testimonio… ' + pct + '%';
+		});
+
+		xhr.addEventListener('load', () => {
+			if (barra) barra.style.width = '100%';
+			if (texto) texto.textContent = 'Listo. Actualizando…';
+			// Se deja que la redireccion del servidor se encargue: el destino ya
+			// lleva los parametros de exito o de error.
+			window.location.href = xhr.responseURL || '/valoraciones';
+		});
+
+		xhr.addEventListener('error', () => {
+			if (boton) {
+				boton.removeAttribute('disabled');
+				boton.textContent = 'Publicar Testimonio';
+			}
+			if (caja) caja.hidden = true;
+			if (texto) texto.textContent = 'No se pudo subir. Inténtalo de nuevo.';
+			if (caja) caja.hidden = false;
+		});
+
+		xhr.send(datos);
+	});
+</script>
+
 <style>
+	.upload-progress {
+		margin-top: 14px;
+	}
+
+	.upload-progress[hidden] {
+		display: none;
+	}
+
+	.upload-bar {
+		height: 6px;
+		border-radius: 9999px;
+		background: rgba(212, 175, 55, 0.16);
+		overflow: hidden;
+	}
+
+	.upload-bar span {
+		display: block;
+		height: 100%;
+		width: 0%;
+		border-radius: 9999px;
+		background: var(--gold-gradient);
+		transition: width 0.25s ease;
+	}
+
+	.upload-text {
+		margin: 8px 0 0;
+		font-size: 12.5px;
+		color: var(--text-secondary);
+	}
+
+	/* Boton bloqueado durante la subida: tiene que verse que no hace nada. */
+	.gold-button[disabled] {
+		opacity: 0.65;
+		cursor: progress;
+		transform: none;
+	}
+
+	.testimonial-card {
+		transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+			border-color 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.testimonial-card:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 22px 48px -16px rgba(10, 17, 40, 0.35);
+	}
+
+	.testimonial-image img {
+		transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.testimonial-image:hover img {
+		transform: scale(1.05);
+	}
 	.section {
 		padding: 85px 24px;
 	}

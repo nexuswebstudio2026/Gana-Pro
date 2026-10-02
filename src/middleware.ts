@@ -16,6 +16,7 @@ const PUBLIC_PATHS: readonly string[] = [
 	'/register',
 	'/forgot-password',
 	'/gana-dinero',
+	'/valoraciones',
 	'/sobre-nosotros',
 	'/api/login',
 	'/api/logout',

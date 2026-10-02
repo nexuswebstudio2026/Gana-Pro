@@ -135,9 +135,21 @@ async function credit(referred: User, concept: CommissionConcept): Promise<Commi
 		return { ...NOTHING, reason: `No se encontró al referente del código ${code}.` };
 	}
 
-	const referrerName = ownCodeOf(referrer) || String(referrer.username || '').trim();
+	// El pago se identifica por USUARIO, no por código: `setSheetUserBalance`
+	// localiza la fila en la columna "Usuario" y, si el referente tuviese un
+	// código propio distinto (por ejemplo "PROMO-JUAN"), la búsqueda fallaría y
+	// la comisión se perdería en silencio. El código es solo para compartirlo.
+	const referrerUsername = String(referrer.username || '').trim();
+	const referrerCode = ownCodeOf(referrer);
+	if (!referrerUsername) {
+		return { ...NOTHING, reason: 'El referente no tiene nombre de usuario.' };
+	}
+
+	// En la pestaña se anota el código, que es como se reconoce al referente en
+	// el organigrama y en la red de referidos.
+	const referrerName = referrerCode || referrerUsername;
 	// Defensa extra: nadie se paga a sí mismo aunque la hoja esté inconsistente.
-	if (normalizeHeader(referrerName) === normalizeHeader(referredName)) {
+	if (normalizeHeader(referrerUsername) === normalizeHeader(referredName)) {
 		return { ...NOTHING, reason: 'El referente y el referido son el mismo usuario.' };
 	}
 
@@ -153,9 +165,11 @@ async function credit(referred: User, concept: CommissionConcept): Promise<Commi
 		};
 	}
 
-	const current = parseSheetBalance(await getUserBalance(referrerName, String(referrer.email || '')));
+	const current = parseSheetBalance(
+		await getUserBalance(referrerUsername, String(referrer.email || ''))
+	);
 	const next = current + COMMISSION_PER_REFERRAL;
-	if (!(await setSheetUserBalance(referrerName, next))) {
+	if (!(await setSheetUserBalance(referrerUsername, next))) {
 		return {
 			credited: false,
 			referrer: referrerName,

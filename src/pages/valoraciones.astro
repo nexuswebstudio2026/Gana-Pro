@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import TestimonialsSection from '../components/TestimonialsSection.astro';
+import { validateSession } from '../lib/session';
+
+export const prerender = false;
+
+const token = Astro.cookies.get('auth_session')?.value;
+const session = validateSession(token);
+---
+
+<Layout
+	title="Valoraciones de la comunidad"
+	description="Testimonios y valoraciones sin filtro de los miembros de GANA PRO sobre la metodología."
+>
+	<Navbar />
+
+	<main class="main-content">
+		<TestimonialsSection session={session} />
+	</main>
+</Layout>
+
+<style>
+	.main-content {
+		position: relative;
+		overflow: hidden;
+	}
+</style>
+

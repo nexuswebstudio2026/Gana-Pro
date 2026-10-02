@@ -1,20 +1,646 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
-import TestimonialsSection from '../components/TestimonialsSection.astro';
-import { validateSession } from '../lib/session';
 
+// SSR: la página usa el Navbar, que lee la cookie de sesión
 export const prerender = false;
-
-const token = Astro.cookies.get('auth_session')?.value;
-const session = validateSession(token);
 ---
 
-<Layout title="Plataforma de Lujo, Inversión & Prestigio">
+<Layout
+	title="Gana Dinero"
+	description="Las vías para generar ingresos en GANA PRO: Sistema Constelación y Referidos, con una estructura de cinco niveles y reglas claras."
+>
 	<Navbar />
 
 	<main class="main-content">
-		<TestimonialsSection session={session} />
+		<section class="section page-hero">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">INGRESOS & RENTABILIDAD</span>
+					<h1 class="section-title font-cinzel">
+						Las <span class="gold-gradient-text">Vías para Gana Dinero</span>
+					</h1>
+					<p class="section-subtitle">
+						Cuatro estrategias de ingreso diseñadas para convertir tu tiempo, tu equipo y tu capital en
+						resultados medibles y sostenidos.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- ============ LAS DOS VÍAS DE INGRESO ============ -->
+		<section class="section ways-section" aria-labelledby="ways-title">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">ELIGE TU CAMINO</span>
+					<h2 class="section-title font-cinzel" id="ways-title">
+						Dos Formas de <span class="gold-gradient-text">Ganar Dinero</span>
+					</h2>
+					<p class="section-subtitle">
+						GANA PRO abre dos vías independientes. No son pasos de un mismo recorrido: puedes usar una, las
+						dos o quedarte solo con la primera. Cada una tiene reglas propias, requisitos distintos y
+						riesgos distintos.
+					</p>
+				</div>
+
+				<div class="ways-grid">
+					<article class="luxury-card way-card" id="via-constelacion">
+						<span class="way-tag font-cinzel">VÍA 01</span>
+						<div class="card-icon-box">
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polygon points="12 2 22 8.5 18.5 20 5.5 20 2 8.5 12 2"></polygon>
+								<circle cx="12" cy="11" r="2.2"></circle>
+								<circle cx="7" cy="15" r="1.6"></circle>
+								<circle cx="17" cy="15" r="1.6"></circle>
+							</svg>
+						</div>
+						<h3 class="way-title font-cinzel">Sistema Constelación</h3>
+						<p class="way-desc">
+							La vía estructural. Consistes una red de <strong class="accent">5 posiciones por
+								persona</strong> dentro de una constelación de cinco niveles. Tu posición sube cuando la
+							base que tienes debajo completa los aportes y confirma la estructura.
+						</p>
+						<ul class="way-list">
+							<li>
+								<strong>Cómo ganas:</strong> el 50 % de lo que entra por tu base lo reenvías hacia
+								arriba, y el Nivel 5 retiene el 65 % de lo que le llega.
+							</li>
+							<li>
+								<strong>Requisito:</strong> llenar tus 5 posiciones. Sin 5 personas debajo no hay
+								ascenso.
+							</li>
+							<li>
+								<strong>Escala:</strong> es la vía profunda: de 1 posición a las 3.906 de una
+								constelación completa.
+							</li>
+						</ul>
+						<a href="#via-constelacion-detalle" class="way-link">
+							Ver la metodología completa
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="12" y1="5" x2="12" y2="19"></line>
+								<polyline points="19 12 12 19 5 12"></polyline>
+							</svg>
+						</a>
+					</article>
+
+					<article class="luxury-card way-card" id="via-referidos">
+						<span class="way-tag font-cinzel">VÍA 02</span>
+						<div class="card-icon-box">
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+								<circle cx="9" cy="7" r="4"></circle>
+								<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+								<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							</svg>
+						</div>
+						<h3 class="way-title font-cinzel">Red de Referidos</h3>
+						<p class="way-desc">
+							La vía directa. Captas personas con tu código de referido y ganas
+							<strong class="accent">$1.000 por cada alta</strong>, sin aportar capital. No dependes de que
+							un grupo se complete: cuenta cada persona que consigues.
+						</p>
+						<ul class="way-list">
+							<li>
+								<strong>Cómo ganas:</strong> <strong>$1.000</strong> de una sola vez por cada persona
+								que se registra con tu código. Sin llenar los 5 espacios.
+							</li>
+							<li>
+								<strong>Requisito:</strong> solo compartir tu enlace. Sin aporte inicial ni grupo que
+								completar.
+							</li>
+							<li>
+								<strong>Escala:</strong> vía ancha y de entrada rápida: cada referido suma una vez y no
+								hay tope.
+							</li>
+						</ul>
+						<a href="#via-referidos-detalle" class="way-link">
+							Ver cómo funciona
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="12" y1="5" x2="12" y2="19"></line>
+								<polyline points="19 12 12 19 5 12"></polyline>
+							</svg>
+						</a>
+					</article>
+				</div>
+
+				<div class="ways-compare">
+					<p>
+						<strong class="accent">En resumen:</strong> la <strong>Constelación</strong> es lenta,
+						profunda y la única que puede llegar al Nivel 5. Los <strong>Referidos</strong> son rápidos,
+						anchos y alimentan directamente tu base. Muévete primero por Referidos para llenar posiciones
+						y usa la Constelación para sostenerlas.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- ============ VÍA 01: SISTEMA CONSTELACIÓN ============ -->
+		<section class="section method-section" id="via-constelacion-detalle" aria-labelledby="method-title">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">VÍA 01 · METODOLOGÍA PROPIA</span>
+					<h2 class="section-title font-cinzel" id="method-title">
+						Sistema <span class="gold-gradient-text">Constelación</span>
+					</h2>
+					<p class="section-subtitle">
+						Una estructura jerárquica de cinco niveles donde cada posición se sostiene sobre cinco posiciones
+						inferiores. El avance no depende del azar: depende de la confirmación de los aportes de tu
+						estructura.
+					</p>
+				</div>
+
+				<!-- Niveles -->
+				<div class="levels-grid">
+					<div class="luxury-card level-card">
+						<span class="level-num font-cinzel">01</span>
+						<h3 class="level-name font-cinzel">Nivel 1</h3>
+						<p class="level-desc">Posición de entrada. Todos los usuarios nuevos inician aquí.</p>
+					</div>
+					<div class="luxury-card level-card">
+						<span class="level-num font-cinzel">02</span>
+						<h3 class="level-name font-cinzel">Nivel 2</h3>
+						<p class="level-desc">Recibe los aportes de sus 5 posiciones de Nivel 1 y confirma la estructura.</p>
+					</div>
+					<div class="luxury-card level-card">
+						<span class="level-num font-cinzel">03</span>
+						<h3 class="level-name font-cinzel">Nivel 3</h3>
+						<p class="level-desc">Ascendente una vez validada la Base 2. Aloja 5 posiciones de Nivel 2.</p>
+					</div>
+					<div class="luxury-card level-card">
+						<span class="level-num font-cinzel">04</span>
+						<h3 class="level-name font-cinzel">Nivel 4</h3>
+						<p class="level-desc">Ascendente por validación de la Base 3. Aloja 5 posiciones de Nivel 3.</p>
+					</div>
+					<div class="luxury-card level-card level-final">
+						<span class="level-num font-cinzel">05</span>
+						<h3 class="level-name font-cinzel">Nivel 5</h3>
+						<p class="level-desc">
+							Último nivel del ciclo. Aloja 5 posiciones de Nivel 4, envía el 35 % de lo que recibe a
+							GANA PRO y retiene el 65 % menos el impuesto de plataforma.
+						</p>
+					</div>
+				</div>
+
+				<!-- Estructura jerárquica y distribución real -->
+				<div class="luxury-card tree-box">
+					<h3 class="cycle-title font-cinzel">La Estructura Jerárquica</h3>
+					<p class="cycle-intro">
+						La regla es única y se repite sin excepción: <strong class="accent">cada posición superior sostiene
+						exactamente 5 posiciones inferiores</strong>, y cada una de ellas sostiene 5 más, hasta cerrar
+						las cinco posiciones de la constelación.
+					</p>
+
+					<div class="tree-list" role="list">
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 1</span>
+							<span class="tree-bar" style="--w: 100%"></span>
+							<span class="tree-count">3.125</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 2</span>
+							<span class="tree-bar" style="--w: 62%"></span>
+							<span class="tree-count">625</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 3</span>
+							<span class="tree-bar" style="--w: 32%"></span>
+							<span class="tree-count">125</span>
+						</div>
+						<div class="tree-row" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 4</span>
+							<span class="tree-bar" style="--w: 16%"></span>
+							<span class="tree-count">25</span>
+						</div>
+						<div class="tree-row tree-row-top" role="listitem">
+							<span class="tree-label font-cinzel">Nivel 5</span>
+							<span class="tree-bar" style="--w: 8%"></span>
+							<span class="tree-count">5</span>
+						</div>
+					</div>
+						<div class="tree-stats">
+						<div class="tree-stat">
+							<span class="tree-stat-value font-cinzel">3.906</span>
+							<span class="tree-stat-label">Posiciones totales</span>
+						</div>
+						<div class="tree-stat">
+							<span class="tree-stat-value font-cinzel">80 %</span>
+							<span class="tree-stat-label">Ocupan el Nivel 1</span>
+						</div>
+						<div class="tree-stat">
+							<span class="tree-stat-value font-cinzel">5</span>
+							<span class="tree-stat-label">Niveles en la constelación</span>
+						</div>
+					</div>
+
+					<div class="risk-note">
+						<h4 class="risk-title font-cinzel">Lectura Honesta de las Cifras</h4>
+						<p>
+							Una constelación completa requiere <strong class="accent">3.906 personas</strong>. De ellas,
+							<strong class="accent">3.125 están en la base</strong> y aportan los $15.000 que sostienen a
+							los niveles superiores: la base representa el
+							<strong class="accent">80 % de toda la estructura</strong> y aporta los
+							<strong class="accent">$46.875.000</strong>. Para alcanzar el Nivel 5 existen 3.901
+							posiciones por debajo.
+						</p>
+						<p>
+							La estructura solo se completa mediante la captación continuada de nuevos participantes. El
+							rendimiento de cada posición depende por completo del número de personas que consiga
+							incorporar por debajo, sin garantía de completarla.
+						</p>
+					</div>
+				</div>
+
+				<!-- Flujo de fondos -->
+				<div class="luxury-card flow-box">
+					<h3 class="cycle-title font-cinzel">El Flujo de Fondos</h3>
+					<p class="cycle-intro">
+						Los niveles 2, 3 y 4 reenvían a su superior el 50 % de lo que reciben. El Nivel 5 rompe la regla:
+						entrega el 35 % a GANA PRO y retiene el 65 % antes del impuesto de plataforma.
+					</p>
+
+					<div class="flow-table" role="table" aria-label="Flujo de fondos por nivel">
+						<div class="flow-row flow-head" role="row">
+							<span role="columnheader">Nivel</span>
+							<span role="columnheader">Envía</span>
+							<span role="columnheader">Recibe</span>
+							<span role="columnheader">Retiene</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N1 → N2</span>
+							<span role="cell" data-label="Envía">$15.000</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$75.000</span>
+							<span role="cell" data-label="Retiene">—</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N2 → N3</span>
+							<span role="cell" data-label="Envía">$37.500</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$187.500</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$37.500</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N3 → N4</span>
+							<span role="cell" data-label="Envía">$93.750</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$468.750</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$93.750</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N4 → N5</span>
+							<span role="cell" data-label="Envía">$234.375</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$1.171.875</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$234.375</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">N5 → GANA PRO</span>
+							<span role="cell" data-label="Envía">$410.000</span>
+							<span class="flow-in" role="cell" data-label="Recibe">$2.050.000</span>
+							<span class="flow-keep" role="cell" data-label="Retiene">$761.875</span>
+						</div>
+					</div>
+
+					<div class="tax-box">
+						<h4 class="tax-title font-cinzel">Cierre del Ciclo e Impuesto de Plataforma</h4>
+						<p>
+							El Nivel 5 es el último escalón. Cada posición recibe
+							<strong class="accent">$1.171.875</strong> de sus 5 posiciones de Nivel 4 y destina
+							<strong class="accent">$410.000</strong> a GANA PRO, el <strong class="accent">35 %</strong> de
+							lo recibido. A diferencia de los niveles 2, 3 y 4, que reenvían el 50 %, el Nivel 5 retiene el
+							<strong class="accent">65 %</strong>: <strong class="accent">$761.875</strong>.
+						</p>
+						<p>
+							Sobre ese 65 % retenido se aplica el <strong class="accent">5 %</strong> de impuesto por uso de
+							la plataforma, equivalente a <strong class="accent">$38.093,75</strong>. La utilidad neta
+							del Nivel 5 es de <strong class="accent">$723.781,25</strong> por posición.
+						</p>
+						<p class="tax-note">
+							Los cinco Nivel 5 destinan $410.000 cada uno, de modo que GANA PRO percibe
+							<strong class="accent">$2.050.000</strong> por constelación completa.
+						</p>
+					</div>
+
+					<div class="risk-note">
+						<h4 class="risk-title font-cinzel">Reparto Real del Dinero de la Base</h4>
+						<p>
+							De los <strong class="accent">$46.875.000</strong> que aporta la base, la distribución es:
+							Nivel 2 se queda <strong class="accent">$23.437.500</strong> (50 %), Nivel 3
+							<strong class="accent">$11.718.750</strong> (25 %), Nivel 4
+							<strong class="accent">$5.859.375</strong> (12,5 %), Nivel 5
+							<strong class="accent">$3.809.375</strong> (8,1 %) y GANA PRO
+							<strong class="accent">$2.050.000</strong> (4,4 %).
+						</p>
+						<p>
+							El <strong class="accent">95,6 % del dinero</strong> captado por la estructura se queda en los
+							niveles de participantes; GANA PRO percibe el 4,4 % restante. El Nivel 5 es la única posición
+							que retiene más de la mitad: gana <strong class="accent">$723.781,25</strong> netos frente a
+							los $37.500 de un Nivel 2, pero para alcanzarlo necesita
+							<strong class="accent">3.901 personas</strong> por debajo. Un participante en el Nivel 1 que
+							logra llegar al Nivel 2 obtiene <strong class="accent">$37.500</strong> frente a los $15.000
+							que aportó: una rentabilidad del <strong class="accent">150 %</strong> que solo se alcanza
+							captando a 5 personas. Quien no completa su grupo de 5 no recibe nada y pierde los $15.000.
+						</p>
+					</div>
+				</div>
+
+				<!-- Ciclo de confirmación -->
+				<div class="luxury-card cycle-box">
+					<h3 class="cycle-title font-cinzel">El Ciclo de Confirmación</h3>
+					<p class="cycle-intro">
+						Cada ascenso se produce en cuatro movimientos consecutivos. Ningún nivel se alcanza
+						automáticamente: requiere la verificación de los aportes de la base.
+					</p>
+					<ol class="cycle-list">
+						<li>
+							<span class="cycle-step font-cinzel">I</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Registro</h4>
+								<p>Cada usuario nuevo ocupa una posición de Nivel 1 dentro de la estructura.</p>
+							</div>
+						</li>
+						<li>
+							<span class="cycle-step font-cinzel">II</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Aporte</h4>
+								<p>
+									Cada una de las 5 posiciones de Nivel 1 envía un aporte de
+									<strong class="accent">$15.000</strong> a su posición de Nivel 2 correspondiente, que
+									recibe un total de <strong class="accent">$75.000</strong>.
+								</p>
+							</div>
+						</li>
+						<li>
+							<span class="cycle-step font-cinzel">III</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Confirmación</h4>
+								<p>
+									La posición de Nivel 2 verifica y confirma que las 5 posiciones de su base han completado
+									el aporte.
+								</p>
+							</div>
+						</li>
+						<li>
+							<span class="cycle-step font-cinzel">IV</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Ascenso</h4>
+								<p>
+									Confirmado el aporte, las 5 posiciones de Nivel 1 pasan a Nivel 2, la posición validada
+									pasa a Nivel 3, y el Nivel 1 queda libre para nuevos registros.
+								</p>
+							</div>
+						</li>
+					</ol>
+					<p class="cycle-note">
+						La confirmación de la Base 2 habilita el ascenso a Nivel 3. El mismo principio se repite de forma
+						idéntica entre los niveles 2, 3 y 4. Al llegar al <strong class="accent">Nivel 5</strong> el ciclo
+						se cierra: el Nivel 5 envía el 35 % a GANA PRO y retiene el 65 % restante, sobre el que se aplica
+						el impuesto de plataforma.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- ============ VÍA 02: RED DE REFERIDOS ============ -->
+		<section class="section method-section" id="via-referidos-detalle" aria-labelledby="referidos-title">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">VÍA 02 · CAPTACIÓN DIRECTA</span>
+					<h2 class="section-title font-cinzel" id="referidos-title">
+						Red de <span class="gold-gradient-text">Referidos</span>
+					</h2>
+					<p class="section-subtitle">
+						Mientras la Constelación funciona llenando posiciones hacia abajo, tu código de referido
+						trabaja en horizontal. Ganas <strong class="accent">$1.000</strong> una sola vez por cada
+						persona que se registre con tu código, sin aportar capital y sin necesidad de completar
+						ningún grupo.
+					</p>
+				</div>
+
+				<div class="luxury-card cycle-box">
+					<h3 class="cycle-title font-cinzel">Cómo funciona tu código de referido</h3>
+					<p class="cycle-intro">
+						No hay aportes que hacer ni grupos que completar. Tu función se limita a compartir tu
+						enlace y registrar a quienes decidan usar tu código.
+					</p>
+					<ol class="cycle-list">
+						<li>
+							<span class="cycle-step font-cinzel">I</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Obtienes tu código</h4>
+								<p>
+									Al crear tu cuenta se genera un <strong class="accent">código de referido</strong> y un
+									<strong class="accent">código propio</strong> únicos. Ambos aparecen en tu panel de
+									miembro y son el identificador de tu posición en la red.
+								</p>
+							</div>
+						</li>
+						<li>
+							<span class="cycle-step font-cinzel">II</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Lo compartes</h4>
+								<p>
+									Tu enlace incorpora el código. Cualquier persona que se registre con él queda
+									vinculada a tu red, sin importar si luego invita a más por su cuenta.
+								</p>
+							</div>
+						</li>
+						<li>
+							<span class="cycle-step font-cinzel">III</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Se suma a tu base</h4>
+								<p>
+									El referido ocupa una posición de <strong class="accent">Nivel 1</strong> bajo ti y
+									cuenta para tus métricas. Cada referido que trae también rellena posiciones de tu
+									constelación, así que ambas vías se alimentan entre sí.
+								</p>
+							</div>
+						</li>
+						<li>
+							<span class="cycle-step font-cinzel">IV</span>
+							<div>
+								<h4 class="cycle-name font-cinzel">Recibe $1.000 por cada referido</h4>
+								<p>
+									La comisión es un <strong class="accent">pago único</strong>: se genera al confirmarse el
+									registro y suma <strong class="accent">$1.000</strong> a tu acumulado. No se repite cada
+									mes aunque tu referido siga activo, y no depende de que complete su propio grupo.
+								</p>
+							</div>
+						</li>
+					</ol>
+					<p class="cycle-note">
+						La diferencia esencial: en la Constelación <strong>no cobras nada hasta llenar tus 5
+						posiciones</strong>. En Referidos <strong>cada registro cuenta por sí solo</strong>, sin
+						condiciones de grupo. Por eso es la vía recomendada para empezar.
+					</p>
+				</div>
+
+				<div class="luxury-card tree-box">
+					<h3 class="cycle-title font-cinzel">Constelación frente a Referidos</h3>
+					<p class="cycle-intro">
+						Las dos vías viven en la misma plataforma y se complementan: Referidos llena posiciones y
+						Constelación las sostiene.
+					</p>
+					<div class="flow-table" role="table" aria-label="Comparación entre constelación y referidos">
+						<div class="flow-row flow-head" role="row">
+							<span role="columnheader">Criterio</span>
+							<span role="columnheader">Vía 01 · Constelación</span>
+							<span role="columnheader">Vía 02 · Referidos</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">Requisito</span>
+							<span role="cell" data-label="Constelación">5 posiciones completas</span>
+							<span class="flow-in" role="cell" data-label="Referidos">Ningún requisito previo</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">Aporte</span>
+							<span role="cell" data-label="Constelación">$15.000 por posición</span>
+							<span class="flow-in" role="cell" data-label="Referidos">Ninguno</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">Comisión</span>
+							<span role="cell" data-label="Constelación">50 % / 65 % según el nivel</span>
+							<span class="flow-in" role="cell" data-label="Referidos">$1.000 únicos por referido</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">Velocidad</span>
+							<span role="cell" data-label="Constelación">Lenta: exige 5 confirmaciones</span>
+							<span class="flow-in" role="cell" data-label="Referidos">Inmediata al registro</span>
+						</div>
+						<div class="flow-row" role="row">
+							<span class="flow-level font-cinzel" role="cell">Techo</span>
+							<span role="cell" data-label="Constelación">Nivel 5 de la constelación</span>
+							<span class="flow-in" role="cell" data-label="Referidos">Sin tope de nivel</span>
+						</div>
+					</div>
+					<div class="risk-note">
+						<h4 class="risk-title font-cinzel">Lo que nadie te dice</h4>
+						<p>
+							Las dos vías dependen de <strong class="accent">captación de personas</strong>. Ninguna
+							funciona de forma pasiva: sin referidos la Constelación no se completa, y sin referidos
+							la red tampoco crece.
+						</p>
+						<p>
+							En la Constelación, quien no completa su grupo de 5 <strong class="accent">no recibe
+							ningún retorno</strong> y pierde el aporte de $15.000. Antes de comprometer capital,
+							evalúa con honestidad a cuántas personas puedes captar y sostener.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ============ SERVICIOS COMPLEMENTARIOS ============ -->
+		<section class="section">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">CAPITAL Y PROTECCIÓN</span>
+					<h2 class="section-title font-cinzel">
+						Servicios <span class="gold-gradient-text">Complementarios</span>
+					</h2>
+					<p class="section-subtitle">
+						No son vías de ingreso por sí mismas: son las herramientas que protegen y hacen crecer el
+						capital que generas con las dos anteriores.
+					</p>
+				</div>
+				<div class="paths-grid cols-3">
+					<div class="luxury-card path-card">
+						<div class="card-icon-box">
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="12" y1="1" x2="12" y2="23"></line>
+								<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+							</svg>
+						</div>
+						<h2 class="card-title font-cinzel">Rendimiento de Cartera</h2>
+						<p class="card-desc">
+							Portafolios diversificados en divisas premium, metales preciosos e instrumentos de alta
+							liquidez, gestionados con precisión institucional y ejecución milimétrica.
+						</p>
+					</div>
+
+					<div class="luxury-card path-card featured">
+						<div class="featured-badge">MÁS RENTABLE</div>
+						<div class="card-icon-box">
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+								<polyline points="17 6 23 6 23 12"></polyline>
+							</svg>
+						</div>
+						<h2 class="card-title font-cinzel">Analítica Cuántica</h2>
+						<p class="card-desc">
+							Modelos predictivos que procesan señales de mercado en tiempo real para maximizar retornos y
+							minimizar la volatilidad.
+						</p>
+					</div>
+
+					<div class="luxury-card path-card">
+						<div class="card-icon-box">
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+								<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+							</svg>
+						</div>
+						<h2 class="card-title font-cinzel">Bóveda Privada</h2>
+						<p class="card-desc">
+							Protección institucional de grado con cifrado PBKDF2 y monitoreo continuo para que tu capital
+							trabaje sin reposo.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-container">
+				<div class="luxury-card steps-box">
+					<h2 class="cta-title font-cinzel">¿Cómo se Genera tu Ingreso?</h2>
+					<ol class="steps-list">
+						<li>
+							<span class="step-num font-cinzel">01</span>
+							<div>
+								<h3 class="step-title font-cinzel">Crea tu cuenta</h3>
+								<p>Registro en minutos con verificación de identidad y acceso inmediato al portal seguro.</p>
+							</div>
+						</li>
+						<li>
+							<span class="step-num font-cinzel">02</span>
+							<div>
+								<h3 class="step-title font-cinzel">Obtén tu código de referido</h3>
+								<p>Al registrarte se generan tu código de referido y tu código propio. Con ellos ya puedes
+									empazar a captar en la Vía 02.</p>
+							</div>
+						</li>
+						<li>
+							<span class="step-num font-cinzel">03</span>
+							<div>
+								<h3 class="step-title font-cinzel">Llena tus 5 posiciones</h3>
+								<p>Cada referido que traes ocupa una posición bajo ti. Con las 5 completas confirmas la base
+									y activas tu ascenso en la Vía 01.</p>
+							</div>
+						</li>
+						<li>
+							<span class="step-num font-cinzel">04</span>
+							<div>
+								<h3 class="step-title font-cinzel">Recibe tus retornos</h3>
+								<p>Consulta el seguimiento de ingresos y el estado de tu red directamente en tu panel de
+									miembro.</p>
+							</div>
+						</li>
+					</ol>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-container">
+				<div class="luxury-card cta-box">
+					<div class="cta-content">
+						<h2 class="cta-title font-cinzel">Empieza a Ganar Dinero Hoy</h2>
+						<p class="cta-desc">Únete a miles de líderes e inversores que disfrutan del poder de GANA PRO.</p>
+						<div class="cta-btns">
+							<a href="/register" class="gold-button">Crear Cuenta Exclusiva</a>
+							<a href="/login" class="ghost-gold-button">Ya Soy Miembro</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
 	</main>
 </Layout>
 
@@ -23,5 +649,917 @@ const session = validateSession(token);
 		position: relative;
 		overflow: hidden;
 	}
-</style>
 
+	.section {
+		padding: 85px 24px;
+	}
+
+	.section-container {
+		max-width: 1240px;
+		margin: 0 auto;
+	}
+
+	.section-header {
+		text-align: center;
+		margin-bottom: 55px;
+	}
+
+	.section-badge {
+		font-size: 0.75rem;
+		letter-spacing: 0.2em;
+		font-weight: 700;
+		color: var(--gold-primary);
+		text-transform: uppercase;
+		display: inline-block;
+		margin-bottom: 12px;
+	}
+
+	.section-title {
+		font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+		font-weight: 800;
+		margin-bottom: 16px;
+		line-height: 1.2;
+	}
+
+	.section-subtitle {
+		font-size: 1.05rem;
+		color: var(--text-muted);
+		max-width: 620px;
+		margin: 0 auto;
+		line-height: 1.6;
+	}
+
+	.page-hero {
+		padding-top: 70px;
+		padding-bottom: 20px;
+	}
+
+	/* ============ LAS DOS VÍAS ============ */
+	.ways-section {
+		background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.07) 0%, transparent 55%);
+	}
+
+	.ways-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 30px;
+	}
+
+	.way-card {
+		padding: 40px 32px;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.way-tag {
+		position: absolute;
+		top: 22px;
+		right: 24px;
+		font-size: 0.72rem;
+		letter-spacing: 0.22em;
+		color: var(--gold-primary);
+		border: 1px solid var(--gold-border);
+		border-radius: 9999px;
+		padding: 5px 12px;
+		background: rgba(212, 175, 55, 0.08);
+	}
+
+	.way-title {
+		font-size: 1.6rem;
+		font-weight: 800;
+		margin: 18px 0 14px;
+		color: var(--text-primary);
+	}
+
+	.way-desc {
+		color: var(--text-secondary);
+		font-size: 0.98rem;
+		line-height: 1.7;
+		margin-bottom: 22px;
+	}
+
+	.way-list {
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		margin-bottom: 26px;
+	}
+
+	.way-list li {
+		position: relative;
+		padding-left: 22px;
+		color: var(--text-secondary);
+		font-size: 0.92rem;
+		line-height: 1.6;
+	}
+
+	.way-list li::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 9px;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--gold-primary);
+	}
+
+	.way-list strong {
+		color: var(--text-primary);
+	}
+
+	.way-link {
+		margin-top: auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--gold-primary);
+		font-weight: 700;
+		font-size: 0.88rem;
+		letter-spacing: 0.04em;
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+		padding-bottom: 3px;
+		transition: border-color 0.25s ease, gap 0.25s ease;
+	}
+
+	.way-link:hover {
+		border-bottom-color: var(--gold-primary);
+		gap: 12px;
+	}
+
+	.ways-compare {
+		margin-top: 30px;
+		padding: 24px 28px;
+		border: 1px solid var(--gold-border);
+		border-radius: 16px;
+		background: rgba(212, 175, 55, 0.05);
+	}
+
+	.ways-compare p {
+		color: var(--text-secondary);
+		font-size: 0.95rem;
+		line-height: 1.7;
+		text-align: center;
+	}
+
+	/* ============ METODOLOGÍA: SISTEMA CONSTELACIÓN ============ */
+	.method-section {
+		background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.06) 0%, transparent 55%);
+	}
+
+	.levels-grid {
+		display: grid;
+		/* 5 tarjetas: 3 columnas dejaría una fila huérfana de 2 */
+		grid-template-columns: repeat(5, 1fr);
+		gap: 20px;
+		margin-bottom: 46px;
+	}
+
+	.level-card {
+		padding: 30px 26px;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		/* Línea conectora superior entre niveles, puramente decorativa */
+		border-top: 2px solid var(--gold-border);
+	}
+
+	/* El Nivel 5 se destaca como cúspide de la constelación */
+	.level-final {
+		border-color: var(--gold-primary);
+		background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, var(--bg-card) 55%);
+		box-shadow: 0 0 34px rgba(212, 175, 55, 0.2);
+	}
+
+	.level-num {
+		font-size: 2.1rem;
+		font-weight: 900;
+		line-height: 1;
+		color: var(--gold-primary);
+		margin-bottom: 14px;
+	}
+
+	.level-name {
+		font-size: 1.2rem;
+		font-weight: 800;
+		margin-bottom: 10px;
+	}
+
+	.level-desc {
+		font-size: 0.92rem;
+		color: var(--text-secondary);
+		line-height: 1.65;
+	}
+
+	/* ---- Ciclo de confirmación ---- */
+	.cycle-box {
+		padding: 48px 42px;
+	}
+
+	.cycle-title {
+		font-size: clamp(1.5rem, 2.6vw, 2rem);
+		font-weight: 800;
+		margin-bottom: 14px;
+		text-align: center;
+	}
+
+	.cycle-intro {
+		font-size: 1.02rem;
+		color: var(--text-muted);
+		line-height: 1.7;
+		max-width: 720px;
+		margin: 0 auto 38px;
+		text-align: center;
+	}
+
+	.cycle-list {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 30px;
+	}
+
+	.cycle-list li {
+		display: flex;
+		align-items: flex-start;
+		gap: 18px;
+	}
+
+	.cycle-step {
+		width: 46px;
+		height: 46px;
+		flex: 0 0 46px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: rgba(212, 175, 55, 0.12);
+		border: 1px solid var(--gold-border);
+		color: var(--gold-primary);
+		font-size: 1.1rem;
+		font-weight: 800;
+	}
+
+	.cycle-name {
+		font-size: 1.08rem;
+		font-weight: 700;
+		margin-bottom: 6px;
+	}
+
+	.cycle-list p {
+		font-size: 0.92rem;
+		color: var(--text-muted);
+		line-height: 1.65;
+	}
+
+	.accent {
+		color: var(--gold-primary);
+		font-weight: 800;
+		white-space: nowrap;
+	}
+
+	.cycle-note {
+		margin-top: 34px;
+		padding-top: 24px;
+		border-top: 1px solid var(--gold-border);
+		font-size: 0.88rem;
+		color: var(--text-muted);
+		line-height: 1.7;
+		text-align: center;
+	}
+
+	/* ---- Estructura jerárquica ---- */
+	.tree-box {
+		padding: 48px 42px;
+		margin-bottom: 46px;
+	}
+
+	.tree-list {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin: 34px 0 36px;
+	}
+
+	.tree-row {
+		display: grid;
+		grid-template-columns: 96px 1fr 72px;
+		align-items: center;
+		gap: 16px;
+	}
+
+	.tree-label {
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: var(--text-secondary);
+		letter-spacing: 0.04em;
+		text-align: right;
+	}
+
+	/* La barra es proporcional al número de posiciones de cada nivel */
+	.tree-bar {
+		height: 26px;
+		width: var(--w);
+		min-width: 8px;
+		border-radius: 4px;
+		background: linear-gradient(90deg, rgba(212, 175, 55, 0.55), var(--gold-primary));
+	}
+
+	.tree-count {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tree-row-top .tree-label,
+	.tree-row-top .tree-count {
+		color: var(--gold-primary);
+	}
+
+	.tree-row-top .tree-bar {
+		background: var(--gold-gradient);
+		box-shadow: 0 0 16px rgba(212, 175, 55, 0.55);
+	}
+
+	/* ---- Cifras clave ---- */
+	.tree-stats {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 18px;
+		padding: 26px 0;
+		border-top: 1px solid var(--gold-border);
+		border-bottom: 1px solid var(--gold-border);
+	}
+
+	.tree-stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 6px;
+	}
+
+	.tree-stat-value {
+		font-size: 1.9rem;
+		font-weight: 900;
+		color: var(--gold-primary);
+		line-height: 1.1;
+	}
+
+	.tree-stat-label {
+		font-size: 0.8rem;
+		color: var(--text-muted);
+		font-weight: 600;
+		letter-spacing: 0.03em;
+	}
+
+	/* ---- Nota de riesgo ---- */
+	.risk-note {
+		margin-top: 32px;
+		padding: 26px 28px;
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		border-left: 3px solid #ef4444;
+		border-radius: 12px;
+		background: rgba(239, 68, 68, 0.06);
+	}
+
+	.risk-title {
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: #ef4444;
+		margin-bottom: 14px;
+	}
+
+	.risk-note p {
+		font-size: 0.92rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 12px;
+	}
+
+	.risk-note p:last-child {
+		margin-bottom: 0;
+	}
+
+	/* En la nota de riesgo el dorado se reserva para los datos duros */
+	.risk-note .accent {
+		color: var(--text-primary);
+	}
+
+	/* ---- Flujo de fondos ---- */
+	.flow-box {
+		padding: 48px 42px;
+		margin-bottom: 46px;
+	}
+
+	.flow-table {
+		display: flex;
+		flex-direction: column;
+		margin: 30px 0 34px;
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		overflow: hidden;
+	}
+
+	.flow-row {
+		display: grid;
+		grid-template-columns: 1.4fr 1fr 1fr 1fr;
+		align-items: center;
+		gap: 12px;
+		padding: 14px 20px;
+		border-bottom: 1px solid var(--gold-border);
+		font-size: 0.95rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.flow-row:last-child {
+		border-bottom: none;
+	}
+
+	/* Cabecera */
+	.flow-head {
+		background: rgba(212, 175, 55, 0.1);
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
+	}
+
+	.flow-head span:not(:first-child) {
+		text-align: right;
+	}
+
+	.flow-level {
+		font-weight: 700;
+		color: var(--text-primary);
+		font-size: 0.92rem;
+	}
+
+	.flow-row span:not(:first-child) {
+		text-align: right;
+		color: var(--text-secondary);
+	}
+
+	.flow-row .flow-in {
+		color: var(--text-primary);
+		font-weight: 600;
+	}
+
+	.flow-row .flow-keep {
+		color: var(--gold-primary);
+		font-weight: 700;
+	}
+
+	/* ---- Impuesto de plataforma ---- */
+	.tax-box {
+		padding: 24px 26px;
+		border: 1px solid var(--gold-border);
+		border-left: 3px solid var(--gold-primary);
+		border-radius: 12px;
+		background: rgba(212, 175, 55, 0.06);
+		margin-bottom: 30px;
+	}
+
+	.tax-title {
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--gold-primary);
+		margin-bottom: 12px;
+	}
+
+	.tax-box p {
+		font-size: 0.92rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 10px;
+	}
+
+	.tax-box p:last-child {
+		margin-bottom: 0;
+	}
+
+	.tax-note {
+		font-size: 0.88rem !important;
+		color: var(--text-muted) !important;
+	}
+
+	.paths-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 30px;
+	}
+
+	/* Los servicios complementarios son 3: una sola fila en escritorio */
+	.paths-grid.cols-3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	.path-card {
+		padding: 38px 30px;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+	}
+
+	.path-card.featured {
+		border-color: var(--gold-primary);
+		box-shadow: 0 0 35px rgba(212, 175, 55, 0.2);
+	}
+
+	.featured-badge {
+		position: absolute;
+		top: 18px;
+		right: 24px;
+		background: var(--gold-gradient);
+		color: #030712;
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 4px 10px;
+		border-radius: 9999px;
+		letter-spacing: 0.1em;
+	}
+
+	.card-icon-box {
+		width: 54px;
+		height: 54px;
+		border-radius: 14px;
+		background: rgba(212, 175, 55, 0.12);
+		border: 1px solid var(--gold-border);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--gold-primary);
+		margin-bottom: 20px;
+	}
+
+	.card-title {
+		font-size: 1.35rem;
+		font-weight: 800;
+		margin-bottom: 12px;
+	}
+
+	.card-desc {
+		font-size: 0.95rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+	}
+
+	.steps-box {
+		padding: 55px 40px;
+	}
+
+	.steps-list {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 34px;
+		margin-top: 36px;
+	}
+
+	.steps-list li {
+		display: flex;
+		align-items: flex-start;
+		gap: 18px;
+	}
+
+	.step-num {
+		font-size: 1.5rem;
+		font-weight: 900;
+		color: var(--gold-primary);
+		line-height: 1;
+		min-width: 48px;
+	}
+
+	.step-title {
+		font-size: 1.1rem;
+		font-weight: 700;
+		margin-bottom: 6px;
+	}
+
+	.steps-list p {
+		font-size: 0.92rem;
+		color: var(--text-muted);
+		line-height: 1.6;
+	}
+
+	.cta-box {
+		padding: 60px 30px;
+		text-align: center;
+		background: radial-gradient(circle at center, rgba(30, 58, 138, 0.25) 0%, var(--bg-card) 75%);
+		border: 1px solid var(--gold-border);
+	}
+
+	.cta-content {
+		max-width: 680px;
+		margin: 0 auto;
+	}
+
+	.cta-title {
+		font-size: clamp(2rem, 3.5vw, 2.7rem);
+		font-weight: 800;
+		margin-bottom: 16px;
+	}
+
+	.cta-desc {
+		font-size: 1.05rem;
+		color: var(--text-secondary);
+		line-height: 1.7;
+		margin-bottom: 34px;
+	}
+
+	.cta-btns {
+		display: flex;
+		justify-content: center;
+		gap: 20px;
+		flex-wrap: wrap;
+	}
+
+	/* 5 columnas en tablet se apelmazan: 3 queda equilibrado */
+	@media (max-width: 1100px) {
+		.levels-grid {
+			grid-template-columns: repeat(3, 1fr);
+			gap: 18px;
+		}
+		/* 3 tarjetas de servicios ya no caben cómodas en una fila */
+		.paths-grid.cols-3 {
+			grid-template-columns: 1fr;
+			gap: 22px;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.paths-grid,
+		.ways-grid,
+		.steps-list {
+			grid-template-columns: 1fr;
+		}
+		.way-card {
+			padding: 32px 24px;
+		}
+		.way-tag {
+			position: static;
+			align-self: flex-start;
+			margin-bottom: 4px;
+		}
+		.ways-compare {
+			padding: 20px;
+		}
+		.steps-box {
+			padding: 40px 24px;
+		}
+		/* La constelación pasa a 2 columnas antes de apilarse */
+		.levels-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		.cycle-list {
+			grid-template-columns: 1fr;
+			gap: 26px;
+		}
+		.cycle-box {
+			padding: 40px 28px;
+		}
+		.tree-box {
+			padding: 40px 28px;
+		}
+		.flow-box {
+			padding: 40px 28px;
+		}
+		.flow-row {
+			grid-template-columns: 1.3fr 1fr 1fr 1fr;
+			padding: 12px 16px;
+			font-size: 0.88rem;
+		}
+		.tree-stats {
+			grid-template-columns: 1fr;
+			gap: 20px;
+		}
+		.tree-stat {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: baseline;
+			text-align: left;
+		}
+		.tree-stat-value {
+			font-size: 1.5rem;
+		}
+	}
+
+	/* ============ MÓVIL ============ */
+	@media (max-width: 640px) {
+		.section {
+			padding: 52px 18px;
+		}
+
+		.section-header {
+			margin-bottom: 36px;
+		}
+
+		.page-hero {
+			padding-top: 44px;
+			padding-bottom: 10px;
+		}
+
+		.paths-grid {
+			gap: 20px;
+		}
+
+		.path-card {
+			padding: 28px 22px;
+		}
+
+		.card-icon-box {
+			width: 48px;
+			height: 48px;
+			margin-bottom: 16px;
+		}
+
+		.card-title {
+			font-size: 1.2rem;
+		}
+
+		.steps-box {
+			padding: 30px 20px;
+		}
+
+		/* ---- Metodología en móvil ---- */
+		.levels-grid {
+			grid-template-columns: 1fr;
+			gap: 18px;
+			margin-bottom: 32px;
+		}
+
+		.level-card {
+			padding: 24px 20px;
+		}
+
+		.level-num {
+			font-size: 1.7rem;
+			margin-bottom: 10px;
+		}
+
+		.level-name {
+			font-size: 1.1rem;
+		}
+
+		.cycle-box {
+			padding: 30px 20px;
+		}
+
+		.cycle-intro {
+			margin-bottom: 28px;
+			font-size: 0.97rem;
+		}
+
+		.cycle-list {
+			gap: 22px;
+		}
+
+		.cycle-list li {
+			gap: 14px;
+		}
+
+		.cycle-step {
+			width: 40px;
+			height: 40px;
+			flex-basis: 40px;
+			font-size: 1rem;
+		}
+
+		.cycle-note {
+			margin-top: 26px;
+			padding-top: 20px;
+		}
+
+		/* ---- Estructura jerárquica en móvil ---- */
+		.tree-box {
+			padding: 30px 20px;
+			margin-bottom: 32px;
+		}
+
+		.tree-list {
+			gap: 10px;
+			margin: 26px 0 28px;
+		}
+
+		/* La etiqueta se alinea a la izquierda para ganar ancho */
+		.tree-row {
+			grid-template-columns: 64px 1fr 56px;
+			gap: 10px;
+		}
+
+		.tree-label {
+			font-size: 0.78rem;
+			text-align: left;
+		}
+
+		.tree-bar {
+			height: 20px;
+		}
+
+		.tree-count {
+			font-size: 0.85rem;
+		}
+
+		.tree-stats {
+			padding: 20px 0;
+		}
+
+		.risk-note {
+			padding: 20px 18px;
+		}
+
+		/* ---- Flujo de fondos en móvil: la tabla se apila ---- */
+		.flow-box {
+			padding: 30px 20px;
+			margin-bottom: 32px;
+		}
+
+		/* Ocultamos la cabecera: cada celda se rotula con data-label */
+		.flow-head {
+			display: none;
+		}
+
+		.flow-row {
+			grid-template-columns: 1fr 1fr;
+			gap: 6px 12px;
+			padding: 14px 16px;
+		}
+
+		.flow-level {
+			grid-column: 1 / -1;
+			padding-bottom: 6px;
+			margin-bottom: 4px;
+			border-bottom: 1px solid var(--gold-border);
+			font-size: 0.95rem;
+		}
+
+		.flow-row span:not(:first-child) {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 8px;
+			text-align: left;
+		}
+
+		.flow-row span:not(:first-child)::before {
+			content: attr(data-label);
+			font-size: 0.72rem;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: var(--text-muted);
+		}
+
+		.tax-box {
+			padding: 20px 18px;
+		}
+
+		.steps-list {
+			gap: 26px;
+			margin-top: 26px;
+		}
+
+		/* El número deja de ocupar ancho fijo para no comprimir el texto */
+		.step-num {
+			font-size: 1.25rem;
+			min-width: 38px;
+		}
+
+		.step-title {
+			font-size: 1rem;
+		}
+
+		.cta-box {
+			padding: 38px 20px;
+		}
+
+		.cta-btns {
+			flex-direction: column;
+		}
+
+		.cta-btns a {
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.section {
+			padding: 42px 14px;
+		}
+
+		.path-card {
+			padding: 24px 18px;
+		}
+
+		.featured-badge {
+			top: 14px;
+			right: 16px;
+			font-size: 0.58rem;
+		}
+	}
+</style>

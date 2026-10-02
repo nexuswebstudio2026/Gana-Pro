@@ -11,6 +11,21 @@ import { getUserLevel } from '../../lib/users';
 
 export const prerender = false;
 
+/**
+ * Caracteres que se eliminan del texto antes de guardarlo.
+ *
+ * Se quitan los de control (nulos, ESC de ANSI) y los bidireccionales, que
+ * pueden hacer que un texto parezca decir lo contrario de lo que dice. No es
+ * una defensa contra XSS -Astro escapa al pintar- : es para que la hoja no se
+ * llene de basura que nadie puede leer ni moderar.
+ */
+const CONTROL_CHARS = /[\u0000-\u001F\u007F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+
+/** Limpia el texto: quita lo anterior, aplana el espacio y recorta. */
+function sanitizeText(value: string): string {
+	return value.replace(CONTROL_CHARS, '').replace(/\s+/g, ' ').trim();
+}
+
 const MAX_COMMENT_LENGTH = 1200;
 
 export const POST: APIRoute = async (Astro) => {
@@ -18,19 +33,19 @@ export const POST: APIRoute = async (Astro) => {
 		// Solo usuarios con sesión activa pueden enviar testimonios
 		const session = Astro.locals.user;
 		if (!session) {
-			return Astro.redirect('/#testimonios', 303);
+			return Astro.redirect('/valoraciones', 303);
 		}
 
 		// El formulario va multipart (para la imagen)
 		const formData = await Astro.request.formData();
 		const rating = Number(formData.get('rating'));
-		const comment = String(formData.get('comment') || '').trim();
+		const comment = sanitizeText(String(formData.get('comment') || ''));
 		const file = formData.get('image');
 
 		// Los parámetros van ANTES del fragmento (#), si no el navegador
 		// los ignora y el mensaje nunca se muestra en la página.
 		const fail = (msg: string) =>
-			Astro.redirect('/?error=' + encodeURIComponent(msg) + '#testimonios', 303);
+			Astro.redirect('/valoraciones?error=' + encodeURIComponent(msg), 303);
 
 		if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
 			return fail('Selecciona una valoración entre 1 y 5 estrellas.');
@@ -93,15 +108,17 @@ export const POST: APIRoute = async (Astro) => {
 			imageFolder,
 		});
 
-		return Astro.redirect('/?ok=1' + (imageProblem ? `&imagen=${imageProblem}` : '') + '#testimonios', 303);
+		return Astro.redirect(
+			'/valoraciones?ok=1' + (imageProblem ? `&imagen=${imageProblem}` : ''),
+			303
+		);
 
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		console.error('Error al enviar testimonio:', msg);
 		return Astro.redirect(
-			'/?error=' +
-				encodeURIComponent('No se pudo guardar tu testimonio. Inténtalo de nuevo.') +
-				'#testimonios',
+			'/valoraciones?error=' +
+				encodeURIComponent('No se pudo guardar tu testimonio. Inténtalo de nuevo.'),
 			303
 		);
 	}
