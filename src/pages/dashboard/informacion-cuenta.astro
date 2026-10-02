@@ -84,17 +84,25 @@ const successMessage =
 let referralCode = '';
 let referralCount = 0;
 let referralCommission = 0;
+let referralUrl = '';
 try {
 	if (userDetail) {
 		const stats = await getReferralStats(userDetail, getPublicSiteUrl(Astro.request));
 		referralCode = ownCodeOf(userDetail) || session.username;
 		referralCount = stats.count;
 		referralCommission = stats.commission;
+		referralUrl = stats.shareUrl;
 	}
 } catch (error) {
 	console.error('Error al calcular las estadísticas de referido:', error);
 }
 const hasReferralQr = Boolean(referralCode);
+// Enlace de WhatsApp: es como se comparte el QR en la práctica en Colombia.
+const referralWhatsappUrl = referralUrl
+	? `https://wa.me/?text=${encodeURIComponent(
+			`Únete a GANA PRO con mi código ${referralCode}: ${referralUrl}`
+		)}`
+	: '';
 ---
 
 <AdminPageLayout
@@ -150,6 +158,32 @@ const hasReferralQr = Boolean(referralCode);
 						/>
 						<figcaption>Escanea para registrarse con tu código</figcaption>
 					</figure>
+
+					{/* Sin esto el QR solo se veía en pantalla y no había forma de
+					    guardarlo ni enviarlo: que es justo para lo que se pide. */}
+					<div class="referral-actions">
+						<a
+							href={referralUrl}
+							download={`QR-referido-${referralCode}.svg`}
+							class="referral-btn"
+						>
+							Descargar QR
+						</a>
+						{referralWhatsappUrl && (
+							<a
+								href={referralWhatsappUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="referral-btn"
+							>
+								Compartir por WhatsApp
+							</a>
+						)}
+						<button type="button" class="referral-btn" data-copy-link={referralUrl}>
+							Copiar enlace
+						</button>
+					</div>
+					<p class="referral-copied" data-copied hidden>Enlace copiado.</p>
 
 					<dl class="referral-stats">
 						<div>
@@ -448,6 +482,38 @@ const hasReferralQr = Boolean(referralCode);
 	</script>
 </AdminPageLayout>
 
+<script>
+	// Copiar el enlace de referido: navigator.clipboard exige un contexto seguro
+	// (https o localhost), así que se deja un respaldo con un input temporal para
+	// que también funcione si la página se abre por otra vía.
+	const copyBtn = document.querySelector<HTMLButtonElement>('[data-copy-link]');
+	const copied = document.querySelector<HTMLElement>('[data-copied]');
+
+	copyBtn?.addEventListener('click', async () => {
+		const url = copyBtn.dataset.copyLink || '';
+		if (!url) return;
+		try {
+			await navigator.clipboard.writeText(url);
+		} catch {
+			const helper = document.createElement('textarea');
+			helper.value = url;
+			helper.setAttribute('readonly', '');
+			helper.style.position = 'fixed';
+			helper.style.opacity = '0';
+			document.body.appendChild(helper);
+			helper.select();
+			document.execCommand('copy');
+			helper.remove();
+		}
+		if (copied) {
+			copied.hidden = false;
+			window.setTimeout(() => {
+				copied.hidden = true;
+			}, 2500);
+		}
+	});
+</script>
+
 <style>
 	.account-panel { padding: 28px; margin-bottom: 24px; }
 	.account-heading { margin-bottom: 20px; }
@@ -472,6 +538,26 @@ const hasReferralQr = Boolean(referralCode);
 	.referral-qr { margin: 0; flex: 0 0 auto; text-align: center; }
 	.referral-qr img { width: 180px; height: 180px; background: #fff; border: 1px solid var(--gold-border); border-radius: 12px; }
 	.referral-qr figcaption { margin-top: 8px; color: var(--text-secondary); font-size: 11.5px; line-height: 1.4; }
+	.referral-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; justify-content: center; }
+	.referral-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 8px 14px;
+		border-radius: 9999px;
+		border: 1px solid var(--gold-border);
+		background: rgba(212, 175, 55, 0.12);
+		color: var(--gold-primary);
+		font: inherit;
+		font-size: 12.5px;
+		font-weight: 700;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background 0.2s ease, border-color 0.2s ease;
+	}
+	.referral-btn:hover { background: rgba(212, 175, 55, 0.22); border-color: var(--gold-primary); }
+	.referral-copied { margin-top: 8px; font-size: 11.5px; color: var(--gold-primary); }
+	.referral-copied[hidden] { display: none; }
 	.referral-stats { flex: 1 1 220px; margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 	.referral-stats > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--gold-border); }
 	.referral-stats dt { color: var(--text-secondary); font-size: 12.5px; }
