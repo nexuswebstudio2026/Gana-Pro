@@ -7,6 +7,7 @@ import {
 	displayValue,
 	filledProfileCount,
 	isProfileEmpty,
+	profileToFormValues,
 	whatsappLink,
 } from '../../lib/account-profile';
 import type { UserRowView } from '../../lib/dashboard-sections';
@@ -25,13 +26,10 @@ const { users, review, reviewMessage, loadFailed, contact, contactMessage } = As
 
 /** Vista de contacto de un usuario, lista para pintar. */
 function contactView(user: UserRowView['user']) {
-	const profile = {
-		address: String(user.address ?? '').trim(),
-		neighborhood: String(user.neighborhood ?? '').trim(),
-		city: String(user.city ?? '').trim(),
-		phone: String(user.phone ?? '').trim(),
-		whatsapp: String(user.whatsapp ?? '').trim(),
-	};
+	// Se reutiliza `profileToFormValues` en vez de copiar los campos a mano: así
+	// la vista del admin no se queda atrás cuando se añade uno nuevo (como la
+	// billetera) y sigue leyendolos de las mismas columnas que el formulario.
+	const profile = profileToFormValues(user);
 	return {
 		profile,
 		empty: isProfileEmpty(profile),

@@ -732,7 +732,7 @@ export function ensureUserProfileColumns(): Promise<boolean> {
 	return ensureUserColumns(USER_PROFILE_COLUMNS);
 }
 
-/** Datos de contacto y residencia que se pueden actualizar de un usuario. */
+/** Datos de contacto, residencia y billetera que se pueden actualizar de un usuario. */
 export interface UserProfileFields {
 	address?: string;
 	neighborhood?: string;
@@ -740,10 +740,24 @@ export interface UserProfileFields {
 	phone?: string;
 
 	whatsapp?: string;
+
+	/**
+	 * Tipo de billetera del usuario.
+	 *
+	 * Se guarda en la columna "Método de Pago" (`idx.paymentMethod`), que es el
+	 * nombre histórico con el que ya se leía en `getGoogleSheetUsers` y en los
+	 * retiros. El nombre del campo dice "wallet" para que el código que lo usa
+	 * se entienda; el de la columna no se toca.
+	 */
+	walletType?: string;
+
+	/** Número o alias de la billetera (columna "Número de Billetera"). */
+	walletNumber?: string;
 }
 
 /**
- * Actualiza la dirección, barrio, ciudad, teléfono y WhatsApp de un usuario.
+ * Actualiza la dirección, barrio, ciudad, teléfono, WhatsApp y los datos de
+ * billetera de un usuario.
  * Devuelve `true` si encontró la fila y escribió al menos un campo.
  */
 export async function updateSheetUserProfile(
@@ -762,6 +776,8 @@ export async function updateSheetUserProfile(
 		city: idx.city,
 		phone: idx.phone,
 		whatsapp: idx.whatsapp,
+		walletType: idx.paymentMethod,
+		walletNumber: idx.walletNumber,
 	};
 
 	const updates: { col: number; value: string }[] = [];

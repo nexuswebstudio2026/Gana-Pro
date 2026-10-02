@@ -5,6 +5,7 @@ import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
 import { formatAppDateTime } from '../../lib/datetime';
 import {
 	PROFILE_FIELD_LIMITS,
+	PROFILE_FIELDS,
 	displayValue,
 	filledProfileCount,
 	isProfileEmpty,
@@ -12,6 +13,7 @@ import {
 	whatsappLink,
 } from '../../lib/account-profile';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import { WALLET_TYPE_SUGGESTIONS } from '../../lib/account-wallet';
 import { COMMISSION_PER_REFERRAL, formatCOP, getReferralStats, ownCodeOf } from '../../lib/referrals';
 import type { User } from '../../lib/types';
 
@@ -239,14 +241,14 @@ const hasReferralQr = Boolean(referralCode);
 	<section class="account-panel luxury-card" aria-labelledby="contact-form-title">
 		<header class="account-heading">
 			<div>
-				<h2 id="contact-form-title">Datos de contacto y residencia</h2>
+				<h2 id="contact-form-title">Datos personales y de pago</h2>
 				<p>
-					Registra o modifica tu dirección, barrio, ciudad, teléfono y WhatsApp. Se guardan en la
-					hoja de usuarios de Google Sheets.
+					Registra o modifica tu dirección, barrio, ciudad, teléfono, WhatsApp y los datos de tu
+					billetera. Se guardan en la hoja de usuarios de Google Sheets.
 				</p>
 			</div>
 			<span class:list={['account-badge', { ok: !profileIsEmpty }]}>
-				{profileIsEmpty ? 'Sin registrar' : `${filledFields} de 5 campos`}
+				{profileIsEmpty ? 'Sin registrar' : `${filledFields} de ${PROFILE_FIELDS.length} campos`}
 			</span>
 		</header>
 
@@ -323,6 +325,51 @@ const hasReferralQr = Boolean(referralCode);
 					<p class="account-hint">Solo números. Se muestra un enlace directo a la conversación.</p>
 					{fieldHasError('whatsapp') && (
 						<p class="account-field-error" id="whatsapp-error">Revisa el WhatsApp.</p>
+					)}
+				</div>
+			</div>
+
+			<div class="account-grid">
+				<div class="account-field">
+					<label for="walletType">Tipo de billetera</label>
+					<input
+						type="text"
+						id="walletType"
+						name="walletType"
+						value={profile.walletType}
+						maxlength={PROFILE_FIELD_LIMITS.walletType}
+						placeholder="Nequi"
+						list="wallet-type-suggestions"
+						autocomplete="off"
+						aria-invalid={fieldHasError('walletType') ? 'true' : undefined}
+						aria-describedby={fieldHasError('walletType') ? 'walletType-error' : undefined}
+					/>
+					<datalist id="wallet-type-suggestions">
+						{WALLET_TYPE_SUGGESTIONS.map((tipo) => (
+							<option value={tipo} />
+						))}
+					</datalist>
+					<p class="account-hint">Escribe el tipo o elige una sugerencia.</p>
+					{fieldHasError('walletType') && (
+						<p class="account-field-error" id="walletType-error">Revisa el tipo de billetera.</p>
+					)}
+				</div>
+				<div class="account-field">
+					<label for="walletNumber">Número de billetera</label>
+					<input
+						type="text"
+						id="walletNumber"
+						name="walletNumber"
+						value={profile.walletNumber}
+						maxlength={PROFILE_FIELD_LIMITS.walletNumber}
+						placeholder="3001234567 o @alias"
+						autocomplete="off"
+						aria-invalid={fieldHasError('walletNumber') ? 'true' : undefined}
+						aria-describedby={fieldHasError('walletNumber') ? 'walletNumber-error' : undefined}
+					/>
+					<p class="account-hint">Es la cuenta donde recibes tus pagos.</p>
+					{fieldHasError('walletNumber') && (
+						<p class="account-field-error" id="walletNumber-error">Revisa el número de billetera.</p>
 					)}
 				</div>
 			</div>

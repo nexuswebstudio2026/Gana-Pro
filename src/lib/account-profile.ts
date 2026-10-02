@@ -4,10 +4,27 @@
  * WhatsApp). Se usa tanto por el formulario como por el endpoint que los guarda.
  */
 import type { UserProfileFields } from './sheets';
+import {
+	WALLET_NUMBER_MAX,
+	WALLET_TYPE_MAX,
+	isValidWalletNumber,
+	isValidWalletType,
+	normalizeWalletNumber,
+	normalizeWalletType,
+} from './account-wallet';
 
 /** Perfil de contacto con todos los campos presentes (pueden ir vacíos). */
 export type AccountProfile = Required<
-	Pick<UserProfileFields, 'address' | 'neighborhood' | 'city' | 'phone' | 'whatsapp'>
+	Pick<
+		UserProfileFields,
+		| 'address'
+		| 'neighborhood'
+		| 'city'
+		| 'phone'
+		| 'whatsapp'
+		| 'walletType'
+		| 'walletNumber'
+	>
 >;
 
 /** Longitud máxima de cada campo, para no desbordar la celda de la hoja. */
@@ -17,6 +34,8 @@ export const PROFILE_FIELD_LIMITS: Record<keyof AccountProfile, number> = {
 	city: 80,
 	phone: 30,
 	whatsapp: 30,
+	walletType: WALLET_TYPE_MAX,
+	walletNumber: WALLET_NUMBER_MAX,
 };
 
 /** Etiqueta de cada campo, en el orden en que se muestran. */
@@ -26,6 +45,8 @@ export const PROFILE_FIELD_LABELS: Record<keyof AccountProfile, string> = {
 	city: 'Ciudad de residencia',
 	phone: 'Teléfono de contacto',
 	whatsapp: 'Contacto de WhatsApp',
+	walletType: 'Tipo de billetera',
+	walletNumber: 'Número de billetera',
 };
 
 /** Los cinco campos del perfil, en el orden de la hoja. */
@@ -103,6 +124,8 @@ export function parseProfileForm(formData: FormData): ProfileParseResult {
 	const city = cleanText(formData.get('city'), PROFILE_FIELD_LIMITS.city);
 	const phone = cleanText(formData.get('phone'), PROFILE_FIELD_LIMITS.phone);
 	const whatsapp = cleanText(formData.get('whatsapp'), PROFILE_FIELD_LIMITS.whatsapp);
+	const walletType = normalizeWalletType(formData.get('walletType'));
+	const walletNumber = normalizeWalletNumber(formData.get('walletNumber'));
 
 	const phoneHelp = 'solo admite números y los signos + ( ) - (7 a 15 dígitos).';
 	if (phone && !isValidPhone(phone)) {
@@ -111,8 +134,19 @@ export function parseProfileForm(formData: FormData): ProfileParseResult {
 	if (whatsapp && !isValidPhone(whatsapp)) {
 		return { field: 'whatsapp', error: `El contacto de WhatsApp ${phoneHelp}` };
 	}
+	if (!isValidWalletType(walletType)) {
+		return { field: 'walletType', error: 'El tipo de billetera solo admite letras y los signos . - _' };
+	}
+	if (!isValidWalletNumber(walletNumber)) {
+		return {
+			field: 'walletNumber',
+			error: `El número de billetera solo admite letras, números y los signos @ + - . (entre 4 y ${PROFILE_FIELD_LIMITS.walletNumber} caracteres)`,
+		};
+	}
 
-	return { profile: { address, neighborhood, city, phone, whatsapp } };
+	return {
+		profile: { address, neighborhood, city, phone, whatsapp, walletType, walletNumber },
+	};
 }
 
 /** Valores iniciales del formulario a partir del registro del usuario. */
@@ -123,5 +157,11 @@ export function profileToFormValues(user: UserProfileFields): AccountProfile {
 		city: String(user.city ?? '').trim(),
 		phone: String(user.phone ?? '').trim(),
 		whatsapp: String(user.whatsapp ?? '').trim(),
+		// La billetera vive en las columnas "Método de Pago" y "Número de
+		// Billetera" de la hoja, de ahí los nombres históricos del tipo `User`.
+		walletType: String(
+			user.walletType ?? (user as { paymentMethod?: string }).paymentMethod ?? ''
+		).trim(),
+		walletNumber: String(user.walletNumber ?? '').trim(),
 	};
 }
