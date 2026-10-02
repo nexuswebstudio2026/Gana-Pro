@@ -88,10 +88,10 @@ const hasRut = rutLink !== '';
 			</div>
 		)}
 
-		{docApproved ? (
-			<p class="doc-note ok">Tu NIT y RUT fueron verificados. Si necesitas actualizarlos, vuelve a subirlos.</p>
-		) : (
-			<form method="POST" action="/api/documents" enctype="multipart/form-data" class="doc-form">
+		{/* El formulario se muestra siempre, también con el documento ya aprobado:
+		    el aviso de arriba promete que se puede actualizar, y sin formulario ese
+		    aviso sería falso. El endpoint vuelve a poner el estado en "pendiente". */}
+		<form method="POST" action="/api/documents" enctype="multipart/form-data" class="doc-form">
 				<div class="doc-field">
 					<label for="nit">NIT (Identificación Tributaria DIAN)</label>
 					<input
@@ -119,9 +119,16 @@ const hasRut = rutLink !== '';
 					/>
 					<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
 				</div>
-				<button type="submit" class="gold-button">{hasRut ? 'Actualizar NIT y RUT' : 'Subir NIT y RUT'}</button>
+				<button type="submit" class="gold-button">
+				{hasRut || docApproved ? 'Actualizar NIT y RUT' : 'Subir NIT y RUT'}
+			</button>
+			{docApproved && (
+				<p class="doc-hint">
+					Tu documento está verificado. Si lo subes de nuevo, volverá a la lista de
+					pendientes para que un administrador lo revise otra vez.
+				</p>
+			)}
 			</form>
-		)}
 	</section>
 </AdminPageLayout>
 
