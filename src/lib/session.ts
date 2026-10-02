@@ -25,20 +25,27 @@ export const SESSION_COOKIE = 'auth_session';
  *
  * En desarrollo se genera uno aleatorio por proceso si no se define, de modo
  * que las sesiones de la copia local nunca son firmadas con un valor público
- * conocido. En producción NO hay valor por defecto: si falta la variable se
- * lanza un error, porque arrancar con un secreto predecible permitiria a
- * cualquiera firmar su propio cookie de administrador.
+ * conocido.
+ *
+ * En producción, si falta la variable NO se inventa ningún valor: se deja en
+ * `null` y el sitio sigue funcionando (las páginas públicas se ven), pero
+ * ninguna sesión puede validarse ni emitirse. Antes este caso lanzaba un error
+ * al importar el módulo, y como `src/middleware.ts` importa este archivo, el
+ * fallo se reproducia en TODA petición y devolvía un 500 incluso en la portada.
+ * Fallar hacia abajo es lo correcto: preferimos que el panel no entre a que
+ * cualquiera pueda firmar su propio cookie de administrador con un secreto
+ * predecible.
  */
-const SECRET = (() => {
+const SECRET = ((): string | null => {
 	const configured = process.env.SESSION_SECRET?.trim();
 	if (configured) return configured;
 
 	if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-		throw new Error(
-			'Falta SESSION_SECRET en las variables de entorno del servidor. ' +
-				'Define un valor largo y aleatorio antes de desplegar: sin el, ' +
-				'las sesiones se firmarian con un secreto conocido por cualquiera.'
+		console.error(
+			'[session] FALTA SESSION_SECRET: el sitio arrancará, pero no se podrá ' +
+				'iniciar sesión ni entrar al panel. Defina la variable en el servidor.'
 		);
+		return null;
 	}
 
 	console.warn(
@@ -49,6 +56,9 @@ const SECRET = (() => {
 })();
 
 function sign(payload: string): string {
+	// Sin secreto no se firma nada. `validateSession` ya trata `null` como
+	// "sin sesión", así que el fallo queda contenido aquí.
+	if (!SECRET) return '';
 	return createHmac('sha256', SECRET).update(payload).digest('hex');
 }
 
@@ -85,6 +95,15 @@ function saveSessions(sessions: Session[]): void {
  * Create a new signed session token that works stateless in serverless environments.
  */
 export function createSession(username: string, email: string, role = 'User'): string {
+	// Sin secreto no se puede firmar nada. Se lanza aquí (y no al importar el
+	// módulo) para que el fallo aparezca en el endpoint de login, en lugar de
+	// tumbar todas las rutas del sitio.
+	if (!SECRET) {
+		throw new Error(
+			'No se puede iniciar sesión: falta SESSION_SECRET en el servidor.'
+		);
+	}
+
 	const expiresAt = Date.now() + SESSION_DURATION;
 	const payload = Buffer.from(JSON.stringify({ username, email, role, expiresAt })).toString('base64url');
 	const signature = sign(payload);
@@ -113,6 +132,10 @@ export function createSession(username: string, email: string, role = 'User'): s
  */
 export function validateSession(token: string | undefined): Session | null {
 	if (!token) return null;
+
+	// Sin secreto no se puede comprobar ninguna firma: se trata como "sin
+	// sesión". Evita además que una firma vacía llegue a coincidir por accidente.
+	if (!SECRET) return null;
 
 	// 1. Try stateless validation first (works across Vercel serverless instances)
 	if (token.includes('.')) {
