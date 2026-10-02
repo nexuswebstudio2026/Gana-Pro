@@ -2,7 +2,7 @@
 import { validateSession } from '../../lib/session';
 import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers } from '../../lib/sheets';
-import { DOCUMENT_STATUS } from '../../lib/testimonials';
+import { DOCUMENT_STATUS, documentTypeLabel } from '../../lib/testimonials';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import type { User } from '../../lib/types';
 
@@ -29,7 +29,14 @@ const isAdmin = isAdminRole(userDetail?.role || session.role);
 const docResult = Astro.url.searchParams.get('doc');
 const docMessage = Astro.url.searchParams.get('msg');
 const docStatus = (userDetail?.documentStatus || DOCUMENT_STATUS.pendiente).trim();
-const nitValue = (userDetail?.nit || userDetail?.documentNumber || '').trim();
+// El NIT es un dato propio de la DIAN. `documentNumber` ya no se usa como
+// respaldo: en el registro ese campo es el número de cédula (CC/TI/CE/PEP),
+// así que tomarlo aquí mezclaría el NIT con el documento de identidad.
+const nitValue = (userDetail?.nit || '').trim();
+// Tipo y número de identidad que el usuario declaró al registrarse.
+const docTypeValue = (userDetail?.documentType || '').trim();
+const docNumberValue = (userDetail?.documentNumber || '').trim();
+const identityLabel = docTypeValue ? documentTypeLabel(docTypeValue) : '';
 const rutLink = (userDetail?.rutLink || userDetail?.documentLink || '').trim();
 const rutFileName = (userDetail?.scannedRut || userDetail?.scannedDocument || 'rut.pdf').trim() || 'rut.pdf';
 const isPdf = rutFileName.toLowerCase().endsWith('.pdf');
@@ -41,16 +48,16 @@ const hasRut = rutLink !== '';
 <AdminPageLayout
 	session={session}
 	isAdmin={isAdmin}
-	title="NIT y RUT personal"
+	title="Documento de Identidad"
 	eyebrow="Configuración · Usuario"
-	description="Consulta el estado de tu registro y gestiona tu NIT y RUT emitido por la DIAN."
+	description="Consulta el estado de tu registro y sube tu documento de identidad."
 >
 	<section class="luxury-card doc-box" aria-labelledby="personal-rut-title">
 		<div class="doc-heading">
 			<div>
-				<h2 class="detail-title font-cinzel" id="personal-rut-title">NIT y RUT (DIAN)</h2>
+				<h2 class="detail-title font-cinzel" id="personal-rut-title">Documento de Identidad</h2>
 				<p class="doc-lead">
-					Registra tu NIT y sube el RUT emitido por la DIAN para completar la verificación de la cuenta. Puedes adjuntar una imagen o un PDF de hasta 5 MB.
+					Sube tu documento de identidad para completar la verificación de la cuenta. Puedes adjuntar una imagen o un PDF de hasta 5 MB.
 				</p>
 			</div>
 			<span class:list={['doc-badge', { ok: docApproved, ko: docRejected, wait: !docApproved && !docRejected }]}>
@@ -59,15 +66,24 @@ const hasRut = rutLink !== '';
 		</div>
 
 		{docResult === 'ok' && (
-			<div class="doc-alert ok" role="status">RUT recibido. Queda pendiente de revisión por un administrador.</div>
+			<div class="doc-alert ok" role="status">Documento recibido. Queda pendiente de revisión por un administrador.</div>
 		)}
 		{docResult === 'error' && (
-			<div class="doc-alert ko" role="alert">{docMessage || 'No se pudo guardar tu RUT.'}</div>
+			<div class="doc-alert ko" role="alert">{docMessage || 'No se pudo guardar tu documento.'}</div>
 		)}
 		{docResult === 'config' && (
 			<div class="doc-alert ko" role="alert">{docMessage || 'El almacenamiento no está disponible en el servidor.'}</div>
 		)}
 
+		{identityLabel && (
+			<div class="doc-current">
+				<div class="doc-current-info">
+					<span class="doc-label">Documento de identidad (registro)</span>
+					<code class="doc-file">{identityLabel}</code>
+				</div>
+				{docNumberValue && <span class="doc-view">{docNumberValue}</span>}
+			</div>
+		)}
 		{nitValue && (
 			<div class="doc-current">
 				<div class="doc-current-info">
@@ -107,9 +123,10 @@ const hasRut = rutLink !== '';
 						pattern="[0-9]*"
 						title="Solo números, entre 6 y 20 dígitos"
 					/>
+					<span class="doc-hint">Opcional. Si no tienes NIT, puedes dejar solo el documento de arriba.</span>
 				</div>
 				<div class="doc-field">
-					<label for="rut">RUT emitido por la DIAN</label>
+					<label for="rut">Documento de identidad</label>
 					<input
 						type="file"
 						id="rut"
@@ -120,7 +137,7 @@ const hasRut = rutLink !== '';
 					<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
 				</div>
 				<button type="submit" class="gold-button">
-				{hasRut || docApproved ? 'Actualizar NIT y RUT' : 'Subir NIT y RUT'}
+				{hasRut || docApproved ? 'Actualizar documento' : 'Subir documento'}
 			</button>
 			{docApproved && (
 				<p class="doc-hint">

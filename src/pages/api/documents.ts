@@ -11,8 +11,9 @@ import { ImageStorageNotConfiguredError } from '../../lib/image-storage';
 
 export const prerender = false;
 
-// El panel solo pide NIT + RUT (DIAN): un campo de texto y un unico archivo.
-// Se acepta el campo antiguo 'documento' como si fuera el RUT.
+// La sección "Documento de Identidad" pide un número y un unico archivo.
+// El campo `nit` conserva su nombre histórico porque es la columna de la hoja;
+// se admite el campo antiguo 'documento' como si fuera el archivo.
 export const POST: APIRoute = async (Astro) => {
   const fail = (msg: string) =>
     Astro.redirect('/dashboard/rut?doc=error&msg=' + encodeURIComponent(msg), 303);
@@ -29,20 +30,20 @@ export const POST: APIRoute = async (Astro) => {
     const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
 
     if (!nit) {
-      return fail('Escribe tu NIT.');
+      return fail('Escribe tu numero de documento o tu NIT.');
     }
     if (!esNitValido(nit)) {
-      return fail('El NIT solo admite numeros, entre 6 y 20 digitos.');
+      return fail('El numero de documento solo admite numeros, entre 6 y 20 digitos.');
     }
     if (!file) {
-      return fail('Selecciona el archivo del RUT para subir.');
+      return fail('Selecciona el archivo de tu documento para subir.');
     }
     const allowed = ALLOWED_DOCUMENT_TYPES as readonly string[];
     if (!allowed.includes(file.type)) {
       return fail('Formato no permitido. Usa JPG, PNG, WEBP o PDF.');
     }
     if (file.size > MAX_DOCUMENT_BYTES) {
-      return fail('El RUT supera el limite de 5 MB.');
+      return fail('El documento supera el limite de 5 MB.');
     }
 
     let stored;
