@@ -1,5 +1,6 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
+import { DOCUMENT_TYPES } from '../lib/testimonials';
 
 // SSR: query params are read at request time
 export const prerender = false;
@@ -7,6 +8,9 @@ export const prerender = false;
 const error = Astro.url.searchParams.get('error');
 // Si llegan con ?ref=CODIGO (enlace de referido), se precarga el campo
 const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
+// Si el registro se rechazó por un tipo de documento no válido, se repone el
+// que el usuario había elegido en vez de dejar el select en el primer valor.
+const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 ---
 
 <AuthLayout title="Membresía Exclusiva" subtitle="Complete sus datos para solicitar su cuenta en GANA PRO">
@@ -88,6 +92,40 @@ const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
 
 		<div class="section-divider" role="separator">
 			<span>Datos de contacto</span>
+		</div>
+
+		<div class="field">
+			<label for="tipoDocumento">Tipo de Documento de Identidad</label>
+			<select
+				id="tipoDocumento"
+				name="tipoDocumento"
+				required
+				value={tipoDoc}
+			>
+				<option value="" disabled selected={!tipoDoc}>Selecciona una opción</option>
+				{DOCUMENT_TYPES.map((tipo) => (
+					<option value={tipo.code} selected={tipoDoc === tipo.code}>
+						{tipo.code} — {tipo.label}
+					</option>
+				))}
+			</select>
+			<span class="field-hint">Documento con el que te identificas ante el negocio.</span>
+		</div>
+
+		<div class="field">
+			<label for="numeroDocumento">Número de Documento</label>
+			<input
+				type="text"
+				id="numeroDocumento"
+				name="numeroDocumento"
+				placeholder="Ej: 1020304050"
+				minlength="6"
+				maxlength="20"
+				required
+				inputmode="numeric"
+				autocomplete="off"
+			/>
+			<span class="field-hint">Solo números, entre 6 y 20 dígitos.</span>
 		</div>
 
 		<div class="field">
@@ -207,7 +245,8 @@ const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
 		letter-spacing: 0.02em;
 	}
 
-	.field input {
+	.field input,
+	.field select {
 		padding: 13px 16px;
 		background: rgba(15, 23, 42, 0.05);
 		border: 1px solid var(--gold-border);
@@ -218,14 +257,23 @@ const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
 		transition: all 0.25s ease;
 	}
 
-	:global([data-theme="dark"]) .field input {
+	:global([data-theme="dark"]) .field input,
+	:global([data-theme="dark"]) .field select {
 		background: rgba(4, 11, 28, 0.6);
 	}
 
-	.field input:focus {
+	.field input:focus,
+	.field select:focus {
 		outline: none;
 		border-color: var(--gold-primary);
 		box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+	}
+
+	/* El option se pinta con el fondo del tema: en Windows el desplegable
+	   heredaría el blanco del sistema y el texto dorado quedaría ilegible. */
+	.field select option {
+		background: var(--bg-primary, #ffffff);
+		color: var(--text-primary, #0f172a);
 	}
 
 	.field-hint {

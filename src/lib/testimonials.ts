@@ -29,6 +29,68 @@ export const DOCUMENT_STATUS = {
 const NIT_PATTERN = /^\d{6,20}$/;
 
 /**
+ * Catálogo único de tipos de documento de identidad.
+ *
+ * Vive aquí y no en la página de registro para que el formulario, el endpoint y
+ * cualquier pantalla que lo muestre usen la misma lista: si cada sitio escribe
+ * sus propias opciones, un tipo nuevo se aplica en un lado y se olvida en otro.
+ */
+export const DOCUMENT_TYPES = [
+	{ code: 'CC', label: 'Cédula de Ciudadanía' },
+	{ code: 'TI', label: 'Tarjeta de Identidad' },
+	{ code: 'CE', label: 'Cédula de Extranjería' },
+	{ code: 'PEP', label: 'Permiso por Protección' },
+] as const;
+
+/** Códigos válidos, derivados del catálogo para que no se desincronicen. */
+export const DOCUMENT_TYPE_CODES = DOCUMENT_TYPES.map((t) => t.code);
+
+/**
+ * Pasa un texto a una forma comparable: sin tildes, en minúsculas y sin
+ * espacios repetidos.
+ *
+ * Se aplica a las DOS partes de la comparación. Si solo se normalizara la
+ * entrada, "Cédula de Ciudadanía" nunca coincidiría con la etiqueta
+ * "cédula de ciudadanía" del catálogo y el nombre completo se rechazaría.
+ */
+function comparable(value: string): string {
+	return value
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase()
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+/**
+ * Normaliza el tipo de documento recibido del formulario.
+ *
+ * Acepta el código (`CC`), el nombre completo en cualquier capitalización
+ * (`cédula de ciudadanía`, `CEDULA DE CIUDADANIA`) y devuelve siempre el
+ * código, o `null` si no corresponde a ninguno del catálogo.
+ */
+export function normalizeDocumentType(value: string): string | null {
+	const raw = (value || '').trim();
+	if (!raw) return null;
+
+	const upper = raw.toUpperCase();
+	const byCode = DOCUMENT_TYPE_CODES.find((code) => code === upper);
+	if (byCode) return byCode;
+
+	// Se comparan también los nombres: el select del navegador manda el
+	// código, pero un POST manual puede no traerlo y no debe acabar rechazado
+	// por un detalle de formato.
+	const byLabel = DOCUMENT_TYPES.find((t) => comparable(t.label) === comparable(raw));
+	return byLabel ? byLabel.code : null;
+}
+
+/** Etiqueta legible de un código, o el propio código si no está en el catálogo. */
+export function documentTypeLabel(code: string): string {
+	const found = DOCUMENT_TYPES.find((t) => t.code === (code || '').trim().toUpperCase());
+	return found ? `${found.code} — ${found.label}` : (code || '').trim();
+}
+
+/**
  * Indica si un NIT tiene un formato válido: solo números, entre 6 y 20 dígitos.
  * Lo usan el envío de documentos del miembro y el panel de administración.
  */

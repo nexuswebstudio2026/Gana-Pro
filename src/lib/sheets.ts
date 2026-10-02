@@ -380,6 +380,10 @@ export async function appendGoogleSheetUser(user: {
 	passwordHash: string;
 	/** Código de quien lo refiere (columna "Código Referido"). */
 	referralCode?: string;
+	/** Tipo de documento de identidad (CC, TI, CE, PEP). */
+	documentType?: string;
+	/** Número del documento de identidad. */
+	documentNumber?: string;
 	/**
 	 * Datos de contacto que escribe el formulario de registro.
 	 *
@@ -446,6 +450,8 @@ export async function appendGoogleSheetUser(user: {
 	set(idx.referralCode, user.referralCode || '');
 	set(idx.ownCode, user.username);
 	set(idx.documentStatus, 'Pendiente');
+	if (user.documentType) set(idx.documentType, user.documentType);
+	if (user.documentNumber) set(idx.documentNumber, user.documentNumber);
 
 	// Contacto del registro, en las columnas cortas. Van aparte de las largas
 	// del panel a propósito: cada juego guarda lo que su propio formulario

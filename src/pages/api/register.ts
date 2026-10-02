@@ -12,6 +12,7 @@ import {
 	PROFILE_FIELD_LIMITS,
 } from '../../lib/account-profile';
 import { findReferrerByCode, ownCodeOf } from '../../lib/referrals';
+import { normalizeDocumentType, esNitValido } from '../../lib/testimonials';
 import type { RegistrationContact } from '../../lib/sheets';
 import type { User } from '../../lib/types';
 
@@ -59,6 +60,18 @@ export const POST: APIRoute = async (Astro) => {
 		}
 		if (password.length < 6) {
 			return errorParam('La contraseña debe tener al menos 6 caracteres.');
+		}
+
+		// --- Tipo y número de documento ---
+		// Se validan contra el catálogo, no contra lo que llegue: el `select` del
+		// navegador se puede manipular con una petición hecha a mano.
+		const tipoDocumento = normalizeDocumentType(params.get('tipoDocumento') || '');
+		if (!tipoDocumento) {
+			return errorParam('Selecciona un tipo de documento válido.');
+		}
+		const numeroDocumento = (params.get('numeroDocumento') || '').trim();
+		if (!esNitValido(numeroDocumento)) {
+			return errorParam('El número de documento solo admite números, entre 6 y 20 dígitos.');
 		}
 
 		// --- Datos de contacto ---
@@ -144,6 +157,8 @@ export const POST: APIRoute = async (Astro) => {
 				email,
 				passwordHash,
 				referralCode,
+				documentType: tipoDocumento,
+				documentNumber: numeroDocumento,
 				contact,
 			});
 		} catch (sheetSaveErr) {
@@ -159,6 +174,8 @@ export const POST: APIRoute = async (Astro) => {
 				password: passwordHash,
 				referralCode,
 				ownCode: username,
+				documentType: tipoDocumento,
+				documentNumber: numeroDocumento,
 				address: contact.address,
 				neighborhood: contact.neighborhood,
 				city: contact.city,
