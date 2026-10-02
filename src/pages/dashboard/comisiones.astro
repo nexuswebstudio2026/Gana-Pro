@@ -2,7 +2,8 @@
 import { isAdminRole } from '../../lib/auth';
 import { formatAppDateTime } from '../../lib/datetime';
 import { getGoogleSheetUsers } from '../../lib/sheets';
-import { listCommissions, COMMISSION_PER_REFERRAL } from '../../lib/referral-commissions';
+import { listCommissions } from '../../lib/referral-commissions';
+import { COMMISSION_PER_REFERRAL } from '../../lib/referrals';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import type { User } from '../../lib/types';
 
