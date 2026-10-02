@@ -1,0 +1,61 @@
+[2m19:15:32[22m [34m[types][39m Generated [2m178ms[22m
+[2m19:15:32[22m [34m[check][39m Getting diagnostics for Astro files in C:\Users\JAC ROSABLANCA\Documents\GitHub\gana-pro...
+[96msrc/lib/dashboard-sections.ts[0m:[93m114[0m:[93m47[0m - [93mwarning[0m[90m ts(6133): [0m'settings' is declared but its value is never read.
+
+[7m114[0m export function toUserRowViews(users: User[], settings: BusinessSettings | null): UserRowView[] {
+[7m   [0m [93m                                              ~~~~~~~~[0m
+
+[96msrc/lib/location.ts[0m:[93m182[0m:[93m8[0m - [93mwarning[0m[90m ts(6133): [0m'sheetId' is declared but its value is never read.
+
+[7m182[0m  const sheetId = await ensureLocationSheet();
+[7m   [0m [93m       ~~~~~~~[0m
+
+[96msrc/lib/session.ts[0m:[93m28[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'generateToken' is declared but its value is never read.
+
+[7m28[0m function generateToken(): string {
+[7m  [0m [93m         ~~~~~~~~~~~~~[0m
+
+[96msrc/pages/api/account.ts[0m:[93m6[0m:[93m2[0m - [93mwarning[0m[90m ts(6133): [0m'updateSheetUserProfile' is declared but its value is never read.
+
+[7m6[0m  updateSheetUserProfile,
+[7m [0m [93m ~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/pages/api/account.ts[0m:[93m5[0m:[93m2[0m - [93mwarning[0m[90m ts(6133): [0m'ensureUserProfileColumns' is declared but its value is never read.
+
+[7m5[0m  ensureUserProfileColumns,
+[7m [0m [93m ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/pages/dashboard/[section].astro[0m:[93m75[0m:[93m33[0m - [91merror[0m[90m ts(7005): [0mVariable 'sheetUsers' implicitly has an 'any[]' type.
+
+[7m75[0m const userRows = toUserRowViews(sheetUsers, businessSettings);
+[7m  [0m [91m                                ~~~~~~~~~~[0m
+[96msrc/pages/dashboard/[section].astro[0m:[93m69[0m:[93m38[0m - [91merror[0m[90m ts(7005): [0mVariable 'sheetUsers' implicitly has an 'any[]' type.
+
+[7m69[0m const hierarchy = buildUserHierarchy(sheetUsers);
+[7m  [0m [91m                                     ~~~~~~~~~~[0m
+[96msrc/pages/dashboard/[section].astro[0m:[93m59[0m:[93m5[0m - [91merror[0m[90m ts(7034): [0mVariable 'sheetUsers' implicitly has type 'any[]' in some locations where its type cannot be determined.
+
+[7m59[0m let sheetUsers = [];
+[7m  [0m [91m    ~~~~~~~~~~[0m
+[96msrc/pages/dashboard/[section].astro[0m:[93m77[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'pendingDocuments' is declared but its value is never read.
+
+[7m77[0m const pendingDocuments = userRows.filter((row) => !row.isApproved && row.hasDocument);
+[7m  [0m [93m      ~~~~~~~~~~~~~~~~[0m
+[96msrc/pages/dashboard/[section].astro[0m:[93m76[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'withDocument' is declared but its value is never read.
+
+[7m76[0m const withDocument = userRows.filter((row) => row.hasDocument);
+[7m  [0m [93m      ~~~~~~~~~~~~[0m
+
+[96msrc/pages/dashboard/mi-organigrama.astro[0m:[93m25[0m:[93m41[0m - [91merror[0m[90m ts(7005): [0mVariable 'sheetUsers' implicitly has an 'any[]' type.
+
+[7m25[0m const personal = buildPersonalHierarchy(sheetUsers, {
+[7m  [0m [91m                                        ~~~~~~~~~~[0m
+[96msrc/pages/dashboard/mi-organigrama.astro[0m:[93m15[0m:[93m5[0m - [91merror[0m[90m ts(7034): [0mVariable 'sheetUsers' implicitly has type 'any[]' in some locations where its type cannot be determined.
+
+[7m15[0m let sheetUsers = [];
+[7m  [0m [91m    ~~~~~~~~~~[0m
+
+Result (73 files): 
+- 5 errors
+- 0 warnings
+- 7 hints
+

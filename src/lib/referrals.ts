@@ -8,7 +8,15 @@ import type { User } from './types';
  * Es un pago ÚNICO por referido: se cuenta una vez por cada alta y nunca se
  * repite aunque el referido siga activo en la plataforma.
  */
+/**
+ * Comisión por referido: $1.000 al aprobarse el registro y otros $1.000 al
+ * aprobarse su primera recarga. Son dos pagos independientes, así que un
+ * referido puede llegar a reportar el doble.
+ */
 export const COMMISSION_PER_REFERRAL = 1000;
+
+/** Pagos que puede generar cada referido: registro + primera recarga. */
+export const REFERRAL_COMMISSION_PAYMENTS = 2;
 
 
 /**
@@ -115,7 +123,7 @@ export async function getReferralStats(user: User, origin: string): Promise<Refe
 		ownCode,
 		referred,
 		count: referred.length,
-		commission: referred.length * COMMISSION_PER_REFERRAL,
+		commission: referred.length * COMMISSION_PER_REFERRAL * REFERRAL_COMMISSION_PAYMENTS,
 		shareUrl: `${origin.replace(/\/$/, '')}/register?ref=${encodeURIComponent(ownCode)}`,
 	};
 }

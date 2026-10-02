@@ -6,8 +6,14 @@ import {
 	TOPUP_STATUS,
 	type TopupStatus,
 } from '../../../lib/topups';
-import { setSheetUserBalance, parseSheetBalance } from '../../../lib/sheets';
+import {
+	setSheetUserBalance,
+	parseSheetBalance,
+	getGoogleSheetUsers,
+} from '../../../lib/sheets';
 import { getUserBalance } from '../../../lib/users';
+import { creditOnFirstTopupApproved } from '../../../lib/referral-commissions';
+import type { User } from '../../../lib/types';
 
 export const prerender = false;
 
@@ -19,6 +25,20 @@ function json(payload: { ok: boolean; message: string; [k: string]: unknown }, s
 }
 
 const fmt = (v: number) => `$${Math.round(v).toLocaleString('es-CO')}`;
+
+/** Busca al usuario en la hoja por usuario o correo, como hace el login. */
+async function findUserInSheet(username: string, email: string): Promise<User | null> {
+	const users = await getGoogleSheetUsers();
+	const byName = String(username || '').trim().toLowerCase();
+	const byEmail = String(email || '').trim().toLowerCase();
+	return (
+		users.find(
+			(u) =>
+				String(u.username || '').trim().toLowerCase() === byName ||
+				(byEmail && String(u.email || '').trim().toLowerCase() === byEmail)
+		) ?? null
+	);
+}
 
 /** Solo un administrador puede revisar las recargas. */
 function isAdmin(session: { role?: string } | null): boolean {
@@ -103,11 +123,32 @@ export const POST: APIRoute = async (Astro) => {
 		const updated = await setTopupStatus(requestId, status, adminNotes);
 		if (!updated) return json({ ok: false, message: 'No se pudo guardar el estado.' }, 500);
 
+		// Segunda comisión: si esta es la primera recarga aprobada del referido,
+		// su referente recibe $1.000. Solo aplica cuando se aprueba.
+		let commissionNote = '';
+		if (decision === 'aprobar') {
+			try {
+				const referred = await findUserInSheet(request.username, request.email);
+				if (referred) {
+					const commission = await creditOnFirstTopupApproved(referred, request.id);
+					if (commission.credited) {
+						commissionNote = ` Comisión de $1.000 acreditada a ${commission.referrer}.`;
+					}
+				}
+			} catch (commissionErr) {
+				// La recarga ya quedó aprobada: el fallo de la comisión no debe
+				// reversar eso ni obligar al admin a repetir la operación.
+				console.error('Error al pagar la comisión de primera recarga:', commissionErr);
+				commissionNote =
+					' La comisión de referido no pudo acreditarse; revísala en la pestaña Comisiones.';
+			}
+		}
+
 		return json({
 			ok: true,
 			message:
 				decision === 'aprobar'
-					? `Recarga #${requestId} aprobada: se acreditaron ${fmt(request.amount)} a ${request.username}.`
+					? `Recarga #${requestId} aprobada: se acreditaron ${fmt(request.amount)} a ${request.username}.${commissionNote}`
 					: `Recarga #${requestId} rechazada.`,
 		});
 	} catch (err) {

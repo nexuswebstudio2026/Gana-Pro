@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { validateSession } from '../../lib/session';
-import { getGoogleSheetUsers } from '../../lib/sheets';
+import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
 import { buildReferralQrSvg, getReferralStats, ownCodeOf } from '../../lib/referrals';
 import type { User } from '../../lib/types';
 
@@ -28,7 +28,11 @@ export const GET: APIRoute = async (Astro) => {
 			return new Response('No se encontró tu usuario en Google Sheets.', { status: 404 });
 		}
 
-		const stats = await getReferralStats(me, Astro.url.origin);
+		// El QR se construye con el dominio público del sitio, nunca con el origen de
+	// la petición: en desarrollo `Astro.url.origin` sería localhost y al
+	// escanearlo el teléfono no llegaría a ningún lado.
+	const siteUrl = getPublicSiteUrl(Astro.request);
+	const stats = await getReferralStats(me, siteUrl);
 		const svg = await buildReferralQrSvg(stats.shareUrl);
 
 		return new Response(svg, {

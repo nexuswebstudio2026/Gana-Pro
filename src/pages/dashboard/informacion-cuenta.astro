@@ -1,6 +1,6 @@
 ---
 import { validateSession } from '../../lib/session';
-import { getGoogleSheetUsers } from '../../lib/sheets';
+import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
 import { formatAppDateTime } from '../../lib/datetime';
 import {
 	PROFILE_FIELD_LIMITS,
@@ -84,7 +84,7 @@ let referralCount = 0;
 let referralCommission = 0;
 try {
 	if (userDetail) {
-		const stats = await getReferralStats(userDetail, Astro.url.origin);
+		const stats = await getReferralStats(userDetail, getPublicSiteUrl(Astro.request));
 		referralCode = ownCodeOf(userDetail) || session.username;
 		referralCount = stats.count;
 		referralCommission = stats.commission;
@@ -132,7 +132,8 @@ const hasReferralQr = Boolean(referralCode);
 					<h3 id="referral-title">Tu código de referido</h3>
 					<p>
 						Comparte tu QR o tu código. Cada persona que se registre con él te
-						acredita {formatCOP(COMMISSION_PER_REFERRAL)} una sola vez.
+						acredita {formatCOP(COMMISSION_PER_REFERRAL)} al aprobarse su registro y
+						otros {formatCOP(COMMISSION_PER_REFERRAL)} cuando haga su primera recarga.
 					</p>
 				</header>
 
@@ -163,7 +164,9 @@ const hasReferralQr = Boolean(referralCode);
 						</div>
 						<div>
 							<dt>Comisión por referido</dt>
-							<dd>{formatCOP(COMMISSION_PER_REFERRAL)}</dd>
+							<dd>
+								{formatCOP(COMMISSION_PER_REFERRAL)} + {formatCOP(COMMISSION_PER_REFERRAL)}
+							</dd>
 						</div>
 					</dl>
 				</div>

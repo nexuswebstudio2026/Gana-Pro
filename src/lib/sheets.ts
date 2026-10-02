@@ -1,4 +1,5 @@
-import { google } from 'googleapis';
+import { JWT } from 'google-auth-library';
+import { sheets_v4 } from 'googleapis/build/src/apis/sheets/v4.js';
 import type { User } from './types';
 import { toZonedIso } from './datetime';
 import fs from 'node:fs';
@@ -39,6 +40,48 @@ export function getEnvValue(key: string): string | undefined {
 	return undefined;
 }
 
+/**
+ * Dominio público del sitio, sin barra final.
+ *
+ * Los QR de referido y los enlaces que se comparten deben apuntar siempre al
+ * sitio real: si se construyen con el origen de la petición, en desarrollo
+ * quedarían codificados como `http://localhost:4321` y al escanearlos el
+ * teléfono se llevaría a una dirección que no existe en internet.
+ *
+ * Se resuelve en este orden:
+ *   1. `PUBLIC_SITE_URL` del entorno (con o sin https://).
+ *   2. El dominio del despliegue en Vercel, vía los encabezados del proxy.
+ *   3. El origen de la petición, como último recurso.
+ */
+export function getPublicSiteUrl(request?: Request): string {
+	const configured = (getEnvValue('PUBLIC_SITE_URL') || '').trim();
+	if (configured) {
+		const withProtocol = /^https?:\/\//i.test(configured) ? configured : `https://${configured}`;
+		return withProtocol.replace(/\/+$/, '');
+	}
+
+	const headers = request?.headers;
+	const host =
+		headers?.get('x-vercel-deployment-url') ||
+		headers?.get('x-forwarded-host') ||
+		headers?.get('host') ||
+		'';
+	if (host) {
+		// x-forwarded-host puede traer una lista separada por comas.
+		const hostname = host.split(',')[0].trim();
+		if (hostname && !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(hostname)) {
+			return `https://${hostname}`;
+		}
+	}
+
+	// Último recurso: el origen de la petición (localhost en desarrollo).
+	try {
+		return new URL(request?.url || 'http://localhost:4321').origin;
+	} catch {
+		return 'http://localhost:4321';
+	}
+}
+
 const SHEET_ID = getEnvValue('GOOGLE_SHEET_ID') || '15I3EAN5rcdG034Mu4mT6uuF6bolzCxQd-FKW9oiDyJo';
 const SHEET_TAB = getEnvValue('GOOGLE_SHEET_TAB') || 'Usuarios';
 const SERVICE_ACCOUNT_EMAIL = getEnvValue('GOOGLE_SERVICE_ACCOUNT_EMAIL');
@@ -65,13 +108,15 @@ export function getSheetsClient() {
 		);
 	}
 
-	const auth = new google.auth.JWT({
+	const auth = new JWT({
 		email: SERVICE_ACCOUNT_EMAIL,
 		key: PRIVATE_KEY,
 		scopes: [SHEETS_SCOPE],
 	});
 
-	return google.sheets({ version: 'v4', auth });
+	// `sheets_v4.Sheets` ya es la versión v4, por eso no se pasa `version`
+	// (esa opción solo existe en el factory `google.sheets()`).
+	return new sheets_v4.Sheets({ auth });
 }
 
 
