@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../lib/session';
 import { saveUserLocation, isValidCoordinates } from '../../lib/location';
 
 export const prerender = false;
@@ -10,8 +9,7 @@ export const prerender = false;
  */
 export const POST: APIRoute = async (Astro) => {
 	try {
-		const token = Astro.cookies.get('auth_session')?.value;
-		const session = validateSession(token);
+		const session = Astro.locals.user;
 		if (!session) {
 			return new Response(JSON.stringify({ ok: false, error: 'Sin sesión' }), { status: 401 });
 		}

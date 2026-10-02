@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../lib/session';
 import {
 	appendTestimonial,
 	uploadTestimonialImage,
@@ -17,8 +16,7 @@ const MAX_COMMENT_LENGTH = 1200;
 export const POST: APIRoute = async (Astro) => {
 	try {
 		// Solo usuarios con sesión activa pueden enviar testimonios
-		const token = Astro.cookies.get('auth_session')?.value;
-		const session = validateSession(token);
+		const session = Astro.locals.user;
 		if (!session) {
 			return Astro.redirect('/#testimonios', 303);
 		}

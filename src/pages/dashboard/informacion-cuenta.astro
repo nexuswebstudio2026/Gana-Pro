@@ -1,5 +1,6 @@
 ---
 import { validateSession } from '../../lib/session';
+import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
 import { formatAppDateTime } from '../../lib/datetime';
 import {
@@ -35,8 +36,7 @@ try {
 	console.error('Error al cargar la información de la cuenta:', error);
 }
 
-const role = (userDetail?.role || session.role || '').trim().toLowerCase();
-const isAdmin = role === 'admin' || role === 'administrator';
+const isAdmin = isAdminRole(userDetail?.role || session.role);
 const accountRole = userDetail?.role || session.role || 'Usuario';
 const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 	.filter((value) => (value || '').trim())

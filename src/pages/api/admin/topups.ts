@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../../lib/session';
+import { isAdminRole } from '../../../lib/auth';
 import {
 	listTopups,
 	setTopupStatus,
@@ -40,17 +40,11 @@ async function findUserInSheet(username: string, email: string): Promise<User | 
 	);
 }
 
-/** Solo un administrador puede revisar las recargas. */
-function isAdmin(session: { role?: string } | null): boolean {
-	const role = (session?.role || '').trim().toLowerCase();
-	return role === 'admin' || role === 'administrator';
-}
-
 /** Lista las solicitudes de recarga. */
 export const GET: APIRoute = async (Astro) => {
-	const session = validateSession(Astro.cookies.get('auth_session')?.value);
+	const session = Astro.locals.user;
 	if (!session) return json({ ok: false, message: 'Sesión no válida.' }, 401);
-	if (!isAdmin(session)) return json({ ok: false, message: 'Sin permisos.' }, 403);
+	if (!isAdminRole(session.role)) return json({ ok: false, message: 'Sin permisos.' }, 403);
 
 	try {
 		const status = Astro.url.searchParams.get('estado') || undefined;
@@ -70,9 +64,9 @@ export const GET: APIRoute = async (Astro) => {
  */
 export const POST: APIRoute = async (Astro) => {
 	try {
-		const session = validateSession(Astro.cookies.get('auth_session')?.value);
+		const session = Astro.locals.user;
 		if (!session) return json({ ok: false, message: 'Sesión no válida.' }, 401);
-		if (!isAdmin(session)) return json({ ok: false, message: 'Sin permisos.' }, 403);
+		if (!isAdminRole(session.role)) return json({ ok: false, message: 'Sin permisos.' }, 403);
 
 		const body = await Astro.request.json().catch(() => null);
 		if (!body) return json({ ok: false, message: 'Datos inválidos.' }, 400);

@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../lib/session';
 import { ensureUserDocumentColumns, updateSheetUserDocument } from '../../lib/sheets';
 import {
   uploadRutDocument,
@@ -19,8 +18,7 @@ export const POST: APIRoute = async (Astro) => {
     Astro.redirect('/dashboard/rut?doc=error&msg=' + encodeURIComponent(msg), 303);
 
   try {
-    const token = Astro.cookies.get('auth_session')?.value;
-    const session = validateSession(token);
+    const session = Astro.locals.user;
     if (!session) {
       return Astro.redirect('/login', 303);
     }

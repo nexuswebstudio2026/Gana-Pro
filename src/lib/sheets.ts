@@ -222,6 +222,46 @@ function userColumnIndexes(headers: string[]): UserColumnIndexes {
 	};
 }
 
+/** Posición de las columnas cortas de contacto, tal cual aparecen en la hoja. */
+interface RegistrationContactIndexes {
+	address: number;
+	neighborhood: number;
+	city: number;
+	phone: number;
+	whatsapp: number;
+}
+
+/**
+ * Localiza las columnas que rellena el formulario de registro: "Direccion",
+ * "Barrio", "Ciudad", "Telefono" y "Whatsapp".
+ *
+ * Aquí el nombre se compara **exacto** a propósito, y no con `includes` como en
+ * el resto del módulo. La hoja tiene dos juegos de columnas de contacto: uno
+ * largo ("Direccion Residencia", "Ciudad de Residencia", "Contacto Telefonico",
+ * "Contacto whatsapp") que usa el panel, y otro corto ("Direccion", "Ciudad",
+ * "Telefono", "Whatsapp") que es donde va lo que escribe el registro. Con
+ * `includes`, `findIndex` devolvería siempre el juego largo y el corto nunca se
+ * llenaría.
+ *
+ * "Barrio" está repetido en el encabezado (columnas G y L). Buscarlo por
+ * coincidencia exacta también es ambiguo, así que se pide explícitamente la
+ * segunda aparición: la del juego corto. Para el resto de campos el juego corto
+ * es el único con nombre exacto, y basta con la primera aparición.
+ */
+export function registrationContactColumnIndexes(headers: string[]): RegistrationContactIndexes {
+	// Índice de la columna "Barrio" del juego largo (la que rellena el panel),
+	// para saltar esa ocurrencia y tomar la siguiente.
+	const longNeighborhood = headers.indexOf('barrio');
+
+	return {
+		address: headers.indexOf('direccion'),
+		neighborhood: headers.indexOf('barrio', longNeighborhood + 1),
+		city: headers.indexOf('ciudad'),
+		phone: headers.indexOf('telefono'),
+		whatsapp: headers.indexOf('whatsapp'),
+	};
+}
+
 /**
  * Obtiene todos los usuarios desde Google Sheets.
  */
@@ -317,6 +357,15 @@ export async function getGoogleSheetUsers(): Promise<User[]> {
 
 
 
+/** Datos de contacto que envía el formulario de registro. */
+export interface RegistrationContact {
+	address: string;
+	neighborhood: string;
+	city: string;
+	phone: string;
+	whatsapp: string;
+}
+
 /**
  * Agrega un nuevo usuario en Google Sheets.
  *
@@ -331,6 +380,14 @@ export async function appendGoogleSheetUser(user: {
 	passwordHash: string;
 	/** Código de quien lo refiere (columna "Código Referido"). */
 	referralCode?: string;
+	/**
+	 * Datos de contacto que escribe el formulario de registro.
+	 *
+	 * Van a las columnas cortas ("Direccion", "Barrio", "Ciudad", "Telefono" y
+	 * "Whatsapp"), no a las largas del panel: son juegos separados y cada uno
+	 * guarda su propio dato. Si se omite, esas celdas quedan vacías.
+	 */
+	contact?: RegistrationContact;
 }): Promise<void> {
 	const sheets = getSheetsClient();
 
@@ -346,6 +403,7 @@ export async function appendGoogleSheetUser(user: {
 
 	const headers = rows[headerRow].map((h: unknown) => normalizeHeader(String(h)));
 	const idx = userColumnIndexes(headers);
+	const contactIdx = registrationContactColumnIndexes(headers);
 	if (idx.username === -1 || idx.email === -1) {
 		throw new Error('La hoja de usuarios no tiene las columnas "Usuario" y "Email".');
 	}
@@ -366,7 +424,11 @@ export async function appendGoogleSheetUser(user: {
 
 	// Se cubre la última columna con datos: la fila debe llegar completa hasta
 	// el final de la tabla, no hasta la posición del último valor escrito.
-	const lastColumn = Math.max(headers.length - 1, ...Object.values(idx).filter((i) => i !== -1));
+	const lastColumn = Math.max(
+		headers.length - 1,
+		...Object.values(idx).filter((i) => i !== -1),
+		...Object.values(contactIdx).filter((i) => i !== -1)
+	);
 	const newRow: string[] = new Array(lastColumn + 1).fill('');
 	const set = (column: number, value: string) => {
 		if (column !== -1) newRow[column] = value;
@@ -384,6 +446,17 @@ export async function appendGoogleSheetUser(user: {
 	set(idx.referralCode, user.referralCode || '');
 	set(idx.ownCode, user.username);
 	set(idx.documentStatus, 'Pendiente');
+
+	// Contacto del registro, en las columnas cortas. Van aparte de las largas
+	// del panel a propósito: cada juego guarda lo que su propio formulario
+	// escribió, sin que uno pise al otro.
+	if (user.contact) {
+		set(contactIdx.address, user.contact.address);
+		set(contactIdx.neighborhood, user.contact.neighborhood);
+		set(contactIdx.city, user.contact.city);
+		set(contactIdx.phone, user.contact.phone);
+		set(contactIdx.whatsapp, user.contact.whatsapp);
+	}
 
 	// Google rechaza escrituras fuera de la cuadrícula, así que se comprueba
 	// que la hoja tenga sitio antes de añadir la fila.

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../../lib/session';
+import { isAdminRole } from '../../../lib/auth';
 import {
 	ensureUserDocumentColumns,
 	getGoogleSheetUsers,
@@ -40,13 +40,11 @@ export const POST: APIRoute = async (Astro) => {
 		);
 
 	try {
-		const token = Astro.cookies.get('auth_session')?.value;
-		const session = validateSession(token);
+		const session = Astro.locals.user;
 		if (!session) return Astro.redirect('/login', 303);
 
 		// Solo un administrador puede aprobar, rechazar o cargar el RUT de un usuario
-		const role = (session.role || '').trim().toLowerCase();
-		if (role !== 'admin' && role !== 'administrator') {
+		if (!isAdminRole(session.role)) {
 			return new Response('Sin permisos', { status: 403 });
 		}
 

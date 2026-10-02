@@ -1,3 +1,4 @@
+import { isAdminRole } from './auth';
 import { getGoogleSheetUsers } from './sheets';
 import { readJSON } from './store';
 import type { User } from './types';
@@ -256,10 +257,7 @@ export interface UserWallet {
 export async function getAdminWallet(): Promise<UserWallet | null> {
 	try {
 		const users = await getGoogleSheetUsers();
-		const admin = users.find((u) => {
-			const role = normalize(u.role);
-			return role === 'admin' || role === 'administrator';
-		});
+		const admin = users.find((u) => isAdminRole(u.role));
 		if (!admin) return null;
 
 		return {

@@ -1,5 +1,6 @@
 ---
 import { validateSession } from '../../lib/session';
+import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { DOCUMENT_STATUS } from '../../lib/testimonials';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
@@ -24,8 +25,7 @@ try {
 	console.error('Error al cargar el RUT personal:', error);
 }
 
-const role = (userDetail?.role || session.role || '').trim().toLowerCase();
-const isAdmin = role === 'admin' || role === 'administrator';
+const isAdmin = isAdminRole(userDetail?.role || session.role);
 const docResult = Astro.url.searchParams.get('doc');
 const docMessage = Astro.url.searchParams.get('msg');
 const docStatus = (userDetail?.documentStatus || DOCUMENT_STATUS.pendiente).trim();

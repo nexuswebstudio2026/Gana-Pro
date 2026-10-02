@@ -38,6 +38,25 @@ if (username) {
 		console.error('No se pudo mostrar el saldo en la barra:', e);
 	}
 }
+
+// Enlaces del menú. "Valoración" lleva a la sección de testimonios y
+// valoraciones de la portada, de ahí el ancla al final de la ruta.
+const navLinks = [
+	{ href: '/gana-dinero', label: 'Gana Dinero' },
+	{ href: '/#testimonios', label: 'Valoración' },
+	{ href: '/sobre-nosotros', label: 'Sobre Nosotros' },
+];
+
+// Marca como actual el enlace cuya página (o ancla) se está viendo. Antes el
+// atributo iba fijo en "Inicio", así que el resaltado dorado ya no correspondía
+// con la sección abierta.
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const isCurrent = (href: string) => {
+	const [path, hash] = href.split('#');
+	const target = path.replace(/\/+$/, '') || '/';
+	if (currentPath !== target) return false;
+	return !hash || Astro.url.hash === `#${hash}`;
+};
 ---
 
 <header class="navbar">
@@ -53,9 +72,15 @@ if (username) {
 		</a>
 
 		<nav class="nav-links" id="primary-nav" aria-label="Navegación principal">
-			<a href="/" class="nav-link" aria-current="page">Inicio</a>
-			<a href="/gana-dinero" class="nav-link">Gana Dinero</a>
-			<a href="/sobre-nosotros" class="nav-link">Sobre Nosotros</a>
+			{navLinks.map((link) => (
+				<a
+					href={link.href}
+					class="nav-link"
+					aria-current={isCurrent(link.href) ? 'page' : undefined}
+				>
+					{link.label}
+				</a>
+			))}
 		</nav>
 
 		<div class="nav-actions">

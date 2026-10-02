@@ -1,9 +1,38 @@
 import type { APIRoute } from 'astro';
 import { hashPassword } from '../../lib/crypto';
 import { readJSON, writeJSON } from '../../lib/store';
-import { getGoogleSheetUsers, appendGoogleSheetUser } from '../../lib/sheets';
+import {
+	getGoogleSheetUsers,
+	appendGoogleSheetUser,
+	ensureUserProfileColumns,
+} from '../../lib/sheets';
+import {
+	cleanText,
+	isValidPhone,
+	PROFILE_FIELD_LIMITS,
+} from '../../lib/account-profile';
 import { findReferrerByCode, ownCodeOf } from '../../lib/referrals';
+import type { RegistrationContact } from '../../lib/sheets';
 import type { User } from '../../lib/types';
+
+/**
+ * Lee y normaliza los cinco datos de contacto del formulario de registro.
+ *
+ * Devuelve `null` si falta alguno: en el registro son obligatorios, porque sin
+ * ellos el usuario queda sin forma de ser contacto por el negocio.
+ */
+function parseRegistrationContact(params: URLSearchParams): RegistrationContact | null {
+	const contact: RegistrationContact = {
+		address: cleanText(params.get('address'), PROFILE_FIELD_LIMITS.address),
+		neighborhood: cleanText(params.get('neighborhood'), PROFILE_FIELD_LIMITS.neighborhood),
+		city: cleanText(params.get('city'), PROFILE_FIELD_LIMITS.city),
+		phone: cleanText(params.get('phone'), PROFILE_FIELD_LIMITS.phone),
+		whatsapp: cleanText(params.get('whatsapp'), PROFILE_FIELD_LIMITS.whatsapp),
+	};
+	return contact.address && contact.neighborhood && contact.city && contact.phone && contact.whatsapp
+		? contact
+		: null;
+}
 
 // API routes must be server-rendered, not prerendered as static
 export const prerender = false;
@@ -18,16 +47,37 @@ export const POST: APIRoute = async (Astro) => {
 		const password = params.get('password') ?? '';
 		const passwordConfirm = params.get('passwordConfirm') ?? '';
 		const referralInput = params.get('ref')?.trim() ?? '';
+		const errorParam = (msg: string) =>
+			Astro.redirect('/register?error=' + encodeURIComponent(msg), 303);
 
 		// --- Validation ---
 		if (!username || !email || !password) {
-			return Astro.redirect('/register?error=' + encodeURIComponent('Todos los campos son obligatorios.'), 303);
+			return errorParam('Todos los campos son obligatorios.');
 		}
 		if (password !== passwordConfirm) {
-			return Astro.redirect('/register?error=' + encodeURIComponent('Las contraseñas no coinciden.'), 303);
+			return errorParam('Las contraseñas no coinciden.');
 		}
 		if (password.length < 6) {
-			return Astro.redirect('/register?error=' + encodeURIComponent('La contraseña debe tener al menos 6 caracteres.'), 303);
+			return errorParam('La contraseña debe tener al menos 6 caracteres.');
+		}
+
+		// --- Datos de contacto ---
+		// Se reutiliza el validador del panel en lugar de reescribir las reglas:
+		// así el teléfono admite exactamente el mismo formato en los dos sitios.
+		// Aquí los cinco campos son obligatorios, cuando en el panel son opcionales.
+		const contact = parseRegistrationContact(params);
+		if (!contact) {
+			return errorParam('Completa todos los datos de contacto para crear tu cuenta.');
+		}
+		if (!isValidPhone(contact.phone)) {
+			return errorParam(
+				'El teléfono solo admite números y los signos + ( ) - (entre 7 y 15 dígitos).'
+			);
+		}
+		if (!isValidPhone(contact.whatsapp)) {
+			return errorParam(
+				'El contacto de WhatsApp solo admite números y los signos + ( ) - (entre 7 y 15 dígitos).'
+			);
 		}
 
 		// Check for duplicates in Google Sheets
@@ -49,10 +99,10 @@ export const POST: APIRoute = async (Astro) => {
 		const allUsers = [...sheetUsers, ...localUsers];
 
 		if (allUsers.some((u) => u.username?.toLowerCase() === username.toLowerCase())) {
-			return Astro.redirect('/register?error=' + encodeURIComponent('El nombre de usuario ya está en uso.'), 303);
+			return errorParam('El nombre de usuario ya está en uso.');
 		}
 		if (allUsers.some((u) => u.email?.toLowerCase() === email)) {
-			return Astro.redirect('/register?error=' + encodeURIComponent('El correo electrónico ya está registrado.'), 303);
+			return errorParam('El correo electrónico ya está registrado.');
 		}
 
 		// --- Código de referido (opcional) ---
@@ -62,10 +112,8 @@ export const POST: APIRoute = async (Astro) => {
 		if (referralInput) {
 			const referrer = await findReferrerByCode(referralInput);
 			if (!referrer) {
-				return Astro.redirect(
-					'/register?error=' +
-						encodeURIComponent('El código de referido no es válido. Verifícalo o regístrate sin él.'),
-					303
+				return errorParam(
+					'El código de referido no es válido. Verifícalo o regístrate sin él.'
 				);
 			}
 			// No se permite autoreferirse
@@ -73,10 +121,7 @@ export const POST: APIRoute = async (Astro) => {
 				referrer.username?.toLowerCase() === username.toLowerCase() ||
 				referrer.email?.toLowerCase() === email
 			) {
-				return Astro.redirect(
-					'/register?error=' + encodeURIComponent('No puedes usar tu propio código de referido.'),
-					303
-				);
+				return errorParam('No puedes usar tu propio código de referido.');
 			}
 			referralCode = ownCodeOf(referrer) || referrer.username || referralInput;
 		}
@@ -86,15 +131,24 @@ export const POST: APIRoute = async (Astro) => {
 
 		// 1. Guardar en Google Sheets
 		try {
+			// Si a la hoja le faltan las columnas cortas, se crean antes de
+			// escribir: si no, los valores caerían en celdas que Google descarta.
+			try {
+				await ensureUserProfileColumns();
+			} catch (err) {
+				console.error('No se pudieron preparar las columnas de contacto:', err);
+			}
+
 			await appendGoogleSheetUser({
 				username,
 				email,
 				passwordHash,
 				referralCode,
+				contact,
 			});
 		} catch (sheetSaveErr) {
 			console.error('Error al guardar usuario en Google Sheet:', sheetSaveErr);
-			return Astro.redirect('/register?error=' + encodeURIComponent('No se pudo guardar el registro en Google Sheets. Intente de nuevo más tarde.'), 303);
+			return errorParam('No se pudo guardar el registro en Google Sheets. Intente de nuevo más tarde.');
 		}
 
 		// 2. Backup opcional en JSON local
@@ -105,6 +159,11 @@ export const POST: APIRoute = async (Astro) => {
 				password: passwordHash,
 				referralCode,
 				ownCode: username,
+				address: contact.address,
+				neighborhood: contact.neighborhood,
+				city: contact.city,
+				phone: contact.phone,
+				whatsapp: contact.whatsapp,
 			};
 			localUsers.push(newUser);
 			writeJSON('users.json', localUsers);

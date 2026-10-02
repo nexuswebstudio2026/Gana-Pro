@@ -1,10 +1,5 @@
 import type { APIRoute } from 'astro';
-import { validateSession } from '../../lib/session';
-import {
-	clearSheetUserProfile,
-	ensureUserProfileColumns,
-	updateSheetUserProfile,
-} from '../../lib/sheets';
+import { clearSheetUserProfile } from '../../lib/sheets';
 import { isProfileEmpty, parseProfileForm } from '../../lib/account-profile';
 import type { AccountProfile } from '../../lib/account-profile';
 import { saveUserProfile, type ProfileAction } from '../../lib/account-crud';
@@ -34,7 +29,7 @@ export const POST: APIRoute = async (Astro) => {
 		);
 
 	try {
-		const session = validateSession(Astro.cookies.get('auth_session')?.value);
+		const session = Astro.locals.user;
 		if (!session) {
 			return Astro.redirect('/login', 303);
 		}

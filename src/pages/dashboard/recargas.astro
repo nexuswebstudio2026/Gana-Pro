@@ -1,5 +1,5 @@
 ---
-import { validateSession } from '../../lib/session';
+import { isAdminRole } from '../../lib/auth';
 import { formatAppDateTime } from '../../lib/datetime';
 import { getGoogleSheetUsers } from '../../lib/sheets';
 import { listTopups, TOPUP_STATUS, type TopupRequest } from '../../lib/topups';
@@ -8,10 +8,8 @@ import type { User } from '../../lib/types';
 
 export const prerender = false;
 
-const session = validateSession(Astro.cookies.get('auth_session')?.value);
-if (!session) {
-	return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
-}
+// El middleware ya resolvio la sesion y comprobo que hay una valida.
+const session = Astro.locals.user!;
 
 let userDetail: User | null = null;
 try {
@@ -26,9 +24,10 @@ try {
 	console.error('Error al cargar el rol del usuario:', error);
 }
 
-const role = (userDetail?.role || session.role || '').trim().toLowerCase();
-const isAdmin = role === 'admin' || role === 'administrator';
-if (!isAdmin) {
+// El rol de la hoja manda sobre el de la sesión: si el administrador acaba
+// de degradar a esta persona, deja de ver las recargas sin esperar a que
+// caduque su cookie.
+if (!isAdminRole(userDetail?.role || session.role)) {
 	return Astro.redirect('/dashboard?error=' + encodeURIComponent('No tienes permisos para ver las recargas.'), 303);
 }
 
