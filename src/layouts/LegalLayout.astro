@@ -2,9 +2,13 @@
 /**
  * Marco común de las páginas legales (términos, privacidad y preguntas).
  *
- * No usa `Layout.astro` a propósito: esas páginas son de lectura larga y
- * necesitan un ancho de línea cómodo, sin la navegación comercial del sitio.
+ * No usa `Layout.astro` porque son textos largos y necesitan un ancho de línea
+ * cómodo, pero sí monta `Navbar` y `Footer`: quien llega desde el footer a
+ * "Términos" tiene que poder volver atrás con el menú, no quedarse en una página
+ * sin salida. El `legal-nav` del pie de documento es un refuerzo para saltar de
+ * un documento a otro, no la única navegación.
  */
+import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 
 interface Props {
@@ -38,6 +42,8 @@ const { title, description, updated } = Astro.props;
 		</script>
 	</head>
 	<body>
+		<Navbar />
+
 		<main class="legal">
 			<article class="legal-card luxury-card">
 				<h1 class="font-cinzel">{title}</h1>

@@ -1,9 +1,163 @@
 ---
-// El contenido de "Gana Dinero" es ahora la portada (/). Esta ruta se conserva
-// para no romper los enlaces ya compartidos: antes mostraba ese contenido y
-// ahora redirige a el.
-//
-// El 308 indica a los buscadores que el cambio es permanente; con un 302 lo
-// tratarian como temporal y ademas Vercel podria cachearlo.
-return Astro.redirect('/', 308);
+/**
+ * Herramienta "Gana Dinero": la calculadora de la matriz 5x1 en página propia.
+ *
+ * Antes esta ruta era un 308 a la portada. Se convirtió en página real porque la
+ * calculadora merece un enlace propio y compartible ("mira cuánto ganas en el
+ * nivel 5"), y porque un redirect la volvía invisible para quien ya la tenía
+ * guardada.
+ *
+ * Las cifras vienen de `matrix-calculator.ts`, el mismo módulo que usa el hero
+ * de la portada: si una regla cambia, cambia en los dos sitios a la vez.
+ */
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import CalculadoraMatriz from '../components/CalculadoraMatriz.astro';
+import FaqSection from '../components/FaqSection.astro';
+import MobileBottomBar from '../components/MobileBottomBar.astro';
+import { validateSession } from '../lib/session';
+import { RECARGA_INICIAL_AMOUNT } from '../lib/p2p';
+import { MAX_DIRECT_TEAM } from '../lib/user-hierarchy';
+
+export const prerender = false;
+
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+const showBottomBar = !session;
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 ---
+
+<Layout
+	title="Gana Dinero"
+	description="Calcula cuánto puedes generar en la matriz 5x1 de GANA PRO: elige tu nivel objetivo, comprueba cuántos referidos activos necesitas y cuánto se envía en cada ascenso."
+>
+	<Navbar />
+
+	<main class="main-content">
+		<section class="section page-hero">
+			<div class="section-container">
+				<div class="section-header">
+					<span class="section-badge font-cinzel">INGRESOS &amp; RENTABILIDAD</span>
+					<h1 class="section-title font-cinzel">
+						Calcula tu <span class="gold-gradient-text">Gana Dinero</span>
+					</h1>
+					<p class="section-subtitle">
+						Simula hasta dónde puedes llegar con la matriz 5x1. Elige tu nivel objetivo y
+						revisa cuántos referidos activos necesitas, cuánto se envía en cada ascenso y
+						cuánto conservas de cada movimiento.
+					</p>
+					<p class="hero-chips">
+						<span class="chip">Activación: {fmt(RECARGA_INICIAL_AMOUNT)}</span>
+						<span class="chip">{MAX_DIRECT_TEAM} puestos por persona</span>
+						<span class="chip">50 % al patrocinador</span>
+						<span class="chip">30 % de sostenimiento en Nivel 5</span>
+					</p>
+				</div>
+
+				<CalculadoraMatriz />
+			</div>
+		</section>
+
+		<FaqSection />
+
+		<section class="section">
+			<div class="section-container">
+				<div class="luxury-card cta-box">
+					<div class="cta-content">
+						<h2 class="cta-title font-cinzel">Empieza a Ganar Dinero Hoy</h2>
+						<p class="cta-desc">
+							Activa tu cuenta y empieza a construir tus cinco puestos en la matriz.
+						</p>
+						<div class="cta-btns">
+							<a href="/register" class="gold-button">Crear Cuenta Exclusiva</a>
+							<a href="/login" class="ghost-gold-button">Ya Soy Miembro</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	{showBottomBar && <MobileBottomBar />}
+</Layout>
+<style>
+	.main-content {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.section { padding: 60px 24px; }
+
+	.section-container {
+		max-width: 1240px;
+		margin: 0 auto;
+	}
+
+	.section-header { margin-bottom: 34px; }
+
+	.section-badge {
+		display: inline-block;
+		margin-bottom: 12px;
+		color: var(--gold-primary);
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.18em;
+	}
+
+	.section-title {
+		margin: 0 0 16px;
+		font-size: clamp(2rem, 4.5vw, 3rem);
+		line-height: 1.15;
+	}
+
+	.section-subtitle {
+		margin: 0 auto;
+		max-width: 70ch;
+		color: var(--text-secondary);
+		font-size: 1.05rem;
+		line-height: 1.75;
+	}
+
+	.hero-chips {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 10px;
+		margin: 24px 0 0;
+	}
+
+	.chip {
+		padding: 7px 16px;
+		border: 1px solid var(--gold-border);
+		border-radius: 9999px;
+		background: rgba(212, 175, 55, 0.08);
+		color: var(--text-secondary);
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+
+	.cta-box { padding: 44px 36px; text-align: center; }
+
+	.cta-title { margin: 0 0 12px; font-size: 1.8rem; }
+
+	.cta-desc {
+		margin: 0 0 26px;
+		color: var(--text-secondary);
+		font-size: 1rem;
+	}
+
+	.cta-btns {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 16px;
+	}
+
+	@media (max-width: 640px) {
+		.section { padding: 40px 16px; }
+		.section-title { font-size: 1.7rem; }
+		.cta-box { padding: 30px 18px; }
+		.cta-title { font-size: 1.4rem; }
+		.cta-btns { flex-direction: column; align-items: stretch; }
+	}
+</style>
+
