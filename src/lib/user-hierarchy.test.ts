@@ -1,3 +1,49 @@
+describe('findUserParent', () => {
+	// La matriz reparte por orden de registro: los primeros cinco cuelgan de
+	// la raíz, y los siguientes del primer hijo (ana).
+	const root = buildUserHierarchy([
+		user('ana'),
+		user('beto'),
+		user('cami'),
+		user('dani'),
+		user('eva'),
+		user('fabi'),
+		user('gabi'),
+	]);
+
+	it('devuelve el nodo que trajo a la persona', () => {
+		// fabi y gabi son los que cuelgan de ana.
+		expect(findUserParent(root, { username: 'fabi' })?.name).toBe('ana');
+		expect(findUserParent(root, { username: 'gabi' })?.name).toBe('ana');
+	});
+
+	it('un usuario del primer nivel cuelga de la raíz GANA PRO', () => {
+		expect(findUserParent(root, { username: 'beto' })?.name).toBe('GANA PRO');
+		expect(findUserParent(root, { username: 'cami' })?.name).toBe('GANA PRO');
+	});
+
+	it('nadie es patrocinador de sí mismo', () => {
+		// ana cuelga de la raíz, así que su patrocinador es GANA PRO, no ella.
+		expect(findUserParent(root, { username: 'ana' })?.name).toBe('GANA PRO');
+		// Y la raíz no tiene padre: no es un usuario al que se le envíe saldo.
+		expect(findUserParent(root, { username: 'GANA PRO' })).toBeNull();
+	});
+
+	it('busca también por correo', () => {
+		expect(findUserParent(root, { email: 'fabi@test.com' })?.name).toBe('ana');
+	});
+
+	it('devuelve null si la persona no está en el árbol', () => {
+		expect(findUserParent(root, { username: 'fantasma' })).toBeNull();
+		expect(findUserParent(buildUserHierarchy([]), { username: 'ana' })).toBeNull();
+	});
+
+	it('sin identidad no busca nada', () => {
+		expect(findUserParent(root, {})).toBeNull();
+	});
+});
+
+
 import { describe, expect, it } from 'vitest';
 import {
 	buildUserHierarchy,
@@ -5,6 +51,7 @@ import {
 	countByLevel,
 	countOrganizationUsers,
 	findUserNode,
+	findUserParent,
 	maxOrganizationDepth,
 	MAX_DIRECT_TEAM,
 } from './user-hierarchy';

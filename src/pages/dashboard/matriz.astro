@@ -1,0 +1,86 @@
+---
+/**
+ * Mi matriz 5x1.
+ *
+ * Ruta del panel, así que `src/middleware.ts` ya exige sesión antes de llegar
+ * aquí: no se repite la comprobación, se usa `Astro.locals.user`.
+ *
+ * Los puestos salen del organigrama personal (`buildPersonalHierarchy`), que ya
+ * reparte la matriz 5x1. A cada persona se le cruza el estado de su última
+ * recarga para saber si su puesto está activo.
+ */
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
+import { toLevelNumber } from '../../lib/users';
+import { listTopups, TOPUP_STATUS } from '../../lib/topups';
+import { buildMatrixNodes, computeProgress } from '../../lib/matrix';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import MatrizStatus from '../../components/dashboard/MatrizStatus.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = Astro.locals.user!;
+
+let sheetUsers: User[] = [];
+let loadFailed = false;
+let level = '1';
+
+try {
+	sheetUsers = await getGoogleSheetUsers();
+
+	// El nivel se lee de la hoja (no de la sesión) para que el número que ve el
+	// usuario sea el mismo que usa el servidor al validar sus pagos.
+	const own = sheetUsers.find(
+		(user) =>
+			user.username?.trim().toLowerCase() === session.username.trim().toLowerCase() ||
+			user.email?.trim().toLowerCase() === session.email.trim().toLowerCase()
+	);
+	level = own?.level?.trim() || '1';
+} catch (error) {
+	loadFailed = true;
+	console.error('Error al cargar la matriz del usuario:', error);
+}
+
+const personal = buildPersonalHierarchy(sheetUsers, {
+	username: session.username,
+	email: session.email,
+});
+
+/**
+ * Estado de la última recarga de cada referido.
+ *
+ * Se recorren las recargas de mayor a menor fecha (la hoja las guarda así) y se
+ * guarda la primera que aparece para cada nombre: así, si una persona recargó
+ * varias veces, manda su recarga más reciente y no una antigua.
+ */
+const topupsByUser: Record<string, string> = {};
+if (!loadFailed) {
+	try {
+		for (const topup of await listTopups()) {
+			const key = String(topup.username ?? '').trim().toLowerCase();
+			if (!key || topupsByUser[key]) continue;
+			topupsByUser[key] =
+				topup.status === TOPUP_STATUS.aprobado ? 'Aprobado' : String(topup.status || '');
+		}
+	} catch (error) {
+		console.error('No se pudieron leer las recargas de la matriz:', error);
+	}
+}
+
+const nodes = buildMatrixNodes(personal.team, topupsByUser);
+const progress = computeProgress(nodes, toLevelNumber(level));
+
+const isAdmin = isAdminRole(session.role);
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Mi matriz"
+	eyebrow="Configuración · Usuario"
+	description="Consulta el estado de tus cinco puestos directos y cuánto te falta para ascender de nivel."
+>
+	<MatrizStatus nodes={nodes} progress={progress} loadFailed={loadFailed} />
+</AdminPageLayout>

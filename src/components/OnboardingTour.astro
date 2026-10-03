@@ -1,0 +1,309 @@
+---
+/**
+ * Tour de bienvenida para miembros nuevos.
+ *
+ * Se muestra una sola vez: la marca queda en `localStorage` y el diálogo solo se
+ * abre si no está. Quien ya tiene su cuenta iniciada no vuelve a verlos, pero
+ * el botón del banner permite repasarlos.
+ */
+---
+
+<div class="tour" data-tour-root>
+	<button type="button" class="tour-open" data-tour-start>
+		<span class="tour-open-icon" aria-hidden="true">?</span>
+		<span>¿Cómo funciona?</span>
+	</button>
+
+	<dialog class="tour-modal" data-tour-modal aria-labelledby="tour-title">
+		<div class="tour-head">
+			<span class="tour-step" data-tour-counter>Paso 1 de 3</span>
+			<form method="dialog">
+				<button type="submit" class="tour-x" aria-label="Cerrar">&times;</button>
+			</form>
+		</div>
+
+		<h2 class="font-cinzel" id="tour-title">Empieza en 3 pasos</h2>
+
+		<ol class="tour-steps" data-tour-steps>
+			<li class="tour-step-item is-current">
+				<span class="tour-num">1</span>
+				<div>
+					<strong>Copia tu enlace de referido</strong>
+					<p>Compártelo con quien quieras traer. Tu código va en la propia dirección.</p>
+				</div>
+			</li>
+			<li class="tour-step-item">
+				<span class="tour-num">2</span>
+				<div>
+					<strong>Recarga $15.000</strong>
+					<p>Es lo que activa tu puesto en la matriz. Adjunta el comprobante y lo verificamos.</p>
+				</div>
+			</li>
+			<li class="tour-step-item">
+				<span class="tour-num">3</span>
+				<div>
+					<strong>Activa tu nivel</strong>
+					<p>Cuando tu recarga se apruebe, tu puesto queda activo y empieza a contar.</p>
+				</div>
+			</li>
+		</ol>
+
+		<div class="tour-actions">
+			<a class="tour-link" href="/dashboard/invitacion" data-tour-link>Ver mi invitación</a>
+			<div class="tour-buttons">
+				<button type="button" class="tour-prev" data-tour-prev disabled>Anterior</button>
+				<button type="button" class="gold-button tour-next" data-tour-next>Siguiente</button>
+			</div>
+		</div>
+	</dialog>
+</div>
+
+<style>
+	.tour { display: inline-block; }
+
+	.tour-open {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 7px 14px;
+		border: 1px solid var(--gold-border);
+		border-radius: 9999px;
+		background: rgba(212, 175, 55, 0.08);
+		color: var(--gold-primary);
+		font-family: inherit;
+		font-size: 12.5px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+	}
+
+	.tour-open:hover {
+		background: rgba(212, 175, 55, 0.16);
+		border-color: var(--gold-primary);
+		transform: translateY(-1px);
+	}
+
+	.tour-open-icon {
+		display: grid;
+		place-items: center;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: var(--gold-primary);
+		color: #030712;
+		font-size: 12px;
+		font-weight: 800;
+	}
+
+	.tour-modal {
+		width: min(460px, calc(100vw - 32px));
+		padding: 28px;
+		border: 1px solid var(--gold-border);
+		border-radius: 20px;
+		background: var(--bg-surface, #0f172a);
+		color: var(--text-primary);
+		box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+	}
+
+	.tour-modal::backdrop {
+		background: rgba(2, 7, 18, 0.75);
+		backdrop-filter: blur(4px);
+	}
+
+	.tour-modal[open] { animation: tour-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+	@keyframes tour-in {
+		from { opacity: 0; transform: translateY(16px) scale(0.97); }
+		to { opacity: 1; transform: none; }
+	}
+
+	.tour-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 10px;
+	}
+
+	.tour-step {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
+	}
+
+	.tour-x {
+		background: none;
+		border: none;
+		color: var(--text-secondary);
+		font-size: 1.6rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.tour-x:hover { color: var(--gold-primary); }
+
+	.tour-modal h2 { margin: 0 0 20px; font-size: 1.45rem; }
+
+	.tour-steps {
+		list-style: none;
+		margin: 0 0 22px;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.tour-step-item {
+		display: flex;
+		gap: 14px;
+		padding: 14px;
+		border: 1px solid var(--gold-border);
+		border-radius: 14px;
+		opacity: 0.5;
+		transition: opacity 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+	}
+
+	.tour-step-item.is-current {
+		opacity: 1;
+		border-color: var(--gold-primary);
+		background: rgba(212, 175, 55, 0.08);
+	}
+
+	.tour-num {
+		flex: 0 0 26px;
+		width: 26px;
+		height: 26px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: rgba(212, 175, 55, 0.18);
+		color: var(--gold-primary);
+		font-size: 12.5px;
+		font-weight: 800;
+	}
+
+	.tour-step-item strong { display: block; margin-bottom: 3px; font-size: 14px; }
+	.tour-step-item p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+
+	.tour-actions {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.tour-buttons { display: flex; gap: 10px; }
+
+	.tour-prev {
+		padding: 12px 20px;
+		border: 1px solid var(--gold-border);
+		border-radius: 9999px;
+		background: transparent;
+		color: var(--text-secondary);
+		font-family: inherit;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: color 0.2s ease, border-color 0.2s ease;
+	}
+
+	.tour-prev:not(:disabled):hover { color: var(--gold-primary); border-color: var(--gold-primary); }
+	.tour-prev:disabled { opacity: 0.4; cursor: not-allowed; }
+
+	.tour-next { border: none; font-family: inherit; }
+
+	.tour-link {
+		color: var(--gold-primary);
+		font-size: 13px;
+<script>
+	// Clave propia del tour: si algún día se cambia el contenido, se sube la
+	// versión y vuelve a mostrarse sin tocar nada más.
+	const SEEN_KEY = 'gana_tour_v1';
+
+	const modal = document.querySelector<HTMLDialogElement>('[data-tour-modal]');
+	const startBtn = document.querySelector<HTMLButtonElement>('[data-tour-start]');
+	const counter = document.querySelector<HTMLElement>('[data-tour-counter]');
+	const nextBtn = document.querySelector<HTMLButtonElement>('[data-tour-next]');
+	const prevBtn = document.querySelector<HTMLButtonElement>('[data-tour-prev]');
+	const steps = Array.from(document.querySelectorAll<HTMLElement>('.tour-step-item'));
+
+	let index = 0;
+
+	const render = () => {
+		steps.forEach((step, i) => step.classList.toggle('is-current', i === index));
+		if (counter) counter.textContent = `Paso ${index + 1} de ${steps.length}`;
+		// En el último paso "Siguiente" deja de tener sentido: se cierra el tour.
+		if (nextBtn) nextBtn.textContent = index === steps.length - 1 ? '¡Listo!' : 'Siguiente';
+		if (prevBtn) prevBtn.disabled = index === 0;
+	};
+
+	const open = () => {
+		index = 0;
+		render();
+		modal?.showModal();
+	};
+
+	/** Marca el tour como visto; si el navegador no guarda, no se rompe nada. */
+	const remember = () => {
+		try {
+			localStorage.setItem(SEEN_KEY, '1');
+		} catch {
+			// Modo privado sin almacenamiento: el tour simplemente se repite.
+		}
+	};
+
+	startBtn?.addEventListener('click', open);
+
+	nextBtn?.addEventListener('click', () => {
+		if (index < steps.length - 1) {
+			index += 1;
+			render();
+		} else {
+			remember();
+			modal?.close();
+		}
+	});
+
+	prevBtn?.addEventListener('click', () => {
+		if (index > 0) {
+			index -= 1;
+			render();
+		}
+	});
+
+	// Al cerrarlo (con la X o con Escape) también se da por visto, para no
+	// interrumpir otra vez en la misma sesión.
+	modal?.addEventListener('close', remember);
+
+	try {
+		if (!localStorage.getItem(SEEN_KEY)) {
+			// Un pequeño retardo deja que la página termine de pintarse antes de
+			// interrumpir con el diálogo.
+			setTimeout(open, 700);
+		}
+	} catch {
+		// Sin localStorage el tour se muestra siempre: es la opción segura.
+	}
+</script>
+
+		font-weight: 600;
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+	}
+
+	.tour-link:hover { border-bottom-color: currentColor; }
+
+	@media (max-width: 520px) {
+		.tour-modal { padding: 22px 18px; }
+		.tour-actions { flex-direction: column; align-items: stretch; }
+		.tour-buttons { justify-content: space-between; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.tour-modal[open] { animation: none; }
+		.tour-step-item { transition: none; }
+	}
+</style>

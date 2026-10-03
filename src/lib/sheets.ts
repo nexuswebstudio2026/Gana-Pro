@@ -62,11 +62,28 @@ export function getEnvValue(key: string): string | undefined {
  * despliega—, el QR llevaba a un error de Vercel en lugar de al sitio. Para un
  * enlace que se comparte y escanea gente, tiene que usarse la dirección estable.
  */
+/**
+ * Dominio oficial de GANA PRO.
+ *
+ * Es el valor de reserva cuando el servidor no recibe `PUBLIC_SITE_URL`. Hace
+ * falta porque las vistas previas de Vercel responden en `equipo-abc.vercel.app`:
+ * si una tarjeta de WhatsApp o un QR se generan desde ahí, se comparten
+ * direcciones que dejan de existir al eliminar la vista previa.
+ */
+export const OFFICIAL_SITE_URL = 'https://ganapro.org';
+
 export function getPublicSiteUrl(request?: Request): string {
 	const configured = (getEnvValue('PUBLIC_SITE_URL') || '').trim();
 	if (configured) {
 		const withProtocol = /^https?:\/\//i.test(configured) ? configured : `https://${configured}`;
 		return withProtocol.replace(/\/+$/, '');
+	}
+
+	// En producción, si nadie definió `PUBLIC_SITE_URL`, se usa el dominio
+	// oficial en lugar del host de la vista previa. En desarrollo NO se aplica:
+	// allí el QR debe apuntar a `localhost` para poder probarlo en el teléfono.
+	if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+		return OFFICIAL_SITE_URL;
 	}
 
 	const fromHeaders = siteUrlFromHeaders(request?.headers);

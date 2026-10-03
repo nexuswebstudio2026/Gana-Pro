@@ -1,0 +1,412 @@
+---
+/**
+ * Carga de comprobantes e historial de pagos entre usuarios.
+ *
+ * El selector de conceptos, sus montos y si están habilitados los arma el
+ * servidor con las reglas de `p2p.ts`: el formulario nunca inventa un monto ni
+ * habilita un concepto por su cuenta.
+ *
+ * La tabla se pinta en el servidor (para que se vea sin JavaScript) y se
+ * refresca al terminar un envío correcto.
+ */
+import { P2P_CONCEPT_INFO, P2P_STATUS, P2P_STATUS_TONE } from '../../lib/p2p';
+import { formatAppDateTime } from '../../lib/datetime';
+import type { P2PPayment } from '../../lib/p2p-payments';
+
+interface Props {
+	concepts: {
+		id: string;
+		label: string;
+		detail: string;
+		amount: number;
+		enabled: boolean;
+	}[];
+	payments: P2PPayment[];
+}
+
+const { concepts, payments } = Astro.props;
+
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+
+/** Normaliza un estado de la hoja al tono con el que se pinta. */
+const toneOf = (status: string) =>
+	P2P_STATUS_TONE[status as keyof typeof P2P_STATUS_TONE] ?? 'pending';
+---
+
+<section class="p2p" aria-label="Comprobantes y movimientos">
+	<div class="p2p-head">
+		<div>
+			<h2 class="font-cinzel">Comprobantes de pago</h2>
+			<p class="p2p-lead">
+				Sube la evidencia de tu recarga inicial y de tus envíos. Cada movimiento queda
+				Pendiente hasta que el administrador lo verifique.
+			</p>
+		</div>
+		<button type="button" class="gold-button p2p-btn" data-open-receipt>
+			Subir comprobante
+		</button>
+	</div>
+
+	<dialog class="p2p-modal" data-receipt-modal aria-labelledby="p2p-modal-title">
+		<form method="dialog" class="p2p-modal-close">
+			<button type="submit" class="p2p-x" aria-label="Cerrar">&times;</button>
+		</form>
+
+		<h3 class="font-cinzel" id="p2p-modal-title">Enviar comprobante</h3>
+		<p class="p2p-modal-lead">Adjunta la captura o el PDF de tu transferencia.</p>
+
+		<form class="p2p-form" data-receipt-form enctype="multipart/form-data">
+			<label class="p2p-field">
+				<span>Concepto</span>
+				<select name="concept" required data-receipt-concept>
+					{concepts.map((concept) => (
+						<option
+							value={concept.id}
+							data-amount={concept.amount}
+							disabled={!concept.enabled}
+							selected={concept.enabled}
+						>
+							{concept.label}{concept.enabled ? '' : ' — no disponible'}
+						</option>
+					))}
+				</select>
+			</label>
+
+			<p class="p2p-amount">
+				Monto a reportar: <strong data-receipt-amount>{fmt(concepts[0]?.amount ?? 0)}</strong>
+			</p>
+
+			<label class="p2p-field">
+				<span>Comprobante (JPG, PNG o PDF · máx. 3 MB)</span>
+				<input
+					type="file"
+					name="receipt"
+					accept="image/jpeg,image/png,application/pdf"
+					required
+					data-receipt-file
+				/>
+			</label>
+
+			<label class="p2p-field">
+				<span>Número de transacción (opcional)</span>
+				<input type="text" name="reference" maxlength="60" placeholder="Ej: 8F2K-9921" />
+			</label>
+
+			<p class="p2p-feedback" data-receipt-feedback role="status" aria-live="polite"></p>
+
+			<button type="submit" class="gold-button p2p-btn" data-receipt-submit>
+				<span data-receipt-submit-label>Enviar comprobante</span>
+				<span class="p2p-spinner" data-receipt-spinner hidden aria-hidden="true"></span>
+			</button>
+		</form>
+	</dialog>
+
+	<h3 class="p2p-history-title font-cinzel">Historial de movimientos</h3>
+
+	{payments.length === 0 ? (
+		<p class="p2p-empty">Todavía no has enviado ningún comprobante.</p>
+	) : (
+		<div class="p2p-table-wrap">
+			<table class="p2p-table">
+				<caption class="sr-only">Historial de movimientos enviados</caption>
+				<thead>
+					<tr>
+						<th scope="col">Fecha</th>
+						<th scope="col">Concepto</th>
+						<th scope="col">Monto</th>
+						<th scope="col">Referencia</th>
+						<th scope="col">Comprobante</th>
+						<th scope="col">Estado</th>
+					</tr>
+				</thead>
+				<tbody>
+					{payments.map((payment) => (
+						<tr data-payment-id={payment.id}>
+							<td>{payment.createdAt ? formatAppDateTime(payment.createdAt) : '—'}</td>
+							<td>
+								{P2P_CONCEPT_INFO[payment.concept as keyof typeof P2P_CONCEPT_INFO]
+									?.label ?? payment.concept}
+							</td>
+							<td class="p2p-amount-cell">{fmt(payment.amount)}</td>
+							<td>{payment.reference || '—'}</td>
+							<td>
+								{payment.receiptUrl ? (
+									<a href={payment.receiptUrl} target="_blank" rel="noopener noreferrer">Ver</a>
+								) : (
+									'—'
+								)}
+							</td>
+							<td>
+								<span class:list={['p2p-status', `is-${toneOf(payment.status)}`]}>
+									{payment.status || P2P_STATUS.pendiente}
+								</span>
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)}
+</section>
+<style>
+	.p2p {
+		padding: 28px;
+		border: 1px solid var(--gold-border);
+		border-radius: 20px;
+		background: var(--bg-surface);
+	}
+
+	.p2p-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 20px;
+		margin-bottom: 22px;
+	}
+
+	.p2p-head h2 { margin: 0 0 6px; font-size: 1.25rem; }
+
+	.p2p-lead {
+		margin: 0;
+		color: var(--text-secondary);
+		font-size: 13.5px;
+		line-height: 1.6;
+		max-width: 62ch;
+	}
+
+	.p2p-btn { border: none; font-family: inherit; flex: 0 0 auto; }
+
+	.p2p-modal {
+		width: min(480px, calc(100vw - 32px));
+		padding: 28px;
+		border: 1px solid var(--gold-border);
+		border-radius: 20px;
+		background: var(--bg-surface, #0f172a);
+		color: var(--text-primary);
+		box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+	}
+
+	.p2p-modal::backdrop {
+		background: rgba(2, 7, 18, 0.72);
+		backdrop-filter: blur(4px);
+	}
+
+	.p2p-modal[open] { animation: p2p-in 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+
+	@keyframes p2p-in {
+		from { opacity: 0; transform: translateY(14px) scale(0.98); }
+		to { opacity: 1; transform: none; }
+	}
+
+	.p2p-modal h3 { margin: 0 0 6px; font-size: 1.3rem; }
+
+	.p2p-x {
+		position: absolute;
+		top: 14px;
+		right: 16px;
+		background: none;
+		border: none;
+		color: var(--text-secondary);
+		font-size: 1.6rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.p2p-x:hover { color: var(--gold-primary); }
+
+	.p2p-modal-lead { margin: 0 0 20px; color: var(--text-secondary); font-size: 13.5px; }
+
+	.p2p-form { display: flex; flex-direction: column; gap: 14px; }
+
+	.p2p-field { display: flex; flex-direction: column; gap: 6px; }
+
+	.p2p-field > span {
+		font-size: 11.5px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.p2p-field input,
+	.p2p-field select {
+		width: 100%;
+		padding: 11px 13px;
+		border: 1px solid var(--gold-border);
+		border-radius: 10px;
+		background: rgba(2, 7, 18, 0.5);
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 14px;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.p2p-field input:focus,
+	.p2p-field select:focus {
+		outline: none;
+		border-color: var(--gold-primary);
+		box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+	}
+
+	.p2p-amount {
+		margin: 0;
+		padding: 11px 13px;
+		border: 1px solid var(--gold-border);
+		border-radius: 10px;
+		background: rgba(212, 175, 55, 0.07);
+		font-size: 13px;
+		color: var(--text-secondary);
+	}
+
+	.p2p-amount strong { color: var(--gold-primary); }
+
+	.p2p-feedback { margin: 0; font-size: 13px; min-height: 1.2em; }
+	.p2p-feedback.is-error { color: #fca5a5; }
+	.p2p-feedback.is-ok { color: #10b981; }
+
+	.p2p-spinner {
+		width: 15px;
+		height: 15px;
+		border: 2px solid rgba(3, 7, 18, 0.35);
+		border-top-color: #030712;
+		border-radius: 50%;
+		animation: p2p-spin 0.7s linear infinite;
+	}
+
+	@keyframes p2p-spin { to { transform: rotate(360deg); } }
+
+	[data-receipt-submit] {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+	}
+
+	.p2p-status {
+		display: inline-block;
+		padding: 3px 10px;
+		border-radius: 9999px;
+		font-size: 11.5px;
+		font-weight: 700;
+		letter-spacing: 0.03em;
+	}
+
+	.p2p-status.is-pending {
+		background: rgba(234, 179, 8, 0.15);
+		border: 1px solid rgba(234, 179, 8, 0.5);
+		color: #fcd34d;
+	}
+
+	.p2p-status.is-approved {
+		background: rgba(16, 185, 129, 0.15);
+		border: 1px solid rgba(16, 185, 129, 0.5);
+		color: #34d399;
+	}
+
+	.p2p-status.is-rejected {
+		background: rgba(239, 68, 68, 0.15);
+		border: 1px solid rgba(239, 68, 68, 0.5);
+		color: #fca5a5;
+	}
+
+	/* Visualmente oculto pero leído por lectores de pantalla. */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	@media (max-width: 620px) {
+		.p2p { padding: 20px 16px; }
+		.p2p-head { flex-direction: column; gap: 14px; }
+		.p2p-btn { width: 100%; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.p2p-modal[open] { animation: none; }
+		.p2p-spinner { animation-duration: 1.4s; }
+	}
+</style>
+
+<script>
+	const modal = document.querySelector<HTMLDialogElement>('[data-receipt-modal]');
+	const openBtn = document.querySelector<HTMLButtonElement>('[data-open-receipt]');
+	const form = document.querySelector<HTMLFormElement>('[data-receipt-form]');
+	const feedback = document.querySelector<HTMLElement>('[data-receipt-feedback]');
+	const submitBtn = document.querySelector<HTMLButtonElement>('[data-receipt-submit]');
+	const spinner = document.querySelector<HTMLElement>('[data-receipt-spinner]');
+	const submitLabel = document.querySelector<HTMLElement>('[data-receipt-submit-label]');
+	const conceptSelect = document.querySelector<HTMLSelectElement>('[data-receipt-concept]');
+	const amountOut = document.querySelector<HTMLElement>('[data-receipt-amount]');
+
+	/** Tipos y tamaño que acepta el endpoint, para no subir un archivo inútil. */
+	const ACCEPTED = ['image/jpeg', 'image/png', 'application/pdf'];
+	const MAX_BYTES = 3 * 1024 * 1024;
+
+	const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+
+	openBtn?.addEventListener('click', () => modal?.showModal());
+
+	/** El monto sale del propio option: el servidor lo recalcula igual. */
+	const syncAmount = () => {
+		const option = conceptSelect?.selectedOptions?.[0];
+		const amount = Number(option?.dataset.amount ?? 0);
+		if (amountOut) amountOut.textContent = fmt(amount);
+	};
+
+	conceptSelect?.addEventListener('change', syncAmount);
+	syncAmount();
+
+	const say = (message: string, ok: boolean) => {
+		if (!feedback) return;
+		feedback.textContent = message;
+		feedback.className = `p2p-feedback ${ok ? 'is-ok' : 'is-error'}`;
+	};
+
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		if (submitBtn?.hasAttribute('disabled')) return;
+
+		const file = form.querySelector<HTMLInputElement>('input[name="receipt"]')?.files?.[0];
+
+		// Se comprueba antes de subir: el archivo va a Vercel Blob y no vale la
+		// pena gastar la subida para que el servidor lo rechace.
+		if (!file) return say('Adjunta el comprobante del pago.', false);
+		if (!ACCEPTED.includes(file.type)) return say('El comprobante debe ser JPG, PNG o PDF.', false);
+		if (file.size > MAX_BYTES) return say('El comprobante supera el límite de 3 MB.', false);
+
+		submitBtn?.setAttribute('disabled', 'true');
+		if (spinner) spinner.hidden = false;
+		if (submitLabel) submitLabel.textContent = 'Subiendo…';
+		if (feedback) feedback.textContent = '';
+
+		try {
+			const response = await fetch('/api/p2p/receipts', {
+				method: 'POST',
+				body: new FormData(form),
+			});
+			const data = (await response.json()) as { ok: boolean; message: string };
+
+			say(data.message, data.ok);
+			if (data.ok) {
+				form.reset();
+				syncAmount();
+				setTimeout(() => window.location.reload(), 1400);
+			}
+		} catch {
+			say('No se pudo conectar con el servidor. Inténtalo de nuevo.', false);
+		} finally {
+			submitBtn?.removeAttribute('disabled');
+			if (spinner) spinner.hidden = true;
+			if (submitLabel) submitLabel.textContent = 'Enviar comprobante';
+		}
+	});
+</script>
+

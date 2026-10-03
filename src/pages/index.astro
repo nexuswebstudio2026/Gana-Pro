@@ -1,9 +1,20 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
+import HeroSection from '../components/HeroSection.astro';
+import ActivityFeed from '../components/ActivityFeed.astro';
+import TestimonialsSection from '../components/TestimonialsSection.astro';
+import FaqSection from '../components/FaqSection.astro';
+import MobileBottomBar from '../components/MobileBottomBar.astro';
+import { validateSession } from '../lib/session';
 
 // SSR: la página usa el Navbar, que lee la cookie de sesión
 export const prerender = false;
+
+// La barra inferior solo sirve a quien todavía no tiene cuenta: si ya está
+// conectado, un "crear cuenta" lo mandaría a un formulario que no necesita.
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+const showBottomBar = !session;
 ---
 
 <Layout
@@ -13,13 +24,20 @@ export const prerender = false;
 	<Navbar />
 
 	<main class="main-content">
+		<HeroSection />
+
+		{/* Aviso de actividad bajo el hero: da sensación de vida al entrar. */}
+		<div class="activity-slot">
+			<ActivityFeed />
+		</div>
+
 		<section class="section page-hero">
 			<div class="section-container">
 				<div class="section-header">
 					<span class="section-badge font-cinzel">INGRESOS & RENTABILIDAD</span>
-					<h1 class="section-title font-cinzel">
+					<h2 class="section-title font-cinzel">
 						Las <span class="gold-gradient-text">Vías para Gana Dinero</span>
-					</h1>
+					</h2>
 					<p class="section-subtitle">
 						Cuatro estrategias de ingreso diseñadas para convertir tu tiempo, tu equipo y tu capital en
 						resultados medibles y sostenidos.
@@ -627,6 +645,12 @@ export const prerender = false;
 			</div>
 		</section>
 
+		{/* Prueba social: los testimonios salen de Google Sheets, con su media real. */}
+		<TestimonialsSection session={session} />
+
+		{/* FAQ antes del cierre: es la última duda que frena el registro. */}
+		<FaqSection />
+
 		<section class="section">
 			<div class="section-container">
 				<div class="luxury-card cta-box">
@@ -642,12 +666,20 @@ export const prerender = false;
 			</div>
 		</section>
 	</main>
+{showBottomBar && <MobileBottomBar />}
 </Layout>
 
 <style>
 	.main-content {
 		position: relative;
 		overflow: hidden;
+	}
+
+	/* La marquesina va justo bajo el hero, con aire para que no se pegue. */
+	.activity-slot {
+		max-width: 1240px;
+		margin: 0 auto;
+		padding: 0 24px 8px;
 	}
 
 	.section {

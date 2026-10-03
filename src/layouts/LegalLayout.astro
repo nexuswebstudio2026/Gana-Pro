@@ -1,0 +1,177 @@
+---
+/**
+ * Marco común de las páginas legales (términos, privacidad y preguntas).
+ *
+ * No usa `Layout.astro` a propósito: esas páginas son de lectura larga y
+ * necesitan un ancho de línea cómodo, sin la navegación comercial del sitio.
+ */
+import Footer from '../components/Footer.astro';
+
+interface Props {
+	title: string;
+	description: string;
+	/** Fecha de última actualización, visible al inicio del documento. */
+	updated?: string;
+}
+
+const { title, description, updated } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="theme-color" content="#020712" />
+		<meta name="description" content={description} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<title>{title} — GANA PRO</title>
+		<script is:inline>
+			const saved = localStorage.getItem('gana_theme') || localStorage.getItem('theme') || 'dark';
+			document.documentElement.setAttribute('data-theme', saved);
+		</script>
+	</head>
+	<body>
+		<main class="legal">
+			<article class="legal-card luxury-card">
+				<h1 class="font-cinzel">{title}</h1>
+				{updated && <p class="legal-updated">Última actualización: {updated}</p>}
+				<p class="legal-lead">{description}</p>
+				<slot />
+			</article>
+
+			<nav class="legal-nav" aria-label="Otras páginas legales">
+				<a href="/terminos-y-condiciones">Términos y Condiciones</a>
+				<a href="/politicas-de-privacidad">Políticas de Privacidad</a>
+				<a href="/preguntas-frecuentes">Preguntas Frecuentes</a>
+				<a href="/dashboard">Ir a mi panel</a>
+			</nav>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--bg-primary: #020712;
+		--bg-surface: rgba(15, 23, 42, 0.75);
+		--text-primary: #f8fafc;
+		--text-secondary: #94a3b8;
+		--gold-primary: #d4af37;
+		--gold-border: rgba(212, 175, 55, 0.35);
+	}
+
+	:root:not([data-theme='dark']) {
+		--bg-primary: #f8fafc;
+		--bg-surface: rgba(255, 255, 255, 0.85);
+		--text-primary: #0f172a;
+		--text-secondary: #475569;
+		--gold-primary: #996515;
+		--gold-border: rgba(153, 101, 21, 0.35);
+	}
+
+	*, *::before, *::after { box-sizing: border-box; }
+
+	body {
+		margin: 0;
+		min-height: 100vh;
+		font-family: 'Montserrat', sans-serif;
+		background: var(--bg-primary);
+		color: var(--text-primary);
+	}
+
+	.font-cinzel { font-family: 'Cinzel', serif; }
+</style>
+
+<style>
+	.legal {
+		max-width: 860px;
+		margin: 0 auto;
+		padding: 48px 24px 24px;
+		display: flex;
+		flex-direction: column;
+		gap: 22px;
+	}
+
+	.legal-card {
+		padding: 40px;
+		border: 1px solid var(--gold-border);
+		border-radius: 20px;
+		background: var(--bg-surface);
+	}
+
+	.legal-card h1 {
+		margin: 0 0 6px;
+		font-size: 2rem;
+		line-height: 1.25;
+	}
+
+	.legal-updated {
+		margin: 0 0 14px;
+		color: var(--gold-primary);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.legal-lead {
+		margin: 0 0 28px;
+		color: var(--text-secondary);
+		font-size: 15px;
+		line-height: 1.7;
+	}
+
+	.legal-card :global(h2) {
+		margin: 32px 0 12px;
+		padding-top: 20px;
+		border-top: 1px solid var(--gold-border);
+		font-family: 'Cinzel', serif;
+		font-size: 1.15rem;
+	}
+
+	.legal-card :global(p),
+	.legal-card :global(li) {
+		color: var(--text-secondary);
+		font-size: 14.5px;
+		line-height: 1.75;
+	}
+
+	.legal-card :global(p) { margin: 0 0 12px; }
+	.legal-card :global(ul) { margin: 0 0 12px; padding-left: 22px; }
+	.legal-card :global(li) { margin-bottom: 7px; }
+	.legal-card :global(strong) { color: var(--text-primary); }
+
+	.legal-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px 22px;
+		justify-content: center;
+		font-size: 13px;
+	}
+
+	.legal-nav a {
+		color: var(--text-secondary);
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+		transition: color 0.2s ease, border-color 0.2s ease;
+	}
+
+	.legal-nav a:hover {
+		color: var(--gold-primary);
+		border-bottom-color: currentColor;
+	}
+
+	@media (max-width: 640px) {
+		.legal { padding: 28px 16px 20px; }
+		.legal-card { padding: 24px 18px; }
+		.legal-card h1 { font-size: 1.5rem; }
+		.legal-nav { flex-direction: column; align-items: center; gap: 8px; }
+	}
+</style>

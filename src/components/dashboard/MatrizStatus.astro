@@ -1,0 +1,338 @@
+---
+/**
+ * Estado de la matriz 5x1 del miembro.
+ *
+ * Muestra los cinco puestos directos con el estado de cada uno y la barra de
+ * avance al siguiente nivel. Los datos ya vienen calculados desde `matrix.ts`:
+ * este componente solo dibuja, y las reglas viven en la librería, donde se
+ * prueban.
+ */
+import { NODE_TONE, type MatrixNode, type MatrixProgress } from '../../lib/matrix';
+
+interface Props {
+	nodes: MatrixNode[];
+	progress: MatrixProgress;
+	/** `true` si no se pudo leer la hoja: se avisa en vez de mostrar ceros. */
+	loadFailed?: boolean;
+}
+
+const { nodes, progress, loadFailed = false } = Astro.props;
+
+const nextLevel = Math.min(5, progress.level + 1);
+---
+
+<section class="matrix luxury-card" aria-label="Estado de mi matriz">
+	<header class="matrix-head">
+		<div>
+			<span class="matrix-eyebrow">Matriz 5x1</span>
+			<h2 class="font-cinzel">Mi red de referidos</h2>
+			<p class="matrix-lead">
+				Cada puesto cuenta cuando su recarga inicial queda verificada.
+			</p>
+		</div>
+		<div class="matrix-level">
+			<span class="matrix-level-num">{progress.level}</span>
+			<span class="matrix-level-cap">Nivel actual</span>
+		</div>
+	</header>
+
+	{loadFailed ? (
+		<p class="matrix-alert" role="alert">
+			No se pudo consultar la información de tu matriz en este momento.
+		</p>
+	) : (
+		<>
+			<div class="matrix-progress">
+				<div
+					class="matrix-bar"
+					role="progressbar"
+					aria-valuenow={progress.percent}
+					aria-valuemin={0}
+					aria-valuemax={100}
+					aria-label="Progreso de ascenso"
+				>
+					<span class="matrix-bar-fill" style={`width:${progress.percent}%`}></span>
+				</div>
+				<div class="matrix-progress-text">
+					<strong>{progress.active} de 5</strong> puestos activos
+					<span class="matrix-dot" aria-hidden="true">·</span>
+					<span>{progress.percent}% completado</span>
+					{progress.complete ? (
+						<span class="matrix-tag matrix-tag-done">¡Ascenso alcanzado!</span>
+					) : (
+						<span class="matrix-tag">
+							Te faltan {progress.remaining} para el Nivel {nextLevel}
+						</span>
+					)}
+				</div>
+			</div>
+
+			<ol class="matrix-grid">
+				{nodes.map((node) => (
+					<li class:list={['matrix-node', `is-${NODE_TONE[node.state]}`]}>
+						<span class="matrix-node-pos">Puesto {node.position}</span>
+						<span class="matrix-node-avatar" aria-hidden="true">
+							{node.name ? node.name.charAt(0).toUpperCase() : '○'}
+						</span>
+						<strong class="matrix-node-name">{node.name ?? 'Libre'}</strong>
+						<span class="matrix-node-state">{node.state}</span>
+						{node.name && node.topupStatus && node.topupStatus !== 'Aprobado' && (
+							<span class="matrix-node-note">
+								Recarga {node.topupStatus.toLowerCase()}
+							</span>
+						)}
+					</li>
+				))}
+			</ol>
+
+			<ul class="matrix-legend">
+				<li><span class="legend-dot is-free" aria-hidden="true"></span>Libre</li>
+<style>
+	.matrix { padding: 28px; }
+
+	.matrix-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 20px;
+		margin-bottom: 22px;
+	}
+
+	.matrix-eyebrow {
+		display: block;
+		margin-bottom: 6px;
+		color: var(--gold-primary);
+		font-size: 11.5px;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+	}
+
+	.matrix-head h2 { margin: 0 0 6px; font-size: 1.25rem; }
+	.matrix-lead { margin: 0; color: var(--text-secondary); font-size: 13.5px; }
+
+	.matrix-level {
+		flex: 0 0 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-width: 74px;
+		padding: 10px 14px;
+		border: 1px solid var(--gold-border);
+		border-radius: 14px;
+		background: rgba(212, 175, 55, 0.08);
+	}
+
+	.matrix-level-num {
+		font-family: 'Cinzel', serif;
+		font-size: 1.8rem;
+		font-weight: 800;
+		line-height: 1;
+		color: var(--gold-primary);
+	}
+
+	.matrix-level-cap {
+		margin-top: 4px;
+		font-size: 10.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.matrix-alert {
+		margin: 0;
+		padding: 16px;
+		border: 1px solid rgba(239, 68, 68, 0.4);
+		border-radius: 12px;
+		background: rgba(239, 68, 68, 0.08);
+		color: #fca5a5;
+		font-size: 13.5px;
+	}
+
+	.matrix-progress { margin-bottom: 26px; }
+
+	.matrix-bar {
+		height: 10px;
+		border-radius: 9999px;
+		background: rgba(212, 175, 55, 0.12);
+		overflow: hidden;
+	}
+
+	.matrix-bar-fill {
+		display: block;
+		height: 100%;
+		border-radius: 9999px;
+		background: linear-gradient(90deg, #d4af37, #f3e5ab);
+		box-shadow: 0 0 14px rgba(212, 175, 55, 0.45);
+		transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.matrix-progress-text {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 10px;
+		font-size: 13px;
+		color: var(--text-secondary);
+	}
+
+	.matrix-progress-text strong { color: var(--text-primary); }
+	.matrix-dot { color: var(--gold-primary); }
+
+	.matrix-tag {
+		padding: 3px 10px;
+		border: 1px solid var(--gold-border);
+		border-radius: 9999px;
+		background: rgba(212, 175, 55, 0.1);
+		color: var(--gold-primary);
+		font-size: 11.5px;
+		font-weight: 600;
+	}
+
+	.matrix-tag-done {
+		border-color: rgba(16, 185, 129, 0.45);
+		background: rgba(16, 185, 129, 0.12);
+		color: #10b981;
+	}
+
+	.matrix-grid {
+		list-style: none;
+		margin: 0 0 18px;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 14px;
+	}
+
+	.matrix-node {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		padding: 18px 12px;
+		border: 1px solid var(--gold-border);
+		border-radius: 16px;
+		text-align: center;
+		transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.matrix-node:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+	}
+
+	.matrix-node.is-free {
+		border-style: dashed;
+		background: transparent;
+	}
+
+	.matrix-node.is-pending {
+		border-color: rgba(234, 179, 8, 0.45);
+		background: rgba(234, 179, 8, 0.07);
+	}
+
+	.matrix-node.is-active {
+		border-color: rgba(16, 185, 129, 0.45);
+		background: rgba(16, 185, 129, 0.08);
+	}
+
+	.matrix-node-pos {
+		font-size: 10.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.matrix-node-avatar {
+		width: 42px;
+		height: 42px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		font-weight: 700;
+		font-size: 15px;
+		background: linear-gradient(135deg, #d4af37, #996515);
+		color: #fff;
+	}
+
+	.matrix-node.is-free .matrix-node-avatar {
+		background: transparent;
+		border: 1px dashed var(--gold-border);
+		color: var(--gold-primary);
+	}
+
+	.matrix-node.is-pending .matrix-node-avatar {
+		background: linear-gradient(135deg, #eab308, #a16207);
+	}
+
+	.matrix-node.is-active .matrix-node-avatar {
+		background: linear-gradient(135deg, #10b981, #047857);
+	}
+
+	.matrix-node-name {
+		font-size: 13.5px;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
+	}
+
+	.matrix-node.is-free .matrix-node-name { color: var(--text-secondary); }
+
+	.matrix-node-state {
+		font-size: 11.5px;
+		line-height: 1.35;
+		color: var(--text-secondary);
+	}
+
+	.matrix-node.is-active .matrix-node-state { color: #10b981; font-weight: 600; }
+	.matrix-node.is-pending .matrix-node-state { color: #eab308; font-weight: 600; }
+
+	.matrix-node-note { font-size: 10.5px; color: var(--text-secondary); opacity: 0.8; }
+
+	.matrix-legend {
+		list-style: none;
+		margin: 0;
+		padding: 14px 0 0;
+		border-top: 1px solid var(--gold-border);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 18px;
+		font-size: 12px;
+		color: var(--text-secondary);
+	}
+
+	.matrix-legend li { display: flex; align-items: center; gap: 7px; }
+
+	.legend-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		border: 1px solid var(--gold-border);
+	}
+
+	.legend-dot.is-free { border-style: dashed; }
+	.legend-dot.is-pending { background: #eab308; border-color: #eab308; }
+	.legend-dot.is-active { background: #10b981; border-color: #10b981; }
+
+	@media (max-width: 520px) {
+		.matrix { padding: 20px 16px; }
+		.matrix-head { flex-direction: column; gap: 14px; }
+		.matrix-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+		.matrix-node { padding: 14px 8px; }
+		.matrix-progress-text { font-size: 12px; }
+	}
+</style>
+
+				<li>
+					<span class="legend-dot is-pending" aria-hidden="true"></span>
+					Registrado (Sin Recarga)
+				</li>
+				<li>
+					<span class="legend-dot is-active" aria-hidden="true"></span>
+					Activo (Recarga Verificada)
+				</li>
+			</ul>
+		</>
+	)}
+</section>

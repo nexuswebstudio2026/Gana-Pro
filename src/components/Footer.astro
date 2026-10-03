@@ -1,6 +1,13 @@
 ---
 import Logo from './Logo.astro';
+import WhatsAppButton from './WhatsAppButton.astro';
 ---
+
+<!--
+	Soporte directo: el número sale de SUPPORT_WHATSAPP. Si no está configurado
+	el botón no se pinta (ver el componente), para no dejar un enlace roto.
+-->
+<WhatsAppButton />
 
 <footer class="footer">
 	<div class="footer-container">
@@ -22,6 +29,12 @@ import Logo from './Logo.astro';
 					<a href="/sobre-nosotros">Sobre Nosotros</a>
 					<a href="/valoraciones">Testimonios</a>
 					<a href="/dashboard">Mi Portal</a>
+				</div>
+				<div class="nav-col">
+					<h4 class="col-title font-cinzel">Ayuda y Legal</h4>
+					<a href="/preguntas-frecuentes">Preguntas Frecuentes</a>
+					<a href="/terminos-y-condiciones">Términos y Condiciones</a>
+					<a href="/politicas-de-privacidad">Políticas de Privacidad</a>
 				</div>
 			</div>
 		</div>
@@ -95,8 +108,9 @@ import Logo from './Logo.astro';
 	/* Una sola columna de enlaces: ocupa menos espacio y mantiene la jerarquía */
 	.footer-nav {
 		display: grid;
-		grid-template-columns: 1fr;
-		gap: 30px;
+		/* Dos columnas: enlaces de la plataforma y enlaces legales */
+		grid-template-columns: repeat(2, minmax(0, auto));
+		gap: 30px 60px;
 		justify-items: start;
 	}
 
@@ -156,6 +170,12 @@ import Logo from './Logo.astro';
 		.footer-top {
 			grid-template-columns: 1fr;
 			gap: 40px;
+		}
+
+		/* En pantallas estrechas las dos columnas de enlaces no caben */
+		.footer-nav {
+			grid-template-columns: 1fr;
+			gap: 26px;
 		}
 	}
 

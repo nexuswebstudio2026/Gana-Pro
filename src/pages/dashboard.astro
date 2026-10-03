@@ -8,6 +8,7 @@ import DashboardSidebar from '../components/DashboardSidebar.astro';
 import BalanceChip from '../components/BalanceChip.astro';
 import Logo from '../components/Logo.astro';
 import Footer from '../components/Footer.astro';
+import OnboardingTour from '../components/OnboardingTour.astro';
 import type { User } from '../lib/types';
 
 // SSR: this page must check cookies at request time
@@ -124,6 +125,8 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 						<span class="eyebrow">{isAdmin ? 'Panel de Administración' : 'Panel de Control Exclusivo'}</span>
 						<h1 class="font-cinzel">Bienvenido, <span class="gold-gradient-text">{session.username}</span></h1>
 						<p class="banner-sub">Su cuenta está verificada y sincronizada con Google Sheets en tiempo real.</p>
+						{/* El tour se abre solo la primera vez; el botón permite repasarlo. */}
+						<div class="banner-tour"><OnboardingTour /></div>
 					</div>
 					<div class="banner-status">
 						<div class="status-indicator">
@@ -132,6 +135,22 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 						</div>
 					</div>
 				</div>
+
+				{/* Accesos directos a los módulos del panel. */}
+				<nav class="quick-links" aria-label="Módulos del panel">
+					<a class="quick-link luxury-card" href="/dashboard/matriz">
+						<span class="quick-link-title font-cinzel">Mi matriz 5x1</span>
+						<span class="quick-link-text">Estado de tus cinco puestos y avance de ascenso.</span>
+					</a>
+					<a class="quick-link luxury-card" href="/dashboard/billetera">
+						<span class="quick-link-title font-cinzel">Mi billetera</span>
+						<span class="quick-link-text">Saldo disponible, comprometido y total ganado.</span>
+					</a>
+					<a class="quick-link luxury-card" href="/dashboard/comprobantes">
+						<span class="quick-link-title font-cinzel">Comprobantes</span>
+						<span class="quick-link-text">Sube y sigue el estado de tus pagos.</span>
+					</a>
+				</nav>
 
 				<div class="stats-grid">
 					<div class="stat-card luxury-card">
@@ -384,6 +403,35 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 	}
 	.welcome-banner h1 { margin: 0 0 8px 0; font-size: 2rem; font-weight: 800; }
 	.banner-sub { margin: 0; color: var(--text-secondary); font-size: 14.5px; }
+	.banner-tour { margin-top: 14px; }
+
+	/* Accesos directos a los módulos del panel */
+	.quick-links {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 18px;
+	}
+
+	.quick-link {
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+		padding: 22px;
+		text-decoration: none;
+	}
+
+	.quick-link-title {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--gold-primary);
+	}
+
+	.quick-link-text {
+		font-size: 13px;
+		line-height: 1.55;
+		color: var(--text-secondary);
+	}
+
 	.status-indicator {
 		display: flex;
 		align-items: center;

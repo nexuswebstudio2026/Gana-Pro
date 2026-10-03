@@ -45,6 +45,12 @@ const items: NavItem[] = [
 		],
 	},
 	{
+		href: '/dashboard/pagos-p2p',
+		label: 'Pagos entre Usuarios',
+		icon: '⇄',
+		adminOnly: true,
+	},
+	{
 		href: '/dashboard/ingresos',
 		label: 'Ingresos',
 		icon: '＋',
@@ -73,6 +79,9 @@ const items: NavItem[] = [
 		icon: '◉',
 		children: [
 			{ href: '/dashboard/mi-organigrama', label: 'Mi organigrama' },
+			{ href: '/dashboard/matriz', label: 'Mi matriz 5x1' },
+			{ href: '/dashboard/billetera', label: 'Mi billetera' },
+			{ href: '/dashboard/comprobantes', label: 'Comprobantes de pago' },
 			{ href: '/dashboard/informacion-cuenta', label: 'Información del Perfil' },
 			{ href: '/dashboard/ubicacion', label: 'Ubicación' },
 			// El RUT (DIAN) es del negocio, así que solo se ofrece al admin. El

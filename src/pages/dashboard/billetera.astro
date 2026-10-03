@@ -1,0 +1,71 @@
+---
+/**
+ * Billetera y retiros del miembro.
+ *
+ * El desglose se calcula con `buildWalletSummary`, la misma función que usa el
+ * endpoint para autorizar un retiro: la cifra que se muestra y la que se acepta
+ * no pueden separarse.
+ */
+import { isAdminRole } from '../../lib/auth';
+import { getSheetUserLevel, getUserBalance, getUserWallet, canWithdraw } from '../../lib/users';
+import { parseSheetBalance } from '../../lib/sheets';
+import { listWithdrawals } from '../../lib/withdrawals';
+import { listP2PPayments } from '../../lib/p2p-payments';
+import { buildWalletSummary, sumApproved, sumPending } from '../../lib/wallet-summary';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import WalletOverview from '../../components/dashboard/WalletOverview.astro';
+import type { Session } from '../../lib/session';
+
+export const prerender = false;
+
+const session: Session = Astro.locals.user!;
+
+const balance = await getUserBalance(session.username, session.email);
+const level = await getSheetUserLevel(session.username, session.email);
+const wallet = await getUserWallet(session.username, session.email);
+
+// Si la hoja no responde, se muestran ceros en vez de inventar cifras.
+let withdrawals: Awaited<ReturnType<typeof listWithdrawals>> = [];
+let p2p: Awaited<ReturnType<typeof listP2PPayments>> = [];
+try {
+	withdrawals = await listWithdrawals(session.username);
+} catch (error) {
+	console.error('No se pudieron leer las solicitudes de retiro:', error);
+}
+try {
+	p2p = await listP2PPayments(session.username);
+} catch (error) {
+	console.error('No se pudieron leer los pagos P2P:', error);
+}
+
+// `listWithdrawals` no filtra por usuario: trae las de toda la plataforma.
+// Se filtran aquí antes de sumar, porque el saldo comprometido y el histórico
+// de cada uno son datos suyos y no se muestran los de los demás.
+const ownWithdrawals = withdrawals.filter(
+	(request) => request.username.trim().toLowerCase() === session.username.trim().toLowerCase()
+);
+
+const summary = buildWalletSummary({
+	balance: parseSheetBalance(balance),
+	pendingWithdrawals: sumPending(ownWithdrawals),
+	pendingPayments: sumPending(p2p),
+	paidOut: sumApproved(ownWithdrawals),
+});
+
+const isAdmin = isAdminRole(session.role);
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Mi billetera"
+	eyebrow="Configuración · Usuario"
+	description="Consulta tu saldo disponible, lo que ya está comprometido en solicitudes abiertas y tu total acumulado."
+>
+	<WalletOverview
+		summary={summary}
+		walletType={wallet?.walletType ?? ''}
+		walletNumber={wallet?.walletNumber ?? ''}
+		canWithdrawLevel={canWithdraw(level)}
+	/>
+</AdminPageLayout>

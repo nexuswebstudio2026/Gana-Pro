@@ -87,6 +87,18 @@ export async function findReferrerByCode(code: string): Promise<User | null> {
 	);
 }
 
+/**
+ * Enlace corto de referido.
+ *
+ * Se comparte por WhatsApp y en redes, así que va lo más corto posible: la
+ * ruta `/r/CODIGO` redirige a `/register?ref=CODIGO`, que es donde el
+ * formulario lee el código. Antes se compartía la ruta larga completa; cambiar
+ * aquí actualiza a la vez el QR, la invitación y lo que se muestra en el panel.
+ */
+export function referralShortUrl(origin: string, code: string): string {
+	return `${origin.replace(/\/$/, '')}/r/${encodeURIComponent(code)}`;
+}
+
 export interface ReferralStats {
 	/** Código con el que este usuario capta. */
 	ownCode: string;
@@ -124,6 +136,6 @@ export async function getReferralStats(user: User, origin: string): Promise<Refe
 		referred,
 		count: referred.length,
 		commission: referred.length * COMMISSION_PER_REFERRAL * REFERRAL_COMMISSION_PAYMENTS,
-		shareUrl: `${origin.replace(/\/$/, '')}/register?ref=${encodeURIComponent(ownCode)}`,
+		shareUrl: referralShortUrl(origin, ownCode),
 	};
 }

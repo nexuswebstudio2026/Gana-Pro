@@ -1,6 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { ownCodeOf } from './referrals';
+import { ownCodeOf, referralShortUrl } from './referrals';
 import type { User } from './types';
+
+describe('referralShortUrl', () => {
+	it('arma la ruta corta /r/CODIGO', () => {
+		expect(referralShortUrl('https://ganapro.org', 'PROMO-JUAN')).toBe(
+			'https://ganapro.org/r/PROMO-JUAN'
+		);
+	});
+
+	it('no duplica la barra final del dominio', () => {
+		expect(referralShortUrl('https://ganapro.org/', 'ANA')).toBe('https://ganapro.org/r/ANA');
+	});
+
+	it('escapa un código con caracteres que rompen la URL', () => {
+		// Un espacio o una barra romperían la ruta: se codifican.
+		expect(referralShortUrl('https://ganapro.org', 'ANA P')).toBe(
+			'https://ganapro.org/r/ANA%20P'
+		);
+		expect(referralShortUrl('https://ganapro.org', 'a/b')).toBe(
+			'https://ganapro.org/r/a%2Fb'
+		);
+	});
+});
+
 
 describe('codigo propio y pago de la comision', () => {
 	it('el codigo es solo para compartir; el saldo se busca por usuario', () => {

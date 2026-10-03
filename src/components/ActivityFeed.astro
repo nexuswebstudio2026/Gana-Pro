@@ -1,0 +1,166 @@
+---
+/**
+ * Marquesina de actividad para la portada.
+ *
+ * ---- Aviso importante sobre la honestidad del dato ----
+ * Estos mensajes son de EJEMPLO, no leen Movements reales. Se rotan en el
+ * navegador para dar sensación de movimiento, pero se dicen explícitamente
+ * «actividad de demostración» tanto en la barra como en el texto de apoyo.
+ *
+ * Publicar actividad inventada sin identificarla como tal induce a error sobre
+ * un producto financiero (en Colombia, la SIC sanciona la publicidad engañosa).
+ * Si algún día se quiere el dato real, el sitio debe pasar a listar los
+ * movimientos de `/api/p2p/receipts` y quitar el distintivo de demostración; el
+ * hueco para hacerlo es el bloque `feed` de este componente.
+ * -----------------------------------------------------------------------
+ */
+
+interface ActivityItem {
+	/** Nombre ficticio: se muestra con iniciales, nunca un nombre completo. */
+	name: string;
+	action: string;
+}
+
+const feed: ActivityItem[] = [
+	{ name: 'C. M.', action: 'activó su Nivel 2' },
+	{ name: 'A. P.', action: 'envió su comprobante de recarga' },
+	{ name: 'L. R.', action: 'completó sus 5 puestos directos' },
+	{ name: 'M. G.', action: 'ascendió al Nivel 3' },
+	{ name: 'D. S.', action: 'registró un nuevo referido' },
+	{ name: 'K. T.', action: 'aprobó su recarga inicial' },
+	{ name: 'J. V.', action: 'solicitó su retiro' },
+	{ name: 'S. N.', action: 'activó su Nivel 4' },
+];
+---
+
+<div class="activity" role="region" aria-label="Actividad reciente de la plataforma">
+	<div class="activity-bar">
+		<span class="activity-dot" aria-hidden="true"></span>
+		<span class="activity-tag font-cinzel">Actividad de demostración</span>
+
+		<div class="activity-viewport">
+			{/*
+				La cinta se duplica una vez para que el bucle de scroll no se vea
+				"salto": al llegar al final hay siempre una copia idéntica delante.
+				La copia se marca aria-hidden para no repetir el contenido ante un
+				lector de pantalla.
+			*/}
+			<div class="activity-track">
+				{[0, 1].map((copy) => (
+					<ul class="activity-run" aria-hidden={copy === 1 ? 'true' : undefined}>
+						{feed.map((item) => (
+							<li class="activity-item">
+								<span class="activity-name">{item.name}</span>
+								{''} {item.action}
+							</li>
+						))}
+					</ul>
+				))}
+			</div>
+		</div>
+	</div>
+
+	<p class="activity-note">
+		Barra de muestra: ilustra el tipo de avisos que verás en tu panel. No refleja
+		movimientos de personas reales.
+	</p>
+</div>
+
+<style>
+	.activity { width: 100%; }
+
+	.activity-bar {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 12px 20px;
+		border: 1px solid var(--gold-border);
+		border-radius: 9999px;
+		background: rgba(212, 175, 55, 0.07);
+		overflow: hidden;
+	}
+
+	.activity-dot {
+		flex: 0 0 8px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: #10b981;
+		box-shadow: 0 0 10px #10b981;
+		animation: activity-pulse 2s ease-in-out infinite;
+	}
+
+	@keyframes activity-pulse {
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.45; transform: scale(0.8); }
+	}
+
+	.activity-tag {
+		flex: 0 0 auto;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
+	}
+
+	.activity-viewport {
+		flex: 1 1 auto;
+		min-width: 0;
+		/* La cinta se oculta a los lados en lugar de cortarse de golpe. */
+		mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+		-webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+	}
+
+	.activity-track {
+		display: flex;
+		width: max-content;
+		animation: activity-scroll 42s linear infinite;
+	}
+
+	.activity-run {
+		display: flex;
+		align-items: center;
+		gap: 28px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.activity-item {
+		font-size: 0.83rem;
+		color: var(--text-secondary);
+		white-space: nowrap;
+	}
+
+	.activity-name { font-weight: 700; color: var(--text-primary); }
+
+	@keyframes activity-scroll {
+		from { transform: translateX(0); }
+		to { transform: translateX(-50%); }
+	}
+
+	.activity-note {
+		margin: 10px 0 0;
+		font-size: 0.72rem;
+		line-height: 1.6;
+		text-align: center;
+		color: var(--text-muted);
+	}
+
+	/* Al pasar el cursor se detiene: permite leer el mensaje que está pasando. */
+	.activity-bar:hover .activity-track { animation-play-state: paused; }
+
+	@media (max-width: 640px) {
+		.activity-bar { padding: 10px 14px; gap: 10px; border-radius: 16px; }
+		.activity-tag { font-size: 0.6rem; letter-spacing: 0.08em; }
+		.activity-item { font-size: 0.78rem; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		/* Sin movimiento: se muestra solo la primera tanda, sin desplazar. */
+		.activity-track { animation: none; }
+		.activity-run[aria-hidden='true'] { display: none; }
+		.activity-dot { animation: none; }
+	}
+</style>

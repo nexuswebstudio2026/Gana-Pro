@@ -1,4 +1,10 @@
-:root {
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Invitacion GANA PRO — JAC42</title>
+		<style>:root {
 	--gold: #b8860b;
 	--gold-dark: #8a6508;
 	--ink: #0f172a;
@@ -23,7 +29,7 @@ body {
 	font-family: 'Cinzel', Georgia, serif;
 }
 
-/* ---------- Controles en pantalla (no se imprimen) ---------- */
+
 .screen-actions {
 	max-width: 720px;
 	margin: 0 auto 20px;
@@ -64,7 +70,7 @@ body {
 	color: var(--muted);
 }
 
-/* ---------- Hoja imprimible ---------- */
+
 .sheet {
 	max-width: 720px;
 	margin: 0 auto;
@@ -107,14 +113,13 @@ body {
 	font-size: 0.98rem;
 }
 
-/* ---------- QR ---------- */
+
 .qr-block {
 	text-align: center;
 	padding: 28px 0 22px;
 }
 
-/* Marco blanco: el QR necesita margen de silencio alrededor para que los
-   lectores lo reconozcan. Un borde de color lo haria fallar. */
+
 .qr-frame {
 	display: inline-block;
 	padding: 18px;
@@ -132,7 +137,7 @@ body {
 	margin: 14px 0 0;
 	font-size: 0.85rem;
 	color: var(--muted);
-}	/* ---------- Codigo y enlace ---------- */
+}	
 .code-block {
 	display: flex;
 	flex-direction: column;
@@ -165,7 +170,7 @@ body {
 	text-align: center;
 }
 
-/* ---------- Pasos ---------- */
+
 .steps {
 	border-top: 1px solid var(--line);
 	padding-top: 22px;
@@ -225,7 +230,7 @@ body {
 	color: var(--gold-dark);
 }
 
-/* ---------- IMPRESIÃ“N ---------- */
+
 @page {
 	size: A4;
 	margin: 12mm;
@@ -237,7 +242,7 @@ body {
 	padding: 0;
 	}
 
-	/* Los controles y el marco son de la pantalla: fuera del papel. */
+	
 	.no-print {
 	display: none !important;
 	}
@@ -251,8 +256,7 @@ body {
 	box-shadow: none;
 	}
 
-	/* Que la app se lea en tinta: un marco de color se imprime y termina
-	dificultando el escaneo. */
+	
 	.qr-frame {
 	border: 1px solid #ddd;
 	break-inside: avoid;
@@ -280,3 +284,56 @@ body {
 	height: 240px;
 	}
 }
+</style>
+	</head>
+	<body>
+		<div class="screen-actions no-print">
+			<button type="button" class="btn-print">Descargar / Imprimir PDF</button>
+			<p class="hint">
+				En el diálogo elige <strong>«Guardar como PDF»</strong> como destino.
+			</p>
+		</div>
+
+		<article class="sheet">
+			<header class="head">
+				<span class="brand font-cinzel">GANA <em>PRO</em></span>
+				<h1>Te invito a GANA PRO</h1>
+				<p class="lead">
+					Gana $1.000 por cada persona que se registre con mi código, cuando su primera
+					recarga sea aprobada.
+				</p>
+			</header>
+
+			<section class="qr-block">
+				<div class="qr-frame">
+					<div style="width:300px;height:300px">[object Promise]</div>
+				</div>
+				<p class="qr-caption">Escanea con la cámara del teléfono</p>
+			</section>
+
+			<section class="code-block">
+				<span class="label">Mi código</span>
+				<code class="code">JAC42</code>
+				<span class="label">O entra directo en</span>
+				<code class="link">https://gana-pro.vercel.app/register?ref=JAC42</code>
+			</section>
+
+			<section class="steps">
+				<h2 class="font-cinzel">Instala la app en tu teléfono</h2>
+				<p class="steps-lead">La app se instala desde el navegador. Añadir áéíóúñÑ ¿?</p>
+				<h3>En Android (Chrome)</h3>
+				<ol>
+					<li>Abre <strong>gana-pro.vercel.app</strong> en Chrome.</li>
+					<li>Pulsa los <strong>tres puntos</strong> de la esquina superior derecha.</li>
+					<li>Elige <strong>«Instalar aplicación»</strong>.</li>
+				</ol>
+				<p class="steps-note">Si no aparece la opción, revisa que estés en el sitio principal.</p>
+			</section>
+
+			<footer class="foot">
+				<span>GANA PRO — Plataforma de élite y alta rentabilidad</span>
+				<span class="foot-code">Código: JAC42</span>
+			</footer>
+		</article>
+	</body>
+</html>

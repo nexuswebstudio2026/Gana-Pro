@@ -1,0 +1,247 @@
+---
+/**
+ * Revisión de pagos entre usuarios (P2P).
+ *
+ * Sección de administración: el middleware ya la restringe por
+ * `ADMIN_DASHBOARD_SECTIONS`, pero aquí se vuelve a comprobar el rol contra la
+ * hoja, igual que hace `recargas.astro`, para que una degradación surta efecto
+ * sin esperar a que caduque la cookie.
+ */
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { listP2PPayments, type P2PPayment } from '../../lib/p2p-payments';
+import { P2P_STATUS, P2P_STATUS_TONE, P2P_CONCEPT_INFO, type P2PConcept } from '../../lib/p2p';
+import { formatAppDateTime } from '../../lib/datetime';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = Astro.locals.user!;
+
+let userDetail: User | null = null;
+try {
+	userDetail =
+		(await getGoogleSheetUsers()).find(
+			(user) =>
+				user.username?.toLowerCase() === session.username.toLowerCase() ||
+				user.email?.toLowerCase() === session.email.toLowerCase()
+		) ?? null;
+} catch (error) {
+	console.error('Error al cargar el rol del usuario:', error);
+}
+
+if (!isAdminRole(userDetail?.role || session.role)) {
+	return Astro.redirect(
+		'/dashboard?error=' + encodeURIComponent('No tienes permisos para ver esta sección.'),
+		303
+	);
+}
+
+let payments: P2PPayment[] = [];
+let loadError = false;
+try {
+	// Sin filtro: el administrador revisa los pagos de toda la plataforma.
+	payments = await listP2PPayments();
+} catch (error) {
+	loadError = true;
+	console.error('Error al cargar los pagos P2P:', error);
+}
+
+const pending = payments.filter((p) => p.status === P2P_STATUS.pendiente);
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+const toneOf = (status: string) =>
+	P2P_STATUS_TONE[status as keyof typeof P2P_STATUS_TONE] ?? 'pending';
+const conceptLabel = (concept: string) =>
+	P2P_CONCEPT_INFO[concept as P2PConcept]?.label ?? concept;
+---
+
+<AdminPageLayout
+	session={session}
+	title="Pagos entre Usuarios"
+	eyebrow="Revisión del administrador"
+	description="Verifica los envíos del 50 % al patrocinador y del 30 % al fondo de sostenibilidad."
+>
+	<p class="p2p-summary">
+		<strong>{pending.length}</strong> pendiente(s) de revisión sobre {payments.length} movimiento(s).
+	</p>
+
+	{loadError ? (
+		<p class="p2p-alert">No se pudo consultar la hoja de pagos P2P.</p>
+	) : payments.length === 0 ? (
+		<p class="p2p-alert">Todavía no hay pagos entre usuarios reportados.</p>
+	) : (
+		<div class="p2p-wrap">
+			<table class="p2p-table">
+				<thead>
+					<tr>
+						<th scope="col">Fecha</th>
+						<th scope="col">Usuario</th>
+						<th scope="col">Concepto</th>
+						<th scope="col">Monto</th>
+						<th scope="col">Referencia</th>
+						<th scope="col">Comprobante</th>
+						<th scope="col">Estado</th>
+						<th scope="col">Acción</th>
+					</tr>
+				</thead>
+				<tbody>
+					{payments.map((payment) => (
+						<tr>
+							<td>{payment.createdAt ? formatAppDateTime(payment.createdAt) : '—'}</td>
+							<td>{payment.username}</td>
+							<td>{conceptLabel(payment.concept)}</td>
+							<td class="amount">{fmt(payment.amount)}</td>
+							<td>{payment.reference || '—'}</td>
+							<td>
+								{payment.receiptUrl ? (
+									<a href={payment.receiptUrl} target="_blank" rel="noopener noreferrer">Ver</a>
+<style>
+	.p2p-summary { margin: 0; color: var(--text-secondary); font-size: 14px; }
+	.p2p-summary strong { color: var(--gold-primary); }
+
+	.p2p-alert {
+		margin: 0;
+		padding: 16px;
+		border: 1px dashed var(--gold-border);
+		border-radius: 12px;
+		color: var(--text-secondary);
+		font-size: 13.5px;
+		text-align: center;
+	}
+
+	.p2p-wrap { overflow-x: auto; }
+
+	.p2p-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 820px; }
+
+	.p2p-table th,
+	.p2p-table td {
+		padding: 11px 12px;
+		text-align: left;
+		border-bottom: 1px solid var(--gold-border);
+		white-space: nowrap;
+	}
+
+	.p2p-table th {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.p2p-table tbody tr { transition: background 0.2s ease; }
+	.p2p-table tbody tr:hover { background: rgba(212, 175, 55, 0.05); }
+	.p2p-table .amount { font-weight: 700; color: var(--gold-primary); }
+	.p2p-table a { color: var(--gold-primary); font-weight: 600; text-decoration: none; }
+	.p2p-table a:hover { text-decoration: underline; }
+
+	.status {
+		display: inline-block;
+		padding: 3px 10px;
+		border-radius: 9999px;
+		font-size: 11.5px;
+		font-weight: 700;
+	}
+
+	.status.is-pending { background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.5); color: #fcd34d; }
+	.status.is-approved { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; }
+	.status.is-rejected { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); color: #fca5a5; }
+
+	.actions { display: inline-flex; gap: 8px; }
+
+	.action {
+		padding: 6px 14px;
+		border-radius: 8px;
+		border: 1px solid var(--gold-border);
+		background: transparent;
+		font-family: inherit;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s ease, color 0.2s ease;
+	}
+
+	.action.is-approve { color: #10b981; border-color: rgba(16, 185, 129, 0.45); }
+	.action.is-approve:hover { background: rgba(16, 185, 129, 0.15); }
+	.action.is-reject { color: #ef4444; border-color: rgba(239, 68, 68, 0.45); }
+	.action.is-reject:hover { background: rgba(239, 68, 68, 0.15); }
+	.action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+	.p2p-feedback { margin: 0; font-size: 13px; min-height: 1.2em; }
+	.p2p-feedback.is-error { color: #fca5a5; }
+	.p2p-feedback.is-ok { color: #10b981; }
+
+	@media (max-width: 520px) {
+		.p2p-table { font-size: 12px; }
+	}
+</style>
+
+<script>
+	const feedback = document.querySelector<HTMLElement>('[data-p2p-feedback]');
+
+	document.querySelectorAll<HTMLButtonElement>('[data-p2p-decision]').forEach((button) => {
+		button.addEventListener('click', async () => {
+			const id = button.dataset.id ?? '';
+			const action = button.dataset.p2pDecision ?? '';
+			if (!id || !action) return;
+
+			// Se deshabilita el botón mientras corre la petición: sin esto, dos
+			// clics seguidos podrían mover el saldo dos veces.
+			button.disabled = true;
+			if (feedback) {
+				feedback.textContent = 'Procesando…';
+				feedback.className = 'p2p-feedback';
+			}
+
+			try {
+				const response = await fetch('/api/admin/p2p-payments', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ id, action }),
+				});
+				const data = (await response.json()) as { ok: boolean; message: string };
+				if (feedback) {
+					feedback.textContent = data.message;
+					feedback.className = `p2p-feedback ${data.ok ? 'is-ok' : 'is-error'}`;
+				}
+				if (data.ok) setTimeout(() => window.location.reload(), 1200);
+				else button.disabled = false;
+			} catch {
+				if (feedback) {
+					feedback.textContent = 'No se pudo conectar con el servidor.';
+					feedback.className = 'p2p-feedback is-error';
+				}
+				button.disabled = false;
+			}
+		});
+	});
+</script>
+
+
+								) : (
+									'—'
+								)}
+							</td>
+							<td>
+								<span class:list={['status', `is-${toneOf(payment.status)}`]}>
+									{payment.status || P2P_STATUS.pendiente}
+								</span>
+							</td>
+							<td>
+								{payment.status === P2P_STATUS.pendiente && (
+									<span class="actions">
+										<button type="button" class="action is-approve" data-p2p-decision="aprobar" data-id={payment.id}>Aprobar</button>
+										<button type="button" class="action is-reject" data-p2p-decision="rechazar" data-id={payment.id}>Rechazar</button>
+									</span>
+								)}
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)}
+
+	<p class="p2p-feedback" data-p2p-feedback role="status" aria-live="polite"></p>
+</AdminPageLayout>

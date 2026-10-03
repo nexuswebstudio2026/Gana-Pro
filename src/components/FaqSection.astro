@@ -1,0 +1,160 @@
+---
+/**
+ * Preguntas frecuentes de la portada, en acordeón.
+ *
+ * Se usa `<details>`/`<summary>` nativos en lugar de un `<div>` con
+ * JavaScript: funcionan sin scripting, son navegables con teclado y se pueden
+ * marcar como buscables desde el propio motor. El script solo añade la animación
+ * y el cierre del resto, que es la mejora opcional.
+ */
+
+interface FaqItem {
+	question: string;
+	answer: string;
+}
+
+const items: FaqItem[] = [
+	{
+		question: '¿Cómo funciona la activación inicial de $15.000?',
+		answer:
+			'Al registrarte recibes un código de referido y cinco puestos vacíos en la matriz. ' +
+			'La recarga inicial de $15.000 es lo que activa tu puesto: haces la transferencia, ' +
+			'adjuntas el comprobante (JPG, PNG o PDF de hasta 3 MB) y, cuando la plataforma lo ' +
+			'verifica, tu puesto pasa a estado Activo. Hasta ese momento aparece como Registrado.',
+	},
+	{
+		question: '¿Cómo se envían los fondos entre niveles (pago 50 % al patrocinador)?',
+		answer:
+			'Cuando asciendes de nivel, el 50 % de lo generado se envía a la persona que te trajo, ' +
+			'que es tu patrocinador dentro de la matriz. El pago se reporta con su comprobante y ' +
+			'queda en estado Pendiente hasta que el administrador lo aprueba y mueve el saldo de ' +
+			'forma efectiva.',
+	},
+	{
+		question: '¿Cómo apruebo el comprobante de mis 5 referidos directos?',
+		answer:
+			'El administrador de la plataforma revisa cada comprobante desde su panel: compara el ' +
+			'monto con la imagen o el PDF y lo aprueba o lo rechaza. Tu puesto de la matriz solo pasa ' +
+			'a Activo cuando su recarga queda Aprobada; los puestos registrados pero sin verificar ' +
+			'no cuentan para tu ascenso.',
+	},
+	{
+		question: '¿Por qué se destina un 30 % a GanaPro al alcanzar el Nivel 5?',
+		answer:
+			'El Nivel 5 (Oro) es el máximo de la matriz y administra la estructura completa. Por eso ' +
+			'ese nivel reparte además del 50 % al patrocinador, un 30 % al fondo de sostenimiento de ' +
+			'GanaPro, que cubre la operación, la verificación de comprobantes y el soporte. Es el ' +
+			'único nivel que aplica ese segundo envío.',
+	},
+];
+---
+
+<section class="section faq-section" id="preguntas" aria-labelledby="faq-title">
+	<div class="section-container">
+		<div class="section-header">
+			<span class="section-badge font-cinzel">RESOLVEMOS TUS DUDAS</span>
+			<h2 class="section-title font-cinzel" id="faq-title">
+				Preguntas <span class="gold-gradient-text">Frecuentes</span>
+			</h2>
+			<p class="section-subtitle">
+				Las cuatro dudas que más nos hacen los miembros antes de activar su cuenta.
+			</p>
+		</div>
+
+		<div class="faq-list">
+			{items.map((item, index) => (
+				<details class="faq-item luxury-card" data-faq open={index === 0}>
+					<summary class="faq-q">
+						<span>{item.question}</span>
+						<span class="faq-marker" aria-hidden="true"></span>
+					</summary>
+					<div class="faq-a">
+						<p>{item.answer}</p>
+					</div>
+				</details>
+			))}
+		</div>
+	</div>
+</section>
+
+<style>
+	.faq-list {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		max-width: 860px;
+		margin: 0 auto;
+	}
+
+	.faq-item {
+		padding: 0;
+		overflow: hidden;
+		transition: border-color 0.3s ease, transform 0.3s ease;
+	}
+
+	.faq-item:hover { border-color: var(--gold-primary); }
+	.faq-item[open] { border-color: var(--gold-primary); }
+
+	.faq-q {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 18px;
+		padding: 22px 26px;
+		cursor: pointer;
+		list-style: none;
+		font-size: 1.02rem;
+		font-weight: 600;
+		color: var(--text-primary);
+		transition: color 0.2s ease;
+	}
+
+	/* Safari pinta un triángulo propio: se quita para usar el marcador dorado. */
+	.faq-q::-webkit-details-marker { display: none; }
+
+	.faq-q:hover { color: var(--gold-primary); }
+
+	.faq-item[open] .faq-q { color: var(--gold-primary); border-bottom: 1px solid var(--gold-border); }
+
+	/* Signo «+» dibujado con dos líneas; al abrirse gira 45° y forma la «×». */
+	.faq-marker {
+		position: relative;
+		flex: 0 0 16px;
+		width: 16px;
+		height: 16px;
+	}
+
+	.faq-marker::before,
+	.faq-marker::after {
+		content: '';
+		position: absolute;
+		background: var(--gold-primary);
+		border-radius: 2px;
+		transition: transform 0.3s ease;
+	}
+
+	.faq-marker::before { top: 7px; left: 0; width: 16px; height: 2px; }
+
+	.faq-marker::after {
+		top: 0;
+		left: 7px;
+		width: 2px;
+		height: 16px;
+	}
+
+	.faq-item[open] .faq-marker::after { transform: rotate(45deg); }
+
+	.faq-a { padding: 20px 26px 24px; }
+
+	.faq-a p {
+		margin: 0;
+		color: var(--text-secondary);
+		font-size: 0.96rem;
+		line-height: 1.75;
+	}
+
+	@media (max-width: 640px) {
+		.faq-q { padding: 18px 20px; font-size: 0.95rem; }
+		.faq-a { padding: 16px 20px 20px; }
+	}
+</style>

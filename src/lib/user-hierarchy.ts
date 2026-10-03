@@ -102,6 +102,45 @@ export function countOrganizationUsers(node: OrganizationNode): number {
 	return node.children.reduce((total, child) => total + 1 + countOrganizationUsers(child), 0);
 }
 
+/**
+ * Localiza a la persona que trajo a otra: su nodo padre en el organigrama.
+ *
+ * Es lo que necesita el envío del 50 % para saber a quién acreditarle el
+ * dinero. Se recorre el árbol llevando el padre de cada nodo, porque
+ * `OrganizationNode` no guarda un puntero al suyo (serializarlo rompería la
+ * estructura que ya se envía al navegador).
+ *
+ * Devuelve `null` si la persona no está en el árbol o si es la raíz: la raíz
+ * GANA PRO no es un usuario al que se le pueda enviar saldo.
+ */
+export function findUserParent(
+	root: OrganizationNode,
+	identity: UserIdentity
+): OrganizationNode | null {
+	const username = normalize(identity.username);
+	const email = normalize(identity.email);
+	if (!username && !email) return null;
+
+	const stack: Array<{ node: OrganizationNode; parent: OrganizationNode | null }> = [
+		{ node: root, parent: null },
+	];
+
+	while (stack.length > 0) {
+		const entry = stack.pop();
+		if (!entry) break;
+		const { node, parent } = entry;
+
+		const matchesName = username && normalize(node.name) === username;
+		const matchesEmail = email && normalize(node.email) === email;
+		// La raíz no cuenta como patrocinador de nadie.
+		if (parent && (matchesName || matchesEmail)) return parent;
+
+		node.children.forEach((child) => stack.push({ node: child, parent: node }));
+	}
+
+	return null;
+}
+
 /** Profundidad máxima del árbol (raíz = 0). */
 export function maxOrganizationDepth(node: OrganizationNode): number {
 	if (node.children.length === 0) return node.depth;

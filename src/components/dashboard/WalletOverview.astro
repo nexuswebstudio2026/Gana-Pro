@@ -1,0 +1,421 @@
+---
+/**
+ * Billetera del miembro.
+ *
+ * Muestra las tres cifras que pide el usuario —disponible, comprometido y total
+ * ganado— y abre el formulario de retiro en un modal. El desglose llega ya
+ * calculado desde `wallet-summary.ts`, la misma librería que valida el retiro en
+ * el servidor: lo que se promete aquí es lo que se autoriza.
+ */
+import type { WalletSummary } from '../../lib/wallet-summary';
+
+interface Props {
+	summary: WalletSummary;
+	walletType: string;
+	walletNumber: string;
+	/** `false` cuando el nivel todavía no habilita retiros. */
+	canWithdrawLevel: boolean;
+}
+
+const { summary, walletType, walletNumber, canWithdrawLevel } = Astro.props;
+
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+
+/** Métodos de pago ofrecidos en el formulario. */
+const METHODS = ['Nequi', 'Daviplata', 'Bre-B', 'Transferencia Bancaria'] as const;
+
+const reason = !canWithdrawLevel
+	? 'Necesitas alcanzar el Nivel Oro para solicitar retiros.'
+	: !walletType || !walletNumber
+		? 'Registra tu medio de pago en Información del Perfil para retirar.'
+		: summary.available <= 0
+			? 'No tienes saldo disponible para retirar.'
+			: '';
+---
+
+<section class="wallet" aria-label="Mi billetera">
+	<div class="wallet-grid">
+		<article class="wallet-card is-available">
+			<span class="wallet-label">Saldo Disponible para Retiro</span>
+			<strong class="wallet-value">{fmt(summary.available)}</strong>
+			<span class="wallet-hint">Lo que puedes retirar hoy.</span>
+		</article>
+
+		<article class="wallet-card is-committed">
+			<span class="wallet-label">Saldo Compromiso / Retenido</span>
+			<strong class="wallet-value">{fmt(summary.committed)}</strong>
+			<span class="wallet-hint">En pagos y retiros por verificar.</span>
+		</article>
+
+		<article class="wallet-card is-total">
+			<span class="wallet-label">Total Ganado Acumulado</span>
+			<strong class="wallet-value">{fmt(summary.totalEarned)}</strong>
+			<span class="wallet-hint">
+				{summary.paidOut > 0
+					? `Incluye ${fmt(summary.paidOut)} ya pagados.`
+					: 'Histórico acreditado.'}
+			</span>
+		</article>
+	</div>
+
+	<div class="wallet-actions">
+		<button
+			type="button"
+			class="gold-button wallet-btn"
+			data-open-withdrawal
+			disabled={Boolean(reason)}
+			aria-describedby={reason ? 'wallet-reason' : undefined}
+		>
+			Solicitar Retiro
+		</button>
+		<p class="wallet-destination">
+			Destino: <strong>{walletType || 'sin registrar'}</strong>
+			{walletNumber && <span class="code-pill">{walletNumber}</span>}
+		</p>
+	</div>
+
+	{reason && <p class="wallet-blocked" id="wallet-reason">{reason}</p>}
+
+	<dialog class="wallet-modal" data-withdrawal-modal aria-labelledby="wallet-modal-title">
+		<form method="dialog" class="wallet-modal-close">
+			<button type="submit" class="wallet-x" aria-label="Cerrar">&times;</button>
+		</form>
+
+		<h3 class="font-cinzel" id="wallet-modal-title">Solicitar Retiro</h3>
+		<p class="wallet-modal-lead">
+			Envía la solicitud y el administrador la revisará antes de transferir.
+		</p>
+
+		<form class="wallet-form" data-withdrawal-form>
+			<label class="wallet-field">
+				<span>Método de pago</span>
+				<select name="method" required>
+					{METHODS.map((method) => (
+						<option value={method} selected={method === walletType}>{method}</option>
+					))}
+				</select>
+			</label>
+
+			<label class="wallet-field">
+				<span>Número de cuenta</span>
+				<input
+					type="text"
+					name="account"
+					value={walletNumber}
+					placeholder="Ej: 3001234567"
+					required
+				/>
+			</label>
+
+			<label class="wallet-field">
+				<span>Monto a retirar</span>
+				<input
+					type="number"
+					name="amount"
+					min="1"
+					step="1"
+					max={String(summary.available)}
+					value={String(summary.available)}
+					required
+				/>
+			</label>
+
+			<p class="wallet-note">
+				Sobre el monto solicitado se aplica una comisión del 5 %.
+				<span data-net-preview></span>
+			</p>
+
+			<p class="wallet-feedback" data-withdrawal-feedback role="status" aria-live="polite"></p>
+
+			<button type="submit" class="gold-button wallet-btn" data-withdrawal-submit>
+				<span data-submit-label>Enviar solicitud</span>
+				<span class="wallet-spinner" data-submit-spinner hidden aria-hidden="true"></span>
+			</button>
+		</form>
+	</dialog>
+</section>
+<style>
+	.wallet { display: flex; flex-direction: column; gap: 18px; }
+
+	.wallet-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+		gap: 16px;
+	}
+
+	.wallet-card {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 22px;
+		border: 1px solid var(--gold-border);
+		border-radius: 16px;
+		background: var(--bg-surface);
+		transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.wallet-card:hover {
+		transform: translateY(-3px);
+		border-color: var(--gold-primary);
+		box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+	}
+
+	.wallet-card.is-available { border-color: rgba(16, 185, 129, 0.4); }
+	.wallet-card.is-committed { border-color: rgba(234, 179, 8, 0.4); }
+
+	.wallet-label {
+		font-size: 11.5px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.wallet-value {
+		font-size: 1.6rem;
+		font-weight: 700;
+		line-height: 1.15;
+		color: var(--text-primary);
+		overflow-wrap: anywhere;
+	}
+
+	.wallet-card.is-available .wallet-value { color: #10b981; }
+	.wallet-card.is-committed .wallet-value { color: #eab308; }
+	.wallet-card.is-total .wallet-value { color: var(--gold-primary); }
+
+	.wallet-hint { font-size: 12px; color: var(--text-secondary); }
+
+	.wallet-actions {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 16px;
+	}
+
+	.wallet-btn { border: none; font-family: inherit; }
+
+	.wallet-btn:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+		transform: none;
+		box-shadow: none;
+	}
+
+	.wallet-destination { margin: 0; font-size: 13px; color: var(--text-secondary); }
+	.wallet-destination strong { color: var(--text-primary); }
+
+	.code-pill {
+		margin-left: 6px;
+		padding: 2px 8px;
+		border-radius: 6px;
+		background: rgba(212, 175, 55, 0.15);
+		font-family: monospace;
+		font-size: 12px;
+	}
+
+	.wallet-blocked {
+		margin: 0;
+		padding: 12px 14px;
+		border: 1px solid rgba(234, 179, 8, 0.4);
+		border-radius: 12px;
+		background: rgba(234, 179, 8, 0.08);
+		color: #fcd34d;
+		font-size: 13px;
+	}
+
+	.wallet-modal {
+		width: min(440px, calc(100vw - 32px));
+		padding: 28px;
+		border: 1px solid var(--gold-border);
+		border-radius: 20px;
+		background: var(--bg-surface, #0f172a);
+		color: var(--text-primary);
+		box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+	}
+
+	.wallet-modal::backdrop {
+		background: rgba(2, 7, 18, 0.72);
+		backdrop-filter: blur(4px);
+	}
+
+	.wallet-modal[open] { animation: wallet-in 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+
+	@keyframes wallet-in {
+		from { opacity: 0; transform: translateY(14px) scale(0.98); }
+		to { opacity: 1; transform: none; }
+	}
+
+	.wallet-modal-close { margin: 0; }
+	.wallet-modal h3 { margin: 0 0 6px; font-size: 1.3rem; }
+
+	.wallet-x {
+		position: absolute;
+		top: 14px;
+		right: 16px;
+		background: none;
+		border: none;
+		color: var(--text-secondary);
+		font-size: 1.6rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.wallet-x:hover { color: var(--gold-primary); }
+
+	.wallet-modal-lead {
+		margin: 0 0 20px;
+		color: var(--text-secondary);
+		font-size: 13.5px;
+		line-height: 1.6;
+	}
+
+	.wallet-form { display: flex; flex-direction: column; gap: 14px; }
+
+	.wallet-field { display: flex; flex-direction: column; gap: 6px; }
+
+	.wallet-field > span {
+		font-size: 11.5px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.wallet-field input,
+	.wallet-field select {
+		width: 100%;
+		padding: 11px 13px;
+		border: 1px solid var(--gold-border);
+		border-radius: 10px;
+		background: rgba(2, 7, 18, 0.5);
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 14px;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.wallet-field input:focus,
+	.wallet-field select:focus {
+		outline: none;
+		border-color: var(--gold-primary);
+		box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+	}
+
+	.wallet-note { margin: 0; font-size: 12.5px; color: var(--text-secondary); }
+
+	.wallet-feedback { margin: 0; font-size: 13px; min-height: 1.2em; }
+	.wallet-feedback.is-error { color: #fca5a5; }
+	.wallet-feedback.is-ok { color: #10b981; }
+
+	.wallet-spinner {
+		width: 15px;
+		height: 15px;
+		border: 2px solid rgba(3, 7, 18, 0.35);
+		border-top-color: #030712;
+		border-radius: 50%;
+		animation: wallet-spin 0.7s linear infinite;
+	}
+
+	@keyframes wallet-spin { to { transform: rotate(360deg); } }
+
+	[data-withdrawal-submit] {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+	}
+
+	@media (max-width: 520px) {
+		.wallet-grid { grid-template-columns: 1fr; gap: 12px; }
+		.wallet-card { padding: 18px; }
+		.wallet-value { font-size: 1.35rem; }
+		.wallet-actions { flex-direction: column; align-items: stretch; }
+		.wallet-btn { width: 100%; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.wallet-modal[open] { animation: none; }
+		.wallet-spinner { animation-duration: 1.4s; }
+	}
+</style>
+
+<script>
+	const modal = document.querySelector<HTMLDialogElement>('[data-withdrawal-modal]');
+	const openBtn = document.querySelector<HTMLButtonElement>('[data-open-withdrawal]');
+	const form = document.querySelector<HTMLFormElement>('[data-withdrawal-form]');
+	const feedback = document.querySelector<HTMLElement>('[data-withdrawal-feedback]');
+	const submitBtn = document.querySelector<HTMLButtonElement>('[data-withdrawal-submit]');
+	const spinner = document.querySelector<HTMLElement>('[data-submit-spinner]');
+	const submitLabel = document.querySelector<HTMLElement>('[data-submit-label]');
+	const amountInput = form?.querySelector<HTMLInputElement>('input[name="amount"]');
+	const preview = document.querySelector<HTMLElement>('[data-net-preview]');
+
+	const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+
+	openBtn?.addEventListener('click', () => modal?.showModal());
+
+	/**
+	 * Muestra el neto antes de confirmar, para que la comisión del 5 % no
+	 * aparezca como sorpresa después de enviar.
+	 */
+	const renderPreview = () => {
+		const amount = Number(amountInput?.value ?? 0);
+		if (preview) preview.textContent = amount > 0 ? `Recibirás ${fmt(amount * 0.95)}.` : '';
+	};
+
+	amountInput?.addEventListener('input', renderPreview);
+	renderPreview();
+
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		if (submitBtn?.hasAttribute('disabled')) return;
+
+		const amount = Number(new FormData(form).get('amount'));
+
+		// Mismo umbral que `MAX_WITHDRAWAL_AMOUNT` en el servidor: evita que la
+		// solicitud viaje y rebote cuando el saldo no alcanza.
+		if (!(amount > 0)) {
+			if (feedback) {
+				feedback.textContent = 'El monto debe ser un número mayor que cero.';
+				feedback.className = 'wallet-feedback is-error';
+			}
+			return;
+		}
+
+		submitBtn?.setAttribute('disabled', 'true');
+		if (spinner) spinner.hidden = false;
+		if (submitLabel) submitLabel.textContent = 'Enviando…';
+		if (feedback) feedback.textContent = '';
+
+		try {
+			const response = await fetch('/api/balance', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ op: 'retirar', amount }),
+			});
+			const data = (await response.json()) as { ok: boolean; message: string };
+
+			if (feedback) {
+				feedback.textContent = data.message;
+				feedback.className = `wallet-feedback ${data.ok ? 'is-ok' : 'is-error'}`;
+			}
+			if (data.ok) {
+				form.reset();
+				renderPreview();
+				// Se recarga para que la tarjeta muestre el nuevo comprometido.
+				setTimeout(() => window.location.reload(), 1400);
+			}
+		} catch {
+			if (feedback) {
+				feedback.textContent = 'No se pudo conectar con el servidor. Inténtalo de nuevo.';
+				feedback.className = 'wallet-feedback is-error';
+			}
+		} finally {
+			submitBtn?.removeAttribute('disabled');
+			if (spinner) spinner.hidden = true;
+			if (submitLabel) submitLabel.textContent = 'Enviar solicitud';
+		}
+	});
+</script>
+

@@ -1,0 +1,21 @@
+---
+/**
+ * Enlace corto de referido: `/r/CODIGO`.
+ *
+ * Los miembros comparten esta ruta mucho (WhatsApp, historias, tarjetas), así que
+ * cuanto más corta mejor: se quitan el `register?ref=` de cada mensaje. La ruta
+ * no renderiza nada, solo redirige al formulario de alta, que ya lee el código
+ * de `ref` y lo deja escrito.
+ *
+ * El código NO se valida contra la hoja a propósito. Puede no existir todavía
+ * (la fila se sincroniza después del alta) y, en cualquier caso, el formulario y
+ * `/api/register` ya lo comprueban. Validarlo aquí convertiría un enlace mal
+ * copiado en un error que además espantaría a quien aún no tiene cuenta.
+ */
+export const prerender = false;
+
+// Se acota la longitud para no propagar un texto arbitrario en la URL.
+const code = (Astro.params.codigo ?? '').trim().slice(0, 60);
+
+return Astro.redirect(`/register?ref=${encodeURIComponent(code)}`, 302);
+---
