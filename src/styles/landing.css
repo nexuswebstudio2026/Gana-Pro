@@ -1,0 +1,710 @@
+/*
+ * Sistema visual de la portada.
+ *
+ * Antes vivía dentro de un `<style>` con ámbito en `index.astro`, y eso era un
+ * problema real: los componentes que la portada inserta (`FaqSection`,
+ * `TestimonialsSection`) usan las clases `.section` y `.section-container`, pero
+ * un selector con ámbito solo alcanza al HTML del propio archivo. Esas dos
+ * secciones salían sin relleno ni centrado.
+ *
+ * Al vivir aquí, este archivo se importa desde `index.astro` y sus reglas sí
+ * alcanzan a todos los componentes de la portada. Solo se carga en las páginas
+ * que lo importan, así que el panel y `/gana-dinero` no se ven afectados.
+ *
+ * Todos los colores salen de las variables que define `Layout.astro`, así que el
+ * cambio claro/oscuro funciona sin tocar una regla de aquí.
+ */
+
+/* ============ RITMO DE SECCIÓN ============ */
+:root {
+	--landing-max: 1200px;
+	--landing-gutter: 24px;
+	--section-y: clamp(56px, 7vw, 96px);
+}
+
+/* ============ ESTRUCTURA ============ */
+.section {
+	padding: var(--section-y) var(--landing-gutter);
+	position: relative;
+}
+
+.section-container {
+	max-width: var(--landing-max);
+	margin: 0 auto;
+}
+
+/* Alterna el fondo entre secciones para que la página se lea por bloques. */
+.section--tinted {
+	background:
+		radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212, 175, 55, 0.07) 0%, transparent 60%),
+		linear-gradient(180deg, transparent 0%, rgba(2, 7, 18, 0.35) 50%, transparent 100%);
+}
+
+/* ============ ENCABEZADO DE SECCIÓN ============ */
+.section-header {
+	max-width: 760px;
+	margin: 0 auto clamp(32px, 4vw, 52px);
+	text-align: center;
+}
+
+/* Alineado a la izquierda cuando la sección lleva texto corrido a un lado. */
+.section-header--split {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: clamp(24px, 4vw, 56px);
+	align-items: end;
+	max-width: none;
+	text-align: left;
+	margin-left: 0;
+}
+
+.section-eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 14px;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+	color: var(--gold-primary);
+}
+
+.section-eyebrow::before {
+	content: '';
+	width: 26px;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--gold-primary));
+}
+
+.section-title {
+	font-size: clamp(1.9rem, 4vw, 2.9rem);
+	font-weight: 800;
+	line-height: 1.18;
+	letter-spacing: -0.01em;
+	margin: 0 0 16px;
+}
+
+.section-subtitle {
+	margin: 0 auto;
+	max-width: 64ch;
+	font-size: 1.04rem;
+	line-height: 1.75;
+	color: var(--text-secondary);
+}
+
+.section-header--split .section-subtitle {
+	margin: 0;
+}
+
+/* Resalta cifras dentro de un párrafo sin competir con el dorado de los títulos. */
+.accent {
+	color: var(--text-primary);
+	font-weight: 700;
+}
+
+/* ============ TARJETAS GENÉRICAS ============ */
+.card {
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	padding: clamp(26px, 3vw, 38px);
+	background: var(--bg-card);
+	border: 1px solid var(--bg-card-border);
+	border-radius: 22px;
+	box-shadow: var(--card-shadow);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	transition:
+		transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+		border-color 0.35s ease,
+		box-shadow 0.35s ease;
+}
+
+.card:hover {
+	transform: translateY(-5px);
+	border-color: var(--gold-primary);
+	box-shadow: 0 26px 54px -22px rgba(0, 0, 0, 0.6), var(--gold-glow);
+}
+
+.card-icon {
+	display: grid;
+	place-items: center;
+	width: 54px;
+	height: 54px;
+	margin-bottom: 20px;
+	border-radius: 15px;
+	color: var(--gold-primary);
+	background: rgba(212, 175, 55, 0.12);
+	border: 1px solid var(--gold-border);
+	transition: transform 0.35s ease, background 0.35s ease;
+}
+
+.card:hover .card-icon {
+	transform: scale(1.06) rotate(-4deg);
+	background: rgba(212, 175, 55, 0.2);
+}
+
+.card-title {
+	margin: 0 0 12px;
+	font-size: 1.28rem;
+	font-weight: 800;
+	line-height: 1.3;
+}
+
+.card-desc {
+	margin: 0;
+	font-size: 0.95rem;
+	line-height: 1.75;
+	color: var(--text-secondary);
+}
+
+.card-tag {
+	position: absolute;
+	top: 22px;
+	right: 24px;
+	padding: 5px 12px;
+	border: 1px solid var(--gold-border);
+	border-radius: 9999px;
+	background: rgba(212, 175, 55, 0.08);
+	color: var(--gold-primary);
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+}
+
+.card--featured {
+	border-color: var(--gold-primary);
+	box-shadow: 0 0 36px rgba(212, 175, 55, 0.2);
+}
+
+.card-badge {
+	position: absolute;
+	top: 18px;
+	right: 22px;
+	padding: 5px 11px;
+	border-radius: 9999px;
+	background: var(--gold-gradient);
+	color: #030712;
+	font-size: 0.62rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+/* Rejilla base: tres columnas en escritorio, se apila sola. */
+.grid {
+	display: grid;
+	gap: clamp(18px, 2vw, 28px);
+}
+
+.grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+/* ============ LISTA CON VIÑETAS DORADAS ============ */
+.ticks {
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin: 22px 0 28px;
+	padding: 0;
+}
+
+.ticks li {
+	position: relative;
+	padding-left: 24px;
+	font-size: 0.92rem;
+	line-height: 1.65;
+	color: var(--text-secondary);
+}
+
+.ticks li::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 9px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--gold-primary);
+}
+
+.ticks strong { color: var(--text-primary); }
+
+/* ============ ENLACE CON SUBRAYADO ANIMADO ============ */
+.text-link {
+	margin-top: auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	align-self: flex-start;
+	padding-bottom: 3px;
+	border-bottom: 1px solid transparent;
+	color: var(--gold-primary);
+	font-size: 0.88rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-decoration: none;
+	transition: border-color 0.25s ease, gap 0.25s ease;
+}
+
+.text-link:hover {
+	border-bottom-color: var(--gold-primary);
+	gap: 13px;
+}
+
+.text-link:focus-visible {
+	outline: 2px solid var(--gold-primary);
+	outline-offset: 4px;
+	border-radius: 4px;
+}
+
+/* ============ PASOS NUMERADOS ============ */
+.steps {
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: clamp(28px, 3vw, 40px);
+	margin: 0;
+	padding: 0;
+}
+
+.steps li {
+	display: flex;
+	align-items: flex-start;
+	gap: 18px;
+}
+
+/* El número va en un disco, no suelto: así la columna no se descuadra al
+   cambiar el tamaño de letra entre pasos. */
+.step-num {
+	display: grid;
+	place-items: center;
+	flex: 0 0 52px;
+	width: 52px;
+	height: 52px;
+	border-radius: 16px;
+	background: rgba(212, 175, 55, 0.1);
+	border: 1px solid var(--gold-border);
+	color: var(--gold-primary);
+	font-size: 1.15rem;
+	font-weight: 800;
+	line-height: 1;
+}
+
+.step-title {
+	margin: 0 0 6px;
+	font-size: 1.08rem;
+	font-weight: 700;
+}
+
+.steps p {
+	margin: 0;
+	font-size: 0.93rem;
+	line-height: 1.7;
+	color: var(--text-secondary);
+}
+
+/* ============ TABLA DE CIFRAS ============ */
+.data-table {
+	display: flex;
+	flex-direction: column;
+	margin: 28px 0 32px;
+	border: 1px solid var(--gold-border);
+	border-radius: 14px;
+	overflow: hidden;
+}
+
+.data-row {
+	display: grid;
+	grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
+	align-items: center;
+	gap: 12px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--gold-border);
+	font-size: 0.95rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.data-row:last-child { border-bottom: none; }
+
+.data-row--head {
+	background: rgba(212, 175, 55, 0.1);
+	color: var(--gold-primary);
+	font-size: 0.76rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+.data-row--head span:not(:first-child),
+.data-row span:not(:first-child) { text-align: right; }
+
+.data-row span:not(:first-child) { color: var(--text-secondary); }
+
+.data-key {
+	font-weight: 700;
+	font-size: 0.92rem;
+	color: var(--text-primary);
+}
+
+.data-row .data-in { color: var(--text-primary); font-weight: 600; }
+
+.data-row .data-keep { color: var(--gold-primary); font-weight: 700; }
+
+/* El Nivel 1 solo aporta: no retiene nada todavía. */
+.data-keep.is-none { color: var(--text-muted); font-weight: 400; }
+
+/* ============ PANELES DE CONTENIDO ============ */
+.panel { gap: 0; margin-top: clamp(18px, 2vw, 28px); }
+
+/* La tabla de comparación tiene una columna menos que la de flujo de fondos:
+   la primera es la clave y las otras dos son las dos vías. */
+.data-row--compare { grid-template-columns: 1.1fr 1fr 1fr; }
+
+.panel-title {
+	margin: 0 0 12px;
+	font-size: 1.32rem;
+	font-weight: 800;
+	line-height: 1.3;
+}
+
+.panel-intro {
+	margin: 0 0 4px;
+	max-width: 76ch;
+	font-size: 0.96rem;
+	line-height: 1.78;
+	color: var(--text-secondary);
+}
+
+.note-muted {
+	font-size: 0.88rem !important;
+	color: var(--text-muted) !important;
+}
+
+/* ============ TARJETA DE NIVEL ============ */
+.level-card {
+	gap: 0;
+	padding: clamp(20px, 2.4vw, 28px) clamp(18px, 2vw, 24px);
+}
+
+.level-num {
+	display: block;
+	margin-bottom: 10px;
+	font-size: 1.9rem;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--gold-primary);
+	opacity: 0.85;
+}
+
+.level-card .card-title { font-size: 1.1rem; margin-bottom: 8px; }
+
+.level-card .card-desc { font-size: 0.86rem; line-height: 1.65; }
+
+/* ============ ESCALERA JERÁRQUICA ============ */
+.ladder {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin: 28px 0 30px;
+}
+
+.ladder-row {
+	display: grid;
+	grid-template-columns: 92px minmax(0, 1fr) 76px;
+	align-items: center;
+	gap: 14px;
+}
+
+.ladder-label {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--text-secondary);
+	letter-spacing: 0.02em;
+}
+
+.ladder-level {
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.ladder-name { color: inherit; }
+
+.ladder-track {
+	height: 26px;
+	border-radius: 8px;
+	background: rgba(2, 7, 18, 0.45);
+	border: 1px solid var(--gold-border);
+	overflow: hidden;
+}
+
+.ladder-fill {
+	display: block;
+	height: 100%;
+	width: var(--w, 0%);
+	border-radius: inherit;
+	background: linear-gradient(90deg, rgba(212, 175, 55, 0.45) 0%, var(--gold-primary) 100%);
+	transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* El último peldaño es el destino del ciclo, así que se lee destacado. */
+.ladder-row--top .ladder-fill {
+	background: linear-gradient(90deg, rgba(184, 134, 11, 0.55) 0%, #fae69e 100%);
+}
+
+.ladder-row--top .ladder-label,
+.ladder-count {
+	color: var(--gold-primary);
+	font-weight: 800;
+	font-size: 0.9rem;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.ladder-stats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 18px;
+	padding: 24px 0;
+	border-top: 1px solid var(--gold-border);
+	border-bottom: 1px solid var(--gold-border);
+}
+
+.ladder-stat { text-align: center; }
+
+.ladder-stat-value {
+	display: block;
+	font-size: 1.5rem;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--gold-primary);
+}
+
+.ladder-stat-label {
+	display: block;
+	margin-top: 4px;
+	font-size: 0.78rem;
+	color: var(--text-secondary);
+}
+
+/* ============ CICLO DE PASOS (I, II, III, IV) ============ */
+.cycle {
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: clamp(26px, 3vw, 38px);
+	margin: 32px 0 0;
+	padding: 0;
+}
+
+.cycle li {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+.cycle-step {
+	display: grid;
+	place-items: center;
+	flex: 0 0 46px;
+	width: 46px;
+	height: 46px;
+	border-radius: 14px;
+	background: var(--gold-gradient);
+	color: #030712;
+	font-size: 0.9rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+}
+
+.cycle-name {
+	margin: 0 0 6px;
+	font-size: 1.02rem;
+	font-weight: 700;
+}
+
+.cycle li p {
+	margin: 0;
+	font-size: 0.92rem;
+	line-height: 1.7;
+	color: var(--text-secondary);
+}
+
+.cycle-note {
+	margin: 30px 0 0;
+	padding-top: 22px;
+	border-top: 1px solid var(--gold-border);
+	font-size: 0.93rem;
+	line-height: 1.75;
+	color: var(--text-secondary);
+}
+
+/* ============ CAJAS DE NOTA ============ */
+.note {
+	padding: 24px 26px;
+	margin: 28px 0 0;
+	border: 1px solid var(--gold-border);
+	border-left: 3px solid var(--gold-primary);
+	border-radius: 14px;
+	background: rgba(212, 175, 55, 0.06);
+}
+
+.note-title {
+	margin: 0 0 10px;
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--gold-primary);
+}
+
+.note p {
+	margin: 0 0 10px;
+	font-size: 0.92rem;
+	line-height: 1.75;
+	color: var(--text-secondary);
+}
+
+.note p:last-child { margin-bottom: 0; }
+
+/* Aviso de riesgo: aquí el dorado no, porque el aviso va en rojo. */
+.note--risk {
+	border-color: rgba(239, 68, 68, 0.3);
+	border-left-color: #ef4444;
+	background: rgba(239, 68, 68, 0.06);
+}
+
+.note--risk .note-title { color: #ef4444; }
+
+/* En las notas el dorado se reserva para los datos duros. */
+.note--risk .accent { color: var(--text-primary); }
+
+.note--muted p {
+	font-size: 0.88rem;
+	color: var(--text-muted);
+}
+
+/* ============ CIERRE ============ */
+.cta {
+	padding: clamp(40px, 5vw, 64px) clamp(22px, 4vw, 40px);
+	text-align: center;
+	background: radial-gradient(circle at center, rgba(30, 58, 138, 0.28) 0%, var(--bg-card) 72%);
+}
+
+.cta-title {
+	margin: 0 0 14px;
+	font-size: clamp(1.8rem, 3.6vw, 2.7rem);
+	font-weight: 800;
+	line-height: 1.2;
+}
+
+.cta-desc {
+	margin: 0 auto 32px;
+	max-width: 58ch;
+	font-size: 1.04rem;
+	line-height: 1.7;
+	color: var(--text-secondary);
+}
+
+.cta-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 18px;
+}
+
+/* ============ REJILLAS Y APILADO ============ */
+@media (max-width: 1024px) {
+	.grid--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.grid--3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+	.section-header--split {
+		grid-template-columns: 1fr;
+		align-items: start;
+	}
+
+	.grid--2,
+	.steps,
+	.cycle,
+	.ladder-stats { grid-template-columns: 1fr; }
+
+	.grid--5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+	.ladder-stats { gap: 22px; padding: 20px 0; }
+
+	/* Apiladas, las cifras se leen como «etiqueta → valor». */
+	.ladder-stat {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		text-align: left;
+	}
+}
+
+@media (max-width: 640px) {
+	:root { --landing-gutter: 18px; }
+
+	.card-tag { position: static; align-self: flex-start; margin-bottom: 4px; }
+
+	/* La tabla se apila: la cabecera se oculta y cada celda se rotula. */
+	.data-row--head { display: none; }
+
+	.data-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 6px 12px;
+		padding: 14px 16px;
+	}
+
+	.data-key {
+		grid-column: 1 / -1;
+		padding-bottom: 6px;
+		margin-bottom: 4px;
+		border-bottom: 1px solid var(--gold-border);
+		font-size: 0.95rem;
+	}
+
+	.data-row span:not(:first-child) {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 8px;
+		text-align: left;
+	}
+
+	.data-row span:not(:first-child)::before {
+		content: attr(data-label);
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.ladder-row { grid-template-columns: 68px minmax(0, 1fr) 62px; gap: 10px; }
+	.ladder-label { font-size: 0.74rem; text-align: left; }
+
+	.cta-actions { flex-direction: column; }
+	.cta-actions a { width: 100%; }
+}
+
+@media (max-width: 380px) {
+	:root { --landing-gutter: 14px; }
+
+	.grid--5 { grid-template-columns: 1fr; }
+	.card-badge { position: static; align-self: flex-start; margin-bottom: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.card:hover { transform: none; }
+	.ladder-fill { transition: none; }
+}

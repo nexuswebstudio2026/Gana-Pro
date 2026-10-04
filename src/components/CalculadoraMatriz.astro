@@ -1,132 +1,262 @@
 ---
 /**
- * Calculadora interactiva de la matriz 5x1.
+ * Calculadora 5x1: explica el ciclo completo, paso a paso.
+ *
+ * Antes el selector de nivel ocultaba los pasos anteriores: elegir "Nivel 3"
+ * dejaba ver solo 1, 2 y 3. Eso hacía que la escalera pareciera una lista que se
+ * rellena en vez de una explicación, y para entender cuánto se gana había que
+ * adivinar qué nivel había que elegir.
+ *
+ * Ahora **la explicación de los cinco niveles está siempre a la vista**. El
+ * selector ya no filtra: resalta el nivel que te interesa y actualiza el resumen
+ * de lo acumulado hasta ahí. Así el Nivel 4 siempre explica su parte, estés
+ * mirando el nivel 2 o el 5.
  *
  * Va en un componente propio porque se usa en dos sitios —el hero de la portada
- * y la página `/gana-dinero`— y antes estaba incrustada en el hero. Duplicarla
- * habría sido peor: cualquier cambio en las cifras tendría que hacerse dos veces
- * y es probable que se olvidara una.
+ * y la página `/gana-dinero`—. Duplicarla obligaría a cambiar las cifras en dos
+ * archivos, que es exactamente como se desincroniza una calculadora.
  *
- * No admite propiedades: los importes salen siempre de `matrix-calculator.ts`,
- * calculados en el servidor. El `<script>` solo cambia de panel, así que es
- * imposible que la pantalla muestre una cifra que el backend no haya calculado.
+ * No calcula nada en el navegador: `ascent-calculator.ts` se ejecuta en el
+ * servidor y aquí se pintan los importes ya resueltos. El `<script>` solo mueve
+ * el resaltado, así que es imposible que la pantalla muestre un número que el
+ * backend no haya calculado.
  */
-import { allProjections, type LevelProjection } from '../lib/matrix-calculator';
+import {
+	ASCENT_TOP_LEVEL,
+	ascentMovements,
+	PLATFORM_SHARE_TOP,
+	PLATFORM_TAX_RATE,
+	simulateAscent,
+	type AscentSimulation,
+} from '../lib/ascent-calculator';
+import { P2P_RATE, RECARGA_INICIAL_AMOUNT } from '../lib/p2p';
+import { MAX_DIRECT_TEAM } from '../lib/user-hierarchy';
 
-const projections = allProjections();
 const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
----
 
+/**
+ * El ciclo entero, siempre completo.
+ *
+ * Es una sola simulación hasta el nivel máximo: los cinco niveles están
+ * explained de una vez y el selector no puede quitarlos de en medio.
+ */
+const simulation = simulateAscent(ASCENT_TOP_LEVEL)!;
+const movements = ascentMovements(simulation);
+
+/**
+ * Resumen por nivel, para el selector.
+ *
+ * Se calcula aparte porque el acumulado y los envíos cambian en cada peldaño:
+ * son las dos únicas cifras que dependen del nivel elegido.
+ */
+const summaries = Array.from({ length: ASCENT_TOP_LEVEL }, (_, index) => index + 1)
+	.map((level) => simulateAscent(level))
+	.filter((value): value is AscentSimulation => value !== null);
+
+/** Por defecto se resalta el destino: el nivel más alto. */
+const DEFAULT_LEVEL = ASCENT_TOP_LEVEL;
+
+/**
+ * Número romano para marcar el orden del movimiento.
+ *
+ * Deliberadamente no es el número de nivel: el nivel lo dice el título de cada
+ * paso, y repetirlo aquí y en el subtítulo era lo que hacía que la escalera se
+ * leyera tres veces lo mismo. El romano marca *en qué paso del ciclo* estamos.
+ */
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+const romanFor = (index: number): string => ROMAN[index] ?? String(index + 1);
+---
 <div class="calc luxury-card" id="calculadora">
 	<div class="calc-head">
 		<span class="calc-badge font-cinzel">CALCULADORA 5x1</span>
-		<h2 class="calc-title font-cinzel">¿A qué nivel quieres llegar?</h2>
+		<h2 class="calc-title font-cinzel">El ciclo completo, paso a paso</h2>
 		<p class="calc-lead">
-			Elige tu nivel objetivo y mira qué necesitas para lograrlo y qué queda de cada
-			movimiento.
+			Los cinco niveles explicados uno detrás de otro: lo que sacas del bolsillo, lo que te
+			devuelve la estructura en cada ascenso y qué parte se queda cada uno. Elige un nivel para
+			resaltarlo y ver cuánto llevas acumulado hasta ahí.
 		</p>
 	</div>
 
-	<div class="calc-levels" role="group" aria-label="Selecciona tu nivel objetivo">
-		{projections.map((projection, index) => (
+	<span class="calc-levels-label">Resalta un nivel</span>
+	<div class="calc-levels" role="group" aria-label="Resalta el nivel que te interesa">
+		{summaries.map((value) => (
 			<button
 				type="button"
-				class:list={['calc-level', { 'is-active': index === 0 }]}
-				data-calc-level={projection.level}
-				aria-pressed={index === 0 ? 'true' : 'false'}
+				class:list={['calc-level', { 'is-active': value.targetLevel === DEFAULT_LEVEL }]}
+				data-calc-level={value.targetLevel}
+				aria-pressed={value.targetLevel === DEFAULT_LEVEL ? 'true' : 'false'}
 			>
-				<span class="calc-level-num font-cinzel">{projection.level}</span>
-				<span class="calc-level-name">{projection.levelName}</span>
+				<span class="calc-level-num font-cinzel">{value.targetLevel}</span>
 			</button>
 		))}
 	</div>
 
 	{/*
-		Un panel por nivel, oculto con `hidden` en vez de con CSS: el contenido
-		sigue en el HTML (lo indexan los buscadores y lo lee un lector de pantalla)
-		y solo se muestra el elegido.
+		Una sola lista con los seis movimientos, y todos visibles siempre. Antes
+		había un panel por nivel y el selector ocultaba los pasos anteriores, así
+		que al elegir el 3 no se leía la explicación del 4 y del 5.
 	*/}
-	<div class="calc-panels">
-		{projections.map((projection: LevelProjection, index) => (
-			<div class="calc-panel" data-calc-panel={projection.level} hidden={index !== 0}>
-				<div class="calc-figure">
-					<span class="calc-figure-label">Referidos activos requeridos</span>
-					<span class="calc-figure-value font-cinzel">{projection.requiredActiveSlots}</span>
-					<span class="calc-figure-hint">puestos directos verificados</span>
+	<ol class="timeline">
+		{movements.map((movement, index) => (
+			<li
+				class:list={[
+					'move',
+					`move--${movement.phase}`,
+					{ 'move--empty': movement.incoming === 0 },
+					{ 'is-focus': movement.level === DEFAULT_LEVEL && movement.phase === 'ascenso' },
+				]}
+				data-move-level={movement.phase === 'ascenso' ? movement.level : undefined}
+			>
+				<div class="move-head">
+					<span class="move-step font-cinzel">{romanFor(index)}</span>
+					<div class="move-titles">
+						{/*
+							El nivel va aquí una sola vez. Antes se repetía en el
+							título, en este subtítulo y en el selector.
+						*/}
+						<h3 class="move-title font-cinzel">
+							Nivel {movement.level} · {movement.title}
+						</h3>
+						{movement.phase === 'ascenso' && (
+							<span class="move-level">{movement.peopleBelow} posiciones por debajo</span>
+						)}
+					</div>
 				</div>
 
-				<div class="calc-figure">
-					<span class="calc-figure-label">Envío de ascenso</span>
-					<span class="calc-figure-value font-cinzel">{projection.ascentRate * 100}%</span>
-					<span class="calc-figure-hint">{fmt(projection.ascentAmount)} al patrocinador</span>
-				</div>
+				<p class="move-detail">{movement.detail}</p>
 
-				<div
-					class:list={['calc-figure', { 'is-muted': projection.sustainabilityRate === 0 }]}
-				>
-					<span class="calc-figure-label">Sostenimiento GanaPro</span>
-					<span class="calc-figure-value font-cinzel">
-						{projection.sustainabilityRate * 100}%
-					</span>
-					<span class="calc-figure-hint">
-						{projection.sustainabilityRate === 0
-							? 'se activa en el Nivel 5'
-							: `${fmt(projection.sustainabilityAmount)} al fondo`}
-					</span>
-				</div>
+				<div class="move-flow">
+					<div class="move-box move-box--in">
+						<span class="move-box-label">Recibes</span>
+						<strong class="move-box-value font-cinzel">
+							{movement.incoming === 0 ? '—' : fmt(movement.incoming)}
+						</strong>
+					</div>
 
-				<div class="calc-figure is-net">
-					<span class="calc-figure-label">Ganancia neta estimada</span>
-					<span class="calc-figure-value font-cinzel">{fmt(projection.netEarnings)}</span>
-					<span class="calc-figure-hint">
-						sobre {fmt(projection.grossCommission)} generados
-					</span>
+					<div class="move-box move-box--out">
+						<span class="move-box-label">Envías</span>
+						<strong class="move-box-value font-cinzel">
+							{movement.outgoing === 0 ? '—' : fmt(movement.outgoing)}
+						</strong>
+						<span class="move-box-hint">{movement.outgoingLabel}</span>
+					</div>
+
+					<div class="move-box move-box--keep">
+						<span class="move-box-label">Te quedas con</span>
+						<strong class="move-box-value font-cinzel">{fmt(movement.remaining)}</strong>
+						<span class="move-box-hint">
+							{movement.phase === 'recarga'
+								? 'aún no hay ingresos: esto es el aporte'
+								: 'de este movimiento'}
+						</span>
+					</div>
 				</div>
-			</div>
+			</li>
 		))}
+	</ol>
+{/*
+		El resumen sí depende del nivel resaltado, así que aquí sí hay un bloque por
+		nivel. Son solo dos cifras que cambian; la activación es siempre la misma y
+		se imprime una sola vez.
+	*/}
+	<div class="calc-summary">
+		<div class="calc-figure is-net">
+			<span class="calc-figure-label">Acumulado</span>
+			{summaries.map((value) => (
+				<span class="calc-summary-slot" data-summary={value.targetLevel} hidden={value.targetLevel !== DEFAULT_LEVEL}>
+					<span class="calc-figure-value font-cinzel">{fmt(value.totalRetained)}</span>
+					<span class="calc-figure-hint">
+						hasta el Nivel {value.targetLevel}, sumando {value.steps.filter((s) => s.retained > 0).length}{' '}
+						ascensos
+					</span>
+				</span>
+			))}
+		</div>
+
+		<div class="calc-figure">
+			<span class="calc-figure-label">Lo que aportas tú</span>
+			<span class="calc-figure-value font-cinzel">{fmt(simulation.activationCost)}</span>
+			<span class="calc-figure-hint">una sola vez, al activar tu puesto</span>
+		</div>
+
+		<div class="calc-figure">
+			<span class="calc-figure-label">Envíos hasta ahí</span>
+			{summaries.map((value) => (
+				<span class="calc-summary-slot" data-summary={value.targetLevel} hidden={value.targetLevel !== DEFAULT_LEVEL}>
+					<span class="calc-figure-value font-cinzel">
+						{fmt(value.totalAscent + value.totalPlatformShare + value.totalTax)}
+					</span>
+					<span class="calc-figure-hint">a patrocinadores, GANA PRO e impuesto</span>
+				</span>
+			))}
+		</div>
 	</div>
 
 	<p class="calc-footnote">
-		Estimación basada en las reglas públicas de la plataforma: activación de
-		{fmt(projections[0].activationCost)} y comisión por cada referido activo. Las ganancias
-		dependen de la verificación de cada recarga y no están garantizadas.
+		Metodología real de la constelación: cada puesto de la base aporta
+		{fmt(RECARGA_INICIAL_AMOUNT)}, los niveles 2, 3 y 4 reenvían el
+		{Math.round(P2P_RATE.ascenso * 100)} % al patrocinador, y el Nivel {ASCENT_TOP_LEVEL} entrega el
+		{Math.round(PLATFORM_SHARE_TOP * 100)} % a GANA PRO más un
+		{Math.round(PLATFORM_TAX_RATE * 100)} % de impuesto. Necesitas las {MAX_DIRECT_TEAM} posiciones de tu
+		base activas y verificadas: con menos, no hay ascenso y se pierden los {fmt(RECARGA_INICIAL_AMOUNT)}.
 	</p>
 
-	<a href="/register" class="gold-button calc-cta">Crear mi cuenta y empezar</a>
+	<a href="/register" class="gold-button calc-cta">Empezar mi ciclo</a>
 </div>
 <style>
 	.calc {
 		width: 100%;
+		max-width: 940px;
+		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		gap: 22px;
-		padding: 38px 32px;
-		background: var(--bg-card);
-		border: 1px solid var(--gold-border);
-		text-align: center;
+		gap: 26px;
+		padding: clamp(26px, 4vw, 44px);
+		text-align: left;
 	}
+
+	.calc-head { text-align: center; }
 
 	.calc-badge {
 		display: inline-block;
-		padding: 5px 14px;
-		border: 1px solid var(--gold-border);
-		border-radius: 9999px;
-		background: rgba(212, 175, 55, 0.1);
-		color: var(--gold-primary);
-		font-size: 0.68rem;
+		margin-bottom: 12px;
+		font-size: 0.72rem;
 		font-weight: 800;
-		letter-spacing: 0.16em;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
 	}
 
-	.calc-title { margin: 0; font-size: clamp(1.4rem, 3vw, 1.9rem); }
+	.calc-title {
+		margin: 0 0 12px;
+		font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+		font-weight: 800;
+		line-height: 1.25;
+	}
 
 	.calc-lead {
-		margin: 0;
-		max-width: 56ch;
-		color: var(--text-secondary);
+		margin: 0 auto;
+		max-width: 58ch;
 		font-size: 0.95rem;
-		line-height: 1.7;
+		line-height: 1.75;
+		color: var(--text-secondary);
+	}
+
+	/* ============ Selector de nivel ============ */
+	/*
+		El selector va solo con números a propósito. Los nombres (Bronce, Plata,
+		Rubí...) los dice cada paso de la escalera, y repetirlos aquí hacía que
+		cada nivel apareciera dos veces antes de empezar a leer.
+	*/
+	.calc-levels-label {
+		display: block;
+		margin-bottom: 10px;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+		text-align: center;
 	}
 
 	.calc-levels {
@@ -137,107 +267,249 @@ const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 	}
 
 	.calc-level {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2px;
-		min-width: 88px;
-		padding: 12px 16px;
+		display: grid;
+		place-items: center;
+		min-width: 54px;
+		padding: 12px 14px;
+		font: inherit;
+		color: var(--text-secondary);
+		background: rgba(255, 255, 255, 0.03);
 		border: 1px solid var(--gold-border);
 		border-radius: 14px;
-		background: rgba(2, 7, 18, 0.35);
-		color: var(--text-secondary);
-		font-family: inherit;
 		cursor: pointer;
-		transition: transform 0.25s ease, border-color 0.25s ease,
-			background 0.25s ease, color 0.25s ease;
+		transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease,
+			transform 0.25s ease;
 	}
 
-	.calc-level:hover { transform: translateY(-2px); border-color: var(--gold-primary); }
+	.calc-level:hover {
+		transform: translateY(-2px);
+		border-color: var(--gold-primary);
+	}
+
+	.calc-level:focus-visible {
+		outline: 2px solid var(--gold-primary);
+		outline-offset: 3px;
+	}
 
 	.calc-level.is-active {
-		background: rgba(212, 175, 55, 0.16);
-		border-color: var(--gold-primary);
-		color: var(--text-primary);
-		box-shadow: 0 0 18px rgba(212, 175, 55, 0.25);
+		color: #030712;
+		background: var(--gold-gradient);
+		border-color: transparent;
+		box-shadow: var(--gold-glow);
 	}
 
-	.calc-level-num { font-size: 1.5rem; font-weight: 800; line-height: 1; }
-	.calc-level.is-active .calc-level-num { color: var(--gold-primary); }
-	.calc-level-name { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+	.calc-level-num { font-size: 1.3rem; font-weight: 800; line-height: 1; }
 
-	.calc-panels { width: 100%; }
+	/* ============ Línea de tiempo ============ */
+	.timeline {
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		margin: 0;
+		padding: 0;
+		position: relative;
+	}
 
-	.calc-panel {
+	.move {
+		position: relative;
+		padding: 20px 22px;
+		border: 1px solid var(--gold-border);
+		border-radius: 16px;
+		background: rgba(2, 7, 18, 0.35);
+		/* El salto se suaviza: al cambiar de nivel el paso se ilumina. */
+		transition: box-shadow 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+	}
+
+	/* Los ascensos destacan; el registro y la recarga son el arranque. */
+	.move--ascenso {
+		background: rgba(212, 175, 55, 0.06);
+		border-color: rgba(212, 175, 55, 0.4);
+	}
+
+	/* El nivel resaltado por el selector: los demás siguen leyéndose. */
+	.move.is-focus {
+		border-color: var(--gold-primary);
+		background: rgba(212, 175, 55, 0.12);
+		box-shadow: 0 0 0 1px var(--gold-primary), 0 14px 34px -18px rgba(212, 175, 55, 0.6);
+	}
+
+	.move-head {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin-bottom: 10px;
+	}
+
+	.move-step {
+		display: grid;
+		place-items: center;
+		flex: 0 0 42px;
+		width: 42px;
+		height: 42px;
+		border-radius: 13px;
+		background: var(--gold-gradient);
+		color: #030712;
+		font-size: 1rem;
+		font-weight: 800;
+		line-height: 1;
+	}
+
+	.move--recarga .move-step,
+	.move--registro .move-step {
+		background: rgba(212, 175, 55, 0.14);
+		border: 1px solid var(--gold-border);
+		color: var(--gold-primary);
+	}
+
+	.move-titles { display: flex; flex-direction: column; gap: 2px; }
+
+	.move-title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	.move-level {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.move-detail {
+		margin: 0 0 16px;
+		font-size: 0.9rem;
+		line-height: 1.7;
+		color: var(--text-secondary);
+	}
+/* ---- Los tres movimientos de dinero ---- */
+	.move-flow {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 10px;
+	}
+
+	.move-box {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 14px;
+		border: 1px solid var(--gold-border);
+		border-radius: 13px;
+		background: rgba(2, 7, 18, 0.45);
+	}
+
+	.move-box-label {
+		font-size: 0.64rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-secondary);
+	}
+
+	.move-box-value {
+		font-size: 1.25rem;
+		font-weight: 800;
+		line-height: 1.15;
+		color: var(--text-primary);
+	}
+
+	.move-box-hint { font-size: 0.7rem; line-height: 1.45; color: var(--text-muted); }
+
+	/* Lo que entra es dinero bueno; lo que sale, dinero que se va. */
+	.move-box--in .move-box-value { color: #10b981; }
+
+	.move-box--out .move-box-value { color: #ef4444; }
+
+	/* Y lo que se queda es el motivo de todo. */
+	.move-box--keep {
+		border-color: var(--gold-primary);
+		background: rgba(212, 175, 55, 0.12);
+	}
+
+	.move-box--keep .move-box-value { color: var(--gold-primary); }
+
+	/* Un movimiento sin dinero se apaga para que la vista vaya al que importa. */
+	.move--empty .move-box-value,
+	.move--empty .move-box-hint { color: var(--text-muted); }
+
+	/* ============ Resumen ============ */
+	.calc-summary {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-		gap: 16px;
-		animation: calc-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	@keyframes calc-in {
-		from { opacity: 0; transform: translateY(8px); }
-		to { opacity: 1; transform: none; }
+		gap: 12px;
 	}
 
 	.calc-figure {
 		display: flex;
 		flex-direction: column;
 		gap: 5px;
-		padding: 20px 16px;
+		padding: 18px 16px;
 		border: 1px solid var(--gold-border);
-		border-radius: 14px;
+		border-radius: 15px;
 		background: rgba(2, 7, 18, 0.4);
 	}
-
-	/* Un dato que todavía no aplica se atenúa en vez de esconderse: así se
-	   entiende que existe y cuándo entra en juego. */
-	.calc-figure.is-muted { opacity: 0.55; }
 
 	.calc-figure.is-net {
 		border-color: var(--gold-primary);
 		background: rgba(212, 175, 55, 0.12);
 	}
 
+	/* Cada variante del resumen ocupa el hueco de su figura, no se apilan. */
+	.calc-summary-slot {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.calc-summary-slot[hidden] { display: none; }
+
 	.calc-figure-label {
-		font-size: 0.68rem;
-		font-weight: 700;
+		font-size: 0.66rem;
+		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--text-secondary);
 	}
 
 	.calc-figure-value {
-		font-size: 1.75rem;
+		font-size: 1.5rem;
 		font-weight: 800;
-		line-height: 1.1;
+		line-height: 1.15;
 		color: var(--gold-primary);
 	}
 
-	.calc-figure-hint { font-size: 0.75rem; color: var(--text-secondary); }
+	.calc-figure-hint { font-size: 0.73rem; line-height: 1.5; color: var(--text-muted); }
 
 	.calc-footnote {
 		margin: 0;
-		max-width: 62ch;
-		font-size: 0.78rem;
-		line-height: 1.65;
+		max-width: 76ch;
+		font-size: 0.79rem;
+		line-height: 1.7;
 		color: var(--text-muted);
 	}
 
-	.calc-cta { text-decoration: none; }
-
-	@media (max-width: 860px) {
-		.calc { padding: 30px 20px; }
-		.calc-level { min-width: 74px; padding: 10px 12px; }
-		.calc-figure-value { font-size: 1.45rem; }
+	.calc-cta {
+		align-self: center;
+		text-decoration: none;
 	}
 
-	@media (max-width: 520px) {
-		.calc { padding: 24px 16px; gap: 18px; }
-		.calc-level { flex: 1 1 calc(50% - 10px); min-width: 0; }
-		.calc-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-		.calc-figure { padding: 14px 10px; }
-		.calc-figure-value { font-size: 1.3rem; }
+	/* ============ APILADO ============ */
+	@media (max-width: 760px) {
+		.calc { padding: 24px 16px; gap: 20px; }
+		.calc-level { min-width: 46px; padding: 10px 12px; }
+		.calc-level-num { font-size: 1.15rem; }
+		/* Tres cajas en línea no caben en móvil: se apilan. */
+		.move-flow { grid-template-columns: 1fr; }
+		.move-box-value { font-size: 1.15rem; }
+		.calc-figure-value { font-size: 1.25rem; }
+	}
+
+	@media (max-width: 420px) {
+		.calc-level { flex: 1 1 calc(20% - 8px); min-width: 0; }
 		.calc-cta { width: 100%; }
 	}
 </style>
@@ -246,13 +518,18 @@ const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 	const buttons = Array.from(
 		document.querySelectorAll<HTMLButtonElement>('[data-calc-level]')
 	);
-	const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-calc-panel]'));
+	const steps = Array.from(document.querySelectorAll<HTMLElement>('[data-move-level]'));
+	const slots = Array.from(document.querySelectorAll<HTMLElement>('[data-summary]'));
 
 	/**
-	 * Muestra el panel del nivel elegido.
+	 * Resalta el nivel elegido y actualiza el resumen.
 	 *
-	 * No calcula nada: los importes ya vienen en el HTML, así que la única forma
-	 * de que el número cambie es que el servidor lo mande distinto.
+	 * No oculta nada: la explicación de los cinco niveles está siempre en el
+	 * HTML. Antes el selector filtraba los paneles y al elegir el 3 desaparecían
+	 * los pasos 4 y 5, que era justo lo que había que leer.
+	 *
+	 * Tampoco calcula nada: los importes ya vienen resueltos, así que la única
+	 * forma de que un número cambie es que el servidor lo mande distinto.
 	 */
 	const select = (level: string) => {
 		buttons.forEach((button) => {
@@ -261,15 +538,26 @@ const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 			button.setAttribute('aria-pressed', String(active));
 		});
 
-		panels.forEach((panel) => {
-			panel.hidden = panel.dataset.calcPanel !== level;
+		steps.forEach((step) => {
+			step.classList.toggle('is-focus', step.dataset.moveLevel === level);
+		});
+
+		slots.forEach((slot) => {
+			slot.hidden = slot.dataset.summary !== level;
 		});
 	};
 
 	buttons.forEach((button) => {
 		const level = button.dataset.calcLevel;
 		if (!level) return;
-		button.addEventListener('click', () => select(level));
+
+		button.addEventListener('click', () => {
+			select(level);
+
+			// Lleva la vista al paso resaltado, que puede estar fuera de pantalla.
+			const step = steps.find((item) => item.dataset.moveLevel === level);
+			step?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		});
 	});
 
 	// Flechas del teclado para recorrer los niveles, como un grupo de pestañas.
@@ -285,4 +573,3 @@ const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 		if (next?.dataset.calcLevel) select(next.dataset.calcLevel);
 	});
 </script>
-

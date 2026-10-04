@@ -1,0 +1,125 @@
+---
+/**
+ * Banda de cifras clave, justo debajo del hero.
+ *
+ * Existe para resolver un problema de jerarquía: antes, la portada salía con el
+ * hero y a continuación un bloque de texto sobre "las vías para ganar dinero" que
+ * no tenía nada debajo. Quien llegaba escaneando la página se encontraba un
+ * subtítulo huérfano. Aquí las cuatro cifras que de verdad explican el negocio
+ * dan la medida de lo que viene, y el hero deja de ser lo único que se ve.
+ *
+ * Las tres primeras salen de la metodología real de la constelación y de las
+ * constantes de la plataforma, no de números escritos a mano. El 50 % del
+ * segundo peldaño se calcula con `simulateAscent` para que no pueda desincronizarse
+ * del simulador: si cambia la regla de reparto, las dos cifras cambian juntas.
+ */
+import { simulateAscent } from '../../lib/ascent-calculator';
+import { PLATFORM_SHARE_TOP } from '../../lib/ascent-calculator';
+import { P2P_RATE, RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
+import { MAX_DIRECT_TEAM } from '../../lib/user-hierarchy';
+import { ASCENT_TOP_LEVEL } from '../../lib/ascent-calculator';
+
+const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+
+/** Lo que retiene una posición de Nivel 2 con su base completa. */
+const levelTwoKeeps = simulateAscent(2)!.totalRetained;
+/** Lo que recibe una posición de Nivel 2 de sus cinco puestos. */
+const levelTwoReceives = simulateAscent(2)!.steps[1].received;
+
+const figures = [
+	{
+		value: fmt(RECARGA_INICIAL_AMOUNT),
+		label: 'Activa tu puesto',
+		detail: 'Una sola vez, al entrar en la constelación.',
+	},
+	{
+		value: fmt(levelTwoReceives),
+		label: 'Recibe un Nivel 2',
+		detail: `Lo que aporta su base de ${MAX_DIRECT_TEAM} puestos, de los que se queda el 50 %.`,
+	},
+	{
+		value: fmt(levelTwoKeeps),
+		label: 'Y se lo queda',
+		detail: `Mitad exacta de lo recibido, antes de subir al Nivel 3. El ${pctOf(P2P_RATE.ascenso)} va a su patrocinador.`,
+	},
+	{
+		value: pctOf(1 - PLATFORM_SHARE_TOP),
+		label: `Retiene en el Nivel ${ASCENT_TOP_LEVEL}`,
+		detail: `El último nivel ya no reenvía a nadie: da el ${pctOf(PLATFORM_SHARE_TOP)} a GANA PRO y paga el impuesto.`,
+	},
+];
+
+/** Formatea un porcentaje sin decimales, como el resto de la portada. */
+function pctOf(value: number): string {
+	return `${Math.round(value * 100)} %`;
+}
+---
+
+<div class="figure-band">
+	<ul class="figure-list">
+		{figures.map((figure) => (
+			<li class="figure-item">
+				<span class="figure-value font-cinzel">{figure.value}</span>
+				<span class="figure-label">{figure.label}</span>
+				<span class="figure-detail">{figure.detail}</span>
+			</li>
+		))}
+	</ul>
+</div>
+
+<style>
+	.figure-list {
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 1px;
+		margin: 0;
+		padding: 0;
+		/* La retícula se junta con líneas de 1 px en vez de con bordes dobles. */
+		background: var(--gold-border);
+		border: 1px solid var(--gold-border);
+		border-radius: 20px;
+		overflow: hidden;
+	}
+
+	.figure-item {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 26px 22px;
+		background: var(--bg-card);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		transition: background 0.3s ease;
+	}
+
+	.figure-item:hover { background: rgba(212, 175, 55, 0.08); }
+
+	.figure-value {
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		font-weight: 800;
+		line-height: 1.1;
+		color: var(--gold-primary);
+	}
+
+	.figure-label {
+		font-size: 0.86rem;
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
+	.figure-detail {
+		font-size: 0.78rem;
+		line-height: 1.6;
+		color: var(--text-muted);
+	}
+
+	@media (max-width: 900px) {
+		.figure-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	}
+
+	@media (max-width: 420px) {
+		.figure-item { padding: 20px 16px; }
+		.figure-detail { font-size: 0.74rem; }
+	}
+</style>

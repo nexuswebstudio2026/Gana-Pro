@@ -1,0 +1,56 @@
+---
+/**
+ * Cómo se genera el ingreso, en cuatro pasos.
+ *
+ * Va antes que el detalle de cada vía a propósito. Antes estaba al final de la
+ * portada, después de varios miles de palabras de metodología, que es justo donde
+ * un visitante que ya está decidido deja de leer. El orden nuevo es: qué es →
+ * cuánto se gana (simulador) → por dónde empezar (pasos) → cómo funciona en
+ * detalle (vía 01, vía 02).
+ */
+const steps = [
+	{
+		title: 'Crea tu cuenta',
+		body: 'Registro en minutos con verificación de identidad y acceso inmediato al portal seguro.',
+	},
+	{
+		title: 'Obtén tu código de referido',
+		body: 'Al registrarte se generan tu código de referido y tu código propio. Con ellos ya puedes empezar a captar en la Vía 02.',
+	},
+	{
+		title: 'Llena tus 5 posiciones',
+		body: 'Cada referido que traes ocupa una posición bajo ti. Con las cinco completas confirmas la base y activas tu ascenso en la Vía 01.',
+	},
+	{
+		title: 'Recibe tus retornos',
+		body: 'Consulta el seguimiento de ingresos y el estado de tu red directamente en tu panel de miembro.',
+	},
+];
+---
+
+<section class="section section--tinted" id="como-funciona" aria-labelledby="pasos-title">
+	<div class="section-container">
+		<header class="section-header">
+			<span class="section-eyebrow font-cinzel">Ponte en marcha</span>
+			<h2 class="section-title font-cinzel" id="pasos-title">
+				<span class="gold-gradient-text">¿Cómo</span> se genera tu ingreso?
+			</h2>
+			<p class="section-subtitle">
+				Cuatro movimientos, en orden. El tercero es el único que depende de otras personas,
+				y por eso conviene empezar por el segundo.
+			</p>
+		</header>
+
+		<ol class="steps">
+			{steps.map((step, index) => (
+				<li>
+					<span class="step-num font-cinzel">{String(index + 1).padStart(2, '0')}</span>
+					<div>
+						<h3 class="step-title font-cinzel">{step.title}</h3>
+						<p>{step.body}</p>
+					</div>
+				</li>
+			))}
+		</ol>
+	</div>
+</section>

@@ -87,9 +87,29 @@ npm run test:watch
 npm run check     # astro check (types)
 ```
 
-Tests cover the two areas where a mistake costs money: balance parsing
-(`parseSheetBalance`, which must tell `1.234,56` from `1,234.56`) and the
-referral tree (`buildUserHierarchy` and friends), plus the role rules.
+Tests cover the areas where a mistake costs money: balance parsing
+(`parseSheetBalance`, which must tell `1.234,56` from `1,234.56`), the
+referral tree (`buildUserHierarchy` and friends), the role rules, and the
+public calculators (`matrix-calculator.ts` and `ascent-calculator.ts`).
+
+## Landing page
+
+`src/pages/index.astro` is only a section index; each block lives in its own
+component under `src/components/home/`, plus the shared ones in
+`src/components/`. The visual system is `src/styles/landing.css`, imported
+once from `index.astro`.
+
+That file is **global on purpose**. It used to be a page-scoped `<style>`
+block, which meant the rules never reached the components the landing page
+renders (`FaqSection`, `TestimonialsSection`): they use `.section` and
+`.section-container`, and were rendering without padding or centering. Any
+shared class for the landing page belongs in `landing.css`, not in a scoped
+`<style>`, or the next component that uses it will come out unstyled again.
+
+The calculators follow the same rule as the rest of the money logic: all
+arithmetic happens on the server in a pure module under `src/lib/`, and the
+component only paints the panels it is given. A browser-side calculation is
+how a public figure ends up disagreeing with the backend.
 
 ## Documentation
 

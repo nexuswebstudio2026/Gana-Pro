@@ -1,0 +1,29 @@
+---
+/**
+ * Cierre de la portada: el último llamado a la acción.
+ *
+ * Los dos botones se ofrecen siempre, incluso a quien ya tiene sesión. La barra
+ * inferior móvil (`MobileBottomBar`) sí se oculta al visitante registrado porque
+ * ahí el "crear cuenta" sí sobra, pero este cierre es el final del argumento: quien
+ * ha llegado leyendo tiene aquí su salida natural, y member aparte ya tiene el
+ * acceso al panel en la barra superior.
+ */
+---
+
+<section class="section" aria-labelledby="cierre-title">
+	<div class="section-container">
+		<div class="card cta">
+			<h2 class="cta-title font-cinzel" id="cierre-title">
+				Empieza a <span class="gold-gradient-text">ganar dinero</span> hoy
+			</h2>
+			<p class="cta-desc">
+				Activa tu cuenta, simula tu escalera de niveles y decide con cifras delante cuánto estás
+				dispuesto a construir.
+			</p>
+			<div class="cta-actions">
+				<a href="/register" class="gold-button">Crear cuenta exclusiva</a>
+				<a href="/login" class="ghost-gold-button">Ya soy miembro</a>
+			</div>
+		</div>
+	</div>
+</section>

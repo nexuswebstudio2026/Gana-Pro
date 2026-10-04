@@ -1,0 +1,115 @@
+---
+/**
+ * Las dos vías de ingreso, en dos tarjetas comparables.
+ *
+ * Va en su propio archivo porque es el reparto argumental de toda la portada:
+ * todo lo que viene después (constelación, referidos, servicios) es el detalle de
+ * estas dos ideas. Sacarlo del `index.astro` deja ese archivo como lo que
+ * debería ser, un índice de secciones.
+ *
+ * Cada tarjeta lleva su propio ancla al detalle (`#via-constelacion-detalle` y
+ * `#via-referidos-detalle`), que es lo que hace útil la comparación: el visitante
+ * pasa de "cuál me conviene" a "cómo funciona exactamente" sin pasar por el menú.
+ */
+import { COMMISSION_PER_REFERRAL } from '../../lib/referrals';
+import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
+
+const fmt = (value: number) => `$${value.toLocaleString('es-CO')}`;
+
+const ways = [
+	{
+		id: 'via-constelacion',
+		tag: 'VÍA 01',
+		title: 'Sistema Constelación',
+		anchor: '#via-constelacion-detalle',
+		icon: 'constellation',
+		description: 'La vía estructural. Consistes una red de cinco posiciones por persona dentro de una constelación de cinco niveles. Tu posición sube cuando la base que tienes debajo completa los aportes y confirma la estructura.',
+		points: [
+			{ lead: 'Cómo ganas:', text: `${fmt(RECARGA_INICIAL_AMOUNT)} de cada una de tus cinco posiciones inferiores, una vez confirmada la estructura.` },
+			{ lead: 'Requisito:', text: 'activar tu puesto y tener las cinco posiciones de tu base con la recarga aprobada.' },
+			{ lead: 'Escala:', text: 'profunda y lenta: es la única vía que llega al Nivel 5.' },
+		],
+	},
+	{
+		id: 'via-referidos',
+		tag: 'VÍA 02',
+		title: 'Red de Referidos',
+		anchor: '#via-referidos-detalle',
+		icon: 'referrals',
+		description: `La vía directa. Captas personas con tu código de referido y ganas ${fmt(COMMISSION_PER_REFERRAL)} por cada alta, sin aportar capital. No dependes de que un grupo se complete: cuenta cada persona que consignes.`,
+		points: [
+			{ lead: 'Cómo ganas:', text: `${fmt(COMMISSION_PER_REFERRAL)} de una sola vez por cada persona que se registra con tu código. Sin llenar los cinco espacios.` },
+			{ lead: 'Requisito:', text: 'solo compartir tu enlace. Sin aporte inicial ni grupo que completar.' },
+			{ lead: 'Escala:', text: 'ancha y de entrada rápida: cada referido suma una vez y no hay tope.' },
+		],
+	},
+];
+---
+
+<section class="section" id="vias" aria-labelledby="vias-title">
+	<div class="section-container">
+		<header class="section-header">
+			<span class="section-eyebrow font-cinzel">Elige tu camino</span>
+			<h2 class="section-title font-cinzel" id="vias-title">
+				Dos formas de <span class="gold-gradient-text">ganar dinero</span>
+			</h2>
+			<p class="section-subtitle">
+				GANA PRO abre dos vías independientes. No son pasos de un mismo recorrido: puedes usar
+				una, las dos o quedarte solo con la primera. Cada una tiene reglas propias, requisitos
+				distintos y riesgos distintos.
+			</p>
+		</header>
+
+		<div class="grid grid--2">
+			{ways.map((way) => (
+				<article class="card" id={way.id}>
+					<span class="card-tag font-cinzel">{way.tag}</span>
+
+					<div class="card-icon" aria-hidden="true">
+						{way.icon === 'constellation' ? (
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polygon points="12 2 22 8.5 18.5 20 5.5 20 2 8.5 12 2"></polygon>
+								<circle cx="12" cy="11" r="2.2"></circle>
+								<circle cx="7" cy="15" r="1.6"></circle>
+								<circle cx="17" cy="15" r="1.6"></circle>
+							</svg>
+						) : (
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+								<circle cx="9" cy="7" r="4"></circle>
+								<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+								<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							</svg>
+						)}
+					</div>
+
+					<h3 class="card-title font-cinzel">{way.title}</h3>
+					<p class="card-desc">{way.description}</p>
+
+					<ul class="ticks">
+						{way.points.map((point) => (
+							<li><strong>{point.lead}</strong> {point.text}</li>
+						))}
+					</ul>
+
+					<a href={way.anchor} class="text-link">
+						Ver cómo funciona
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<line x1="12" y1="5" x2="12" y2="19"></line>
+							<polyline points="19 12 12 19 5 12"></polyline>
+						</svg>
+					</a>
+				</article>
+			))}
+		</div>
+
+		<div class="note">
+			<p>
+				<strong class="accent">En resumen:</strong> la <strong>Constelación</strong> es lenta,
+				profunda y la única que puede llegar al Nivel 5. Los <strong>Referidos</strong> son
+				rápidos, anchos y alimentan directamente tu base. Muévete primero por Referidos para
+				llenar posiciones y usa la Constelación para sostenerlas.
+			</p>
+		</div>
+	</div>
+</section>

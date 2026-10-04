@@ -1,0 +1,87 @@
+---
+/**
+ * Servicios complementarios.
+ *
+ * El subtítulo deja claro desde el principio que no son vías de ingreso: es la
+ * sección que más se confunde con las dos anteriores cuando se lee en diagonal,
+ * y conviene que el propio texto lo desambigue.
+ *
+ * `featured` marca la tarjeta destacada y `badge` su distintivo; el resaltado se
+ * decide con clases (`card--featured`, `card-badge`) para que el color lo ponga
+ * la hoja de estilos y no el marcado.
+ */
+interface Service {
+	title: string;
+	body: string;
+	featured?: boolean;
+	badge?: string;
+	icon: 'wallet' | 'chart' | 'vault';
+}
+
+const services: Service[] = [
+	{
+		title: 'Rendimiento de Cartera',
+		body: 'Portafolios diversificados en divisas premium, metales preciosos e instrumentos de alta liquidez, gestionados con precisión institucional y ejecución milimétrica.',
+		icon: 'wallet',
+	},
+	{
+		title: 'Analítica Cuántica',
+		body: 'Modelos predictivos que procesan señales de mercado en tiempo real para maximizar retornos y minimizar la volatilidad.',
+		featured: true,
+		badge: 'Más rentable',
+		icon: 'chart',
+	},
+	{
+		title: 'Bóveda Privada',
+		body: 'Protección institucional de grado con cifrado PBKDF2 y monitoreo continuo para que tu capital trabaje sin reposo.',
+		icon: 'vault',
+	},
+];
+---
+
+<section class="section" id="servicios" aria-labelledby="servicios-title">
+	<div class="section-container">
+		<header class="section-header">
+			<span class="section-eyebrow font-cinzel">Capital y protección</span>
+			<h2 class="section-title font-cinzel" id="servicios-title">
+				Servicios <span class="gold-gradient-text">complementarios</span>
+			</h2>
+			<p class="section-subtitle">
+				No son vías de ingreso por sí mismas: son las herramientas que protegen y hacen crecer el
+				capital que generas con las dos anteriores.
+			</p>
+		</header>
+
+		<div class="grid grid--3">
+			{services.map((service) => (
+				<article class:list={['card', { 'card--featured': service.featured }]}>
+					{service.badge && <span class="card-badge">{service.badge}</span>}
+
+					<div class="card-icon" aria-hidden="true">
+						{service.icon === 'wallet' && (
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="12" y1="1" x2="12" y2="23"></line>
+								<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+							</svg>
+						)}
+						{service.icon === 'chart' && (
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+								<polyline points="17 6 23 6 23 12"></polyline>
+							</svg>
+						)}
+						{service.icon === 'vault' && (
+							<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+								<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+							</svg>
+						)}
+					</div>
+
+					<h3 class="card-title font-cinzel">{service.title}</h3>
+					<p class="card-desc">{service.body}</p>
+				</article>
+			))}
+		</div>
+	</div>
+</section>

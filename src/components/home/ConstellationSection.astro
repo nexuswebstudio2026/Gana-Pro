@@ -1,0 +1,312 @@
+---
+/**
+ * Vía 01 en detalle: cómo funciona la constelación de cinco niveles.
+ *
+ * Los nombres de los niveles se toman de `LEVELS` y no se escriben a mano: la hoja
+ * de cálculo y el panel usan esa misma escala, y repetirla aquí sería una cuarta
+ * copia que se quedaría vieja el día que cambien un nombre.
+ *
+ * Las cifras del flujo de fondos sí están escritas en el marcado a propósito: son
+ * un ejemplo cerrado de cómo se reparte el dinero de una constelación completa, y
+ * se calculan entre todas a la vez. Sacarlas a un módulo obligaría a inventar un
+ * modelo de constelación entera que la plataforma no implementa por separado.
+ */
+import { LEVELS } from '../../lib/users';
+import { MAX_DIRECT_TEAM } from '../../lib/user-hierarchy';
+import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
+
+const fmt = (value: number) => `$${value.toLocaleString('es-CO')}`;
+
+/** Descripción de cada nivel, emparejada por número con la escala real. */
+const levelDetails: Record<number, string> = {
+	1: 'Posición de entrada. Todos los usuarios nuevos inician aquí.',
+	2: 'Recibe los aportes de sus 5 posiciones de Nivel 1 y confirma la estructura.',
+	3: 'Ascendente una vez validada la Base 2. Aloja 5 posiciones de Nivel 2.',
+	4: 'Ascendente por validación de la Base 3. Aloja 5 posiciones de Nivel 3.',
+	5: 'Último nivel del ciclo. Aloja 5 posiciones de Nivel 4 y es el único que reparte además del sostenimiento a GANA PRO.',
+};
+
+const levels = LEVELS.map((level) => ({
+	...level,
+	detail: levelDetails[level.number] ?? '',
+	isTop: level.number === LEVELS[LEVELS.length - 1].number,
+}));
+
+/** Puestos de cada nivel en una constelación completa (5 en cada rama). */
+const scale = [
+	{ level: 1, positions: 3125 },
+	{ level: 2, positions: 625 },
+	{ level: 3, positions: 125 },
+	{ level: 4, positions: 25 },
+	{ level: 5, positions: 5 },
+];
+
+const TOTAL_POSITIONS = scale.reduce((sum, row) => sum + row.positions, 0);
+const BASE_POSITIONS = scale[0].positions;
+const TOP_POSITIONS = scale[scale.length - 1].positions;
+const BASE_SHARE = Math.round((BASE_POSITIONS / TOTAL_POSITIONS) * 100);
+
+/** Aporte de toda la base de una constelación: cinco ramas por posición. */
+const baseContribution = BASE_POSITIONS * RECARGA_INICIAL_AMOUNT;
+
+/** Una base completa son cinco posiciones de Nivel 4 sosteniendo una de Nivel 5. */
+const BASE_PER_UPPER = MAX_DIRECT_TEAM * RECARGA_INICIAL_AMOUNT;
+
+/**
+ * Una fila del flujo de fondos.
+ *
+ * `keeps` es `null` cuando ese nivel todavía no retiene nada: el Nivel 1 solo
+ * aporta, no cobra. Se escribe `null` en vez de "—" para que el marcado decida
+ * cómo mostrarlo y no quede un guion duro metido en los datos.
+ */
+interface FlowRow {
+	/** Par de niveles que describe la fila ("N1 → N2"). */
+	label: string;
+	/** Lo que envía hacia arriba. */
+	sends: number;
+	/** Lo que recibe de sus cinco posiciones inferiores. */
+	receives: number;
+	/** Lo que se queda, o `null` si en este paso no retiene. */
+	keeps: number | null;
+}
+
+const flow: FlowRow[] = [
+	{ label: 'N1 → N2', sends: 15_000, receives: 75_000, keeps: null },
+	{ label: 'N2 → N3', sends: 37_500, receives: 187_500, keeps: 37_500 },
+	{ label: 'N3 → N4', sends: 93_750, receives: 468_750, keeps: 93_750 },
+	{ label: 'N4 → N5', sends: 234_375, receives: 1_171_875, keeps: 234_375 },
+	{ label: 'N5 → GANA PRO', sends: 410_000, receives: 2_050_000, keeps: 761_875 },
+];
+
+const cycle = [
+	{
+		step: 'I',
+		title: 'Registro',
+		body: 'Cada usuario nuevo ocupa una posición de Nivel 1 dentro de la estructura.',
+	},
+	{
+		step: 'II',
+		title: 'Aporte',
+		body: `Cada una de las ${MAX_DIRECT_TEAM} posiciones de Nivel 1 envía un aporte de ${fmt(RECARGA_INICIAL_AMOUNT)} a su posición de Nivel 2 correspondiente, que recibe un total de ${fmt(BASE_PER_UPPER)}.`,
+	},
+	{
+		step: 'III',
+		title: 'Confirmación',
+		body: 'La posición de Nivel 2 verifica y confirma que las 5 posiciones de su base han completado el aporte.',
+	},
+	{
+		step: 'IV',
+		title: 'Ascenso',
+		body: 'Confirmado el aporte, las 5 posiciones de Nivel 1 pasan a Nivel 2, la posición validada pasa a Nivel 3, y el Nivel 1 queda libre para nuevos registros.',
+	},
+];
+---
+
+<section class="section section--tinted" id="via-constelacion-detalle" aria-labelledby="constelacion-title">
+	<div class="section-container">
+		<header class="section-header">
+			<span class="section-eyebrow font-cinzel">Vía 01 · Metodología propia</span>
+			<h2 class="section-title font-cinzel" id="constelacion-title">
+				Sistema <span class="gold-gradient-text">Constelación</span>
+			</h2>
+			<p class="section-subtitle">
+				Una estructura jerárquica de cinco niveles donde cada posición se sostiene sobre cinco
+				posiciones inferiores. El avance no depende del azar: depende de la confirmación de los
+				aportes de tu estructura.
+			</p>
+		</header>
+
+		<div class="grid grid--5 levels-grid">
+			{levels.map((level) => (
+				<article class:list={['card', 'level-card', { 'card--featured': level.isTop }]}>
+					<span class="level-num font-cinzel">{String(level.number).padStart(2, '0')}</span>
+					<h3 class="card-title font-cinzel">{level.name}</h3>
+					<p class="card-desc">{level.detail}</p>
+				</article>
+			))}
+		</div>
+
+		{/* La estructura completa, a escala, con el peso real de cada nivel. */}
+		<div class="card panel">
+			<h3 class="panel-title font-cinzel">La estructura jerárquica</h3>
+			<p class="panel-intro">
+				La regla es única y se repite sin excepción: <strong class="accent">cada posición
+				superior sostiene exactamente {MAX_DIRECT_TEAM} posiciones inferiores</strong>, y cada una de
+				ellas sostiene {MAX_DIRECT_TEAM} más, hasta cerrar las cinco posiciones de la constelación.
+			</p>
+
+			<div class="ladder" role="list">
+				{scale.map((row) => (
+					<div
+						class:list={[
+							'ladder-row',
+							{ 'ladder-row--top': row.level === scale[scale.length - 1].level },
+						]}
+						role="listitem"
+					>
+						<span class="ladder-label">
+							<span class="ladder-level">Nivel {row.level}</span>
+						</span>
+						<span class="ladder-track">
+							{/*
+								La barra se dibuja en el servidor a partir de las posiciones
+								reales de cada nivel, no con un ancho escrito a mano.
+							*/}
+							<span
+								class="ladder-fill"
+								style={`--w: ${Math.round((row.positions / BASE_POSITIONS) * 100)}%`}
+							></span>
+						</span>
+						<span class="ladder-count">{row.positions.toLocaleString('es-CO')}</span>
+					</div>
+				))}
+			</div>
+
+			<div class="ladder-stats">
+				<div class="ladder-stat">
+					<span class="ladder-stat-value font-cinzel">
+						{TOTAL_POSITIONS.toLocaleString('es-CO')}
+					</span>
+					<span class="ladder-stat-label">Posiciones totales</span>
+				</div>
+				<div class="ladder-stat">
+					<span class="ladder-stat-value font-cinzel">{BASE_SHARE} %</span>
+					<span class="ladder-stat-label">Ocupan el Nivel 1</span>
+				</div>
+				<div class="ladder-stat">
+					<span class="ladder-stat-value font-cinzel">{LEVELS.length}</span>
+					<span class="ladder-stat-label">Niveles en la constelación</span>
+				</div>
+			</div>
+
+			<div class="note note--risk">
+				<h4 class="note-title font-cinzel">Lectura honesta de las cifras</h4>
+				<p>
+					Una constelación completa requiere <strong class="accent">
+						{TOTAL_POSITIONS.toLocaleString('es-CO')} personas</strong
+					>. De ellas, <strong class="accent">
+						{BASE_POSITIONS.toLocaleString('es-CO')} están en la base</strong
+					> y aportan los {fmt(RECARGA_INICIAL_AMOUNT)} que sostienen a los niveles superiores: la
+					base representa el <strong class="accent">{BASE_SHARE} % de toda la estructura</strong> y
+					aporta los <strong class="accent">{fmt(baseContribution)}</strong>. Para alcanzar un puesto
+					del Nivel 5 hay {(TOTAL_POSITIONS - TOP_POSITIONS).toLocaleString('es-CO')} posiciones por
+					debajo.
+				</p>
+				<p>
+					La estructura solo se completa mediante la captación continuada de nuevos participantes.
+					El rendimiento de cada posición depende por completo del número de personas que consiga
+					incorporar por debajo, sin garantía de completarla.
+				</p>
+			</div>
+		</div>
+
+		{/*
+			El flujo de fondos es un ejemplo cerrado de una constelación completa,
+			resuelto nivel por nivel. Va como tabla de roles y no como tabla HTML
+			nativa porque la versión móvil la apila y rotula con `data-label`; los
+			roles `row`/`columnheader` la dejan intelligible para un lector de pantalla.
+		*/}
+		<div class="card panel">
+			<h3 class="panel-title font-cinzel">El flujo de fondos</h3>
+			<p class="panel-intro">
+				Los niveles 2, 3 y 4 reenvían a su superior el 50 % de lo que reciben. El Nivel 5 rompe la
+				regla: entrega el 35 % a GANA PRO y retiene el 65 % antes del impuesto de plataforma.
+			</p>
+
+			<div class="data-table" role="table" aria-label="Flujo de fondos por nivel">
+				<div class="data-row data-row--head" role="row">
+					<span role="columnheader">Nivel</span>
+					<span role="columnheader">Envía</span>
+					<span role="columnheader">Recibe</span>
+					<span role="columnheader">Retiene</span>
+				</div>
+				{flow.map((row) => (
+					<div class="data-row" role="row">
+						<span class="data-key font-cinzel" role="cell">{row.label}</span>
+						<span role="cell" data-label="Envía">{fmt(row.sends)}</span>
+						<span class="data-in" role="cell" data-label="Recibe">{fmt(row.receives)}</span>
+						<span
+							class:list={['data-keep', { 'is-none': row.keeps === null }]}
+							role="cell"
+							data-label="Retiene"
+						>
+							{row.keeps === null ? '—' : fmt(row.keeps)}
+						</span>
+					</div>
+				))}
+			</div>
+
+			<div class="note">
+				<h4 class="note-title font-cinzel">Cierre del ciclo e impuesto de plataforma</h4>
+				<p>
+					El Nivel 5 es el último escalón. Cada posición recibe
+					<strong class="accent">{fmt(1_171_875)}</strong> de sus 5 posiciones de Nivel 4 y destina
+					<strong class="accent">{fmt(410_000)}</strong> a GANA PRO, el
+					<strong class="accent">35 %</strong> de lo recibido. A diferencia de los niveles 2, 3 y 4, que
+					reenvían el 50 %, el Nivel 5 retiene el <strong class="accent">65 %</strong>:
+					<strong class="accent">{fmt(761_875)}</strong>.
+				</p>
+				<p>
+					Sobre ese 65 % retenido se aplica el <strong class="accent">5 %</strong> de impuesto por uso de
+					la plataforma, equivalente a <strong class="accent">$38.093,75</strong>. La utilidad neta
+					del Nivel 5 es de <strong class="accent">$723.781,25</strong> por posición.
+				</p>
+				<p class="note-muted">
+					Los cinco Nivel 5 destinan $410.000 cada uno, de modo que GANA PRO percibe
+					<strong class="accent">{fmt(2_050_000)}</strong> por constelación completa.
+				</p>
+			</div>
+
+			<div class="note note--risk">
+				<h4 class="note-title font-cinzel">Reparto real del dinero de la base</h4>
+				<p>
+					De los <strong class="accent">{fmt(baseContribution)}</strong> que aporta la base, la
+					distribución es: Nivel 2 se queda <strong class="accent">{fmt(23_437_500)}</strong> (50 %),
+					Nivel 3 <strong class="accent">{fmt(11_718_750)}</strong> (25 %), Nivel 4
+					<strong class="accent">{fmt(5_859_375)}</strong> (12,5 %), Nivel 5
+					<strong class="accent">{fmt(3_809_375)}</strong> (8,1 %) y GANA PRO
+					<strong class="accent">{fmt(2_050_000)}</strong> (4,4 %).
+				</p>
+				<p>
+					El <strong class="accent">95,6 % del dinero</strong> captado por la estructura se queda en
+					los niveles de participantes; GANA PRO percibe el 4,4 % restante. El Nivel 5 es la única
+					posición que retiene más de la mitad: gana
+					<strong class="accent">$723.781,25</strong> netos frente a los $37.500 de un Nivel 2, pero
+					para alcanzarlo necesita
+					<strong class="accent">{(TOTAL_POSITIONS - TOP_POSITIONS).toLocaleString('es-CO')}</strong>
+					personas por debajo. Un participante en el Nivel 1 que logra llegar al Nivel 2 obtiene
+					<strong class="accent">$37.500</strong> frente a los {fmt(RECARGA_INICIAL_AMOUNT)} que
+					aportó: una rentabilidad del <strong class="accent">150 %</strong> que solo se alcanza
+					captando a 5 personas. Quien no completa su grupo de 5 no recibe nada y pierde el aporte.
+				</p>
+			</div>
+		</div>
+
+		<div class="card panel">
+			<h3 class="panel-title font-cinzel">El ciclo de confirmación</h3>
+			<p class="panel-intro">
+				Cada ascenso se produce en cuatro movimientos consecutivos. Ningún nivel se alcanza
+				automáticamente: requiere la verificación de los aportes de la base.
+			</p>
+
+			<ol class="cycle">
+				{cycle.map((item) => (
+					<li>
+						<span class="cycle-step font-cinzel">{item.step}</span>
+						<div>
+							<h4 class="cycle-name font-cinzel">{item.title}</h4>
+							<p>{item.body}</p>
+						</div>
+					</li>
+				))}
+			</ol>
+
+			<p class="cycle-note">
+				La confirmación de la Base 2 habilita el ascenso a Nivel 3. El mismo principio se repite de
+				forma idéntica entre los niveles 2, 3 y 4. Al llegar al <strong class="accent">Nivel 5</strong>
+				el ciclo se cierra: el Nivel 5 entrega a GANA PRO y retiene el resto, sobre el que se aplica
+				el impuesto de plataforma.
+			</p>
+		</div>
+	</div>
+</section>
