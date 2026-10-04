@@ -2,11 +2,8 @@
 import { validateSession } from '../lib/session';
 import { isAdminRole } from '../lib/auth';
 import { getGoogleSheetUsers } from '../lib/sheets';
-import { getAdminWallet } from '../lib/users';
-import ThemeToggle from '../components/ThemeToggle.astro';
+import PanelHeader from '../components/PanelHeader.astro';
 import DashboardSidebar from '../components/DashboardSidebar.astro';
-import BalanceChip from '../components/BalanceChip.astro';
-import Logo from '../components/Logo.astro';
 import Footer from '../components/Footer.astro';
 import OnboardingTour from '../components/OnboardingTour.astro';
 import type { User } from '../lib/types';
@@ -37,16 +34,8 @@ try {
 
 const isAdmin = isAdminRole(userDetail?.role || session.role);
 
-// Saldo acumulado: se toma de la fila del usuario en Google Sheets.
-// Solo se muestra si esa fila existe (userDetail), nunca un valor inventado.
-const balance = userDetail?.balance ?? null;
-const userLevel = userDetail?.level ?? null;
-const walletType = userDetail?.paymentMethod ?? null;
-const walletNumber = userDetail?.walletNumber ?? null;
-// Billetera del admin: es a la que el usuario transfiere para recargar.
-const adminWallet = await getAdminWallet();
-const adminWalletType = adminWallet?.walletType ?? null;
-const adminWalletNumber = adminWallet?.walletNumber ?? null;
+// El saldo, el nivel y las billeteras los lee ahora `PanelHeader`, que es quien
+// los muestra. Aquí solo se conserva `userDetail` para las tarjetas y las fichas.
 ---
 
 <!doctype html>
@@ -88,36 +77,7 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 		<div class:list={['dashboard-wrapper', 'has-sidebar']}>
 			<DashboardSidebar isAdmin={isAdmin} />
 			<div class="dashboard-content">
-				<header class="header">
-				<div class="brand">
-					<div class="logo-shield">
-						<Logo size={22} />
-					</div>
-					<a href="/" class="brand-name font-cinzel">GANA <span class="gold-gradient-text">PRO</span></a>
-				</div>
-
-				<div class="header-actions">
-					<ThemeToggle />
-					<BalanceChip balance={balance} level={userLevel} walletType={walletType} walletNumber={walletNumber} adminWalletType={adminWalletType} adminWalletNumber={adminWalletNumber} />
-					<div class="user-chip">
-						<div class="avatar">{session.username.charAt(0).toUpperCase()}</div>
-						<div class="user-meta">
-							<span class="user-name">{session.username}</span>
-							<span class="user-badge">{userDetail?.role || session.role || 'Miembro VIP'}</span>
-						</div>
-					</div>
-					<form method="POST" action="/api/logout">
-						<button type="submit" class="btn-logout" title="Cerrar sesión">
-							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-								<polyline points="16 17 21 12 16 7"></polyline>
-								<line x1="21" y1="12" x2="9" y2="12"></line>
-							</svg>
-							<span>Salir</span>
-						</button>
-					</form>
-				</div>
-			</header>
+				<PanelHeader userDetail={userDetail} hasSidebar />
 
 			<main class="main-content" id="inicio">
 				<div class="welcome-banner luxury-card">
@@ -135,22 +95,6 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 						</div>
 					</div>
 				</div>
-
-				{/* Accesos directos a los módulos del panel. */}
-				<nav class="quick-links" aria-label="Módulos del panel">
-					<a class="quick-link luxury-card" href="/dashboard/matriz">
-						<span class="quick-link-title font-cinzel">Mi matriz 5x1</span>
-						<span class="quick-link-text">Estado de tus cinco puestos y avance de ascenso.</span>
-					</a>
-					<a class="quick-link luxury-card" href="/dashboard/billetera">
-						<span class="quick-link-title font-cinzel">Mi billetera</span>
-						<span class="quick-link-text">Saldo disponible, comprometido y total ganado.</span>
-					</a>
-					<a class="quick-link luxury-card" href="/dashboard/comprobantes">
-						<span class="quick-link-title font-cinzel">Comprobantes</span>
-						<span class="quick-link-text">Sube y sigue el estado de tus pagos.</span>
-					</a>
-				</nav>
 
 				<div class="stats-grid">
 					<div class="stat-card luxury-card">
@@ -250,10 +194,6 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 								<span class="info-label">Número de Cuenta / Celular</span>
 								<span class="info-val">{userDetail?.walletNumber || 'Sin vincular'}</span>
 							</div>
-							<div class="info-row">
-								<span class="info-label">Base de Datos</span>
-								<span class="info-val text-gold">Google Sheets (En Vivo)</span>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -298,7 +238,6 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 	}
-	.text-gold { color: var(--gold-primary); font-weight: 600; }
 	.luxury-card {
 		background: var(--bg-surface);
 		backdrop-filter: blur(16px);
@@ -309,73 +248,6 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 	.dashboard-wrapper.has-sidebar { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
 	.dashboard-wrapper.admin-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
 	.dashboard-content { min-width: 0; }
-	.header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 16px 36px;
-		background: var(--bg-surface);
-		border-bottom: 1px solid var(--gold-border);
-		position: sticky;
-		top: 0;
-		z-index: 50;
-	}
-	.brand { display: flex; align-items: center; gap: 12px; }
-	.logo-shield {
-		width: 36px;
-		height: 36px;
-		border-radius: 8px;
-		background: rgba(212, 175, 55, 0.15);
-		border: 1px solid var(--gold-border);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--gold-primary);
-	}
-	.brand-name {
-		font-size: 1.3rem;
-		font-weight: 800;
-		letter-spacing: 0.1em;
-		text-decoration: none;
-		color: var(--text-primary);
-	}
-	.header-actions { display: flex; align-items: center; gap: 20px; }
-	.user-chip {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding: 6px 14px 6px 6px;
-		background: rgba(212, 175, 55, 0.08);
-		border: 1px solid var(--gold-border);
-		border-radius: 9999px;
-	}
-	.avatar {
-		width: 34px;
-		height: 34px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #d4af37, #996515);
-		color: #fff;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-weight: 700;
-		font-size: 14px;
-	}
-	.user-meta { display: flex; flex-direction: column; }
-	.user-name { font-size: 13.5px; font-weight: 600; line-height: 1.2; }
-	.user-badge { font-size: 11px; color: var(--gold-primary); font-weight: 600; }
-	.btn-logout {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		padding: 8px 16px;
-		background: transparent;
-		color: var(--text-secondary);
-		border: 1px solid var(--gold-border);
-		border-radius: 8px;
-		cursor: pointer;
-	}
-	.btn-logout:hover { color: #ef4444; border-color: #ef4444; }
 	.main-content {
 		padding: 36px;
 		max-width: 1200px;
@@ -404,33 +276,6 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 	.welcome-banner h1 { margin: 0 0 8px 0; font-size: 2rem; font-weight: 800; }
 	.banner-sub { margin: 0; color: var(--text-secondary); font-size: 14.5px; }
 	.banner-tour { margin-top: 14px; }
-
-	/* Accesos directos a los módulos del panel */
-	.quick-links {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-		gap: 18px;
-	}
-
-	.quick-link {
-		display: flex;
-		flex-direction: column;
-		gap: 7px;
-		padding: 22px;
-		text-decoration: none;
-	}
-
-	.quick-link-title {
-		font-size: 1.05rem;
-		font-weight: 700;
-		color: var(--gold-primary);
-	}
-
-	.quick-link-text {
-		font-size: 13px;
-		line-height: 1.55;
-		color: var(--text-secondary);
-	}
 
 	.status-indicator {
 		display: flex;
@@ -497,10 +342,8 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 	@media (max-width: 1024px) {
 		.dashboard-wrapper.has-sidebar { display: block; }
 		.dashboard-wrapper.admin-layout { display: block; }
-		.header { padding-left: 72px; }
 	}
 	@media (max-width: 768px) {
-		.header { padding: 14px 20px 14px 72px; }
 		.main-content { padding: 20px; }
 		.welcome-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
 		.details-grid { grid-template-columns: 1fr; }
@@ -508,14 +351,6 @@ const adminWalletNumber = adminWallet?.walletNumber ?? null;
 
 	/* ============ MÓVIL PEQUEÑO ============ */
 	@media (max-width: 520px) {
-		/* El chip de usuario + toggle + salir no caben en una fila */
-		.header-actions { gap: 10px; }
-		.user-meta { display: none; }
-		.user-chip { padding: 5px; }
-		.brand-name { font-size: 1.1rem; }
-		.btn-logout { padding: 8px 12px; }
-		.btn-logout span { display: none; }
-
 		.main-content { padding: 16px; gap: 20px; }
 		.welcome-banner { padding: 22px 18px; }
 		.welcome-banner h1 { font-size: 1.5rem; }

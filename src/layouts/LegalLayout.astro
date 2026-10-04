@@ -3,13 +3,26 @@
  * Marco común de las páginas legales (términos, privacidad y preguntas).
  *
  * No usa `Layout.astro` porque son textos largos y necesitan un ancho de línea
- * cómodo, pero sí monta `Navbar` y `Footer`: quien llega desde el footer a
- * "Términos" tiene que poder volver atrás con el menú, no quedarse en una página
- * sin salida. El `legal-nav` del pie de documento es un refuerzo para saltar de
- * un documento a otro, no la única navegación.
+ * cómodo, pero sí monta una barra de navegación: quien llega desde el footer a
+ * "Términos" tiene que poder volver atrás, no quedarse en una página sin salida.
+ * El `legal-nav` del pie de documento es un refuerzo para saltar de un documento a
+ * otro, no la única navegación.
+ *
+ * La barra cambia según quién mire:
+ *
+ *   - Con sesión, monta `PanelHeader`, la misma del panel de miembro. Así un
+ *     admin que lee los términos conserva el saldo, su nombre y el botón de
+ *     salir, en vez de caer en una versión pública que parece otra cuenta.
+ *   - Sin sesión, monta el `Navbar` público, que es lo que necesita un visitante
+ *     que llega desde el footer y no tiene panel.
  */
 import Navbar from '../components/Navbar.astro';
+import PanelHeader from '../components/PanelHeader.astro';
 import Footer from '../components/Footer.astro';
+import { validateSession } from '../lib/session';
+
+// SSR: decide la barra con la cookie de sesión en cada visita.
+export const prerender = false;
 
 interface Props {
 	title: string;
@@ -19,6 +32,8 @@ interface Props {
 }
 
 const { title, description, updated } = Astro.props;
+
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
 ---
 
 <!doctype html>
@@ -42,7 +57,7 @@ const { title, description, updated } = Astro.props;
 		</script>
 	</head>
 	<body>
-		<Navbar />
+		{session ? <PanelHeader /> : <Navbar />}
 
 		<main class="legal">
 			<article class="legal-card luxury-card">

@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "token": "eyJ1c2VybmFtZSI6IkdhbmFQcm8iLCJlbWFpbCI6Im5leHVzd2Vic3R1ZGlvMjAyNkBnbWFpbC5jb20iLCJyb2xlIjoiQWRtaW4iLCJleHBpcmVzQXQiOjE3OTE2NzkxNTg3Nzh9.d96da511e3ea57fff8306c0b9d85df945731b3f32571cc8b792e34a0d68707e1",
+    "username": "GanaPro",
+    "email": "nexuswebstudio2026@gmail.com",
+    "role": "Admin",
+    "expiresAt": 1791679158778
+  }
+]

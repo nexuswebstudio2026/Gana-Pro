@@ -1,0 +1,240 @@
+---
+/**
+ * Barra superior del panel de miembro, compartida por el dashboard y las páginas
+ * legales.
+ *
+ * Antes vivía dentro de `dashboard.astro`, y esas páginas —términos, privacidad y
+ * preguntas— montaban el `Navbar` público. El resultado era que un admin que
+ * salía del panel a leer los términos perdía de golpe el saldo, su nombre y el
+ * botón de salir: dos interfaces distintas para la misma sesión. Al extraerla a un
+ * componente, las dos muestran exactamente la misma barra.
+ *
+ * Los importes se leen de Google Sheets igual que en el panel. Si la fila del
+ * usuario no existe, `BalanceChip` simplemente no se pinta: es preferible a
+ * mostrar un saldo inventado.
+ */
+import ThemeToggle from './ThemeToggle.astro';
+import BalanceChip from './BalanceChip.astro';
+import Logo from './Logo.astro';
+import { isAdminRole } from '../lib/auth';
+import { getGoogleSheetUsers } from '../lib/sheets';
+import type { User } from '../lib/types';
+import {
+	getAdminWallet,
+	getUserBalance,
+	getSheetUserLevel,
+	getUserWallet,
+} from '../lib/users';
+import { validateSession } from '../lib/session';
+
+// SSR: la barra se arma con la cookie de sesión en cada visita.
+export const prerender = false;
+
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+
+interface Props {
+	/**
+	 * Fila del usuario en Google Sheets, si la página que lo usa ya la consultó.
+	 *
+	 * Se acepta para no repetir la llamada a Sheets: el dashboard la trae porque
+	 * necesita muchos datos más, y este componente la reutiliza.
+	 */
+	userDetail?: User | null;
+	/**
+	 * Cuánto espacio lateral reserva la barra.
+	 *
+	 * El dashboard deja sitio a su barra lateral (72 px); las páginas legales no
+	 * tienen lateral y arrancan en cero.
+	 */
+	hasSidebar?: boolean;
+}
+
+const { userDetail: providedUser, hasSidebar = false } = Astro.props;
+
+// Si quien lo usa ya consultó la hoja, no se vuelve a pedir.
+let userDetail = providedUser ?? null;
+if (!userDetail && session) {
+	try {
+		const users = await getGoogleSheetUsers();
+		userDetail =
+			users.find(
+				(u) =>
+					u.username?.toLowerCase() === session.username.toLowerCase() ||
+					u.email?.toLowerCase() === session.email.toLowerCase()
+			) ?? null;
+	} catch (e) {
+		console.error('No se pudo resolver el usuario para la barra del panel:', e);
+	}
+}
+
+const role = userDetail?.role || session?.role || 'Miembro VIP';
+
+let balance: string | null = null;
+let userLevel: string | null = null;
+let walletType: string | null = null;
+let walletNumber: string | null = null;
+let adminWalletType: string | null = null;
+let adminWalletNumber: string | null = null;
+
+if (session) {
+	balance = await getUserBalance(session.username, session.email);
+	userLevel = await getSheetUserLevel(session.username, session.email);
+
+	const wallet = await getUserWallet(session.username, session.email);
+	walletType = wallet?.walletType || null;
+	walletNumber = wallet?.walletNumber || null;
+
+	const adminWallet = await getAdminWallet();
+	adminWalletType = adminWallet?.walletType || null;
+	adminWalletNumber = adminWallet?.walletNumber || null;
+}
+---
+<header class:list={['header', { 'has-sidebar': hasSidebar }]}>
+	<div class="brand">
+		<div class="logo-shield">
+			<Logo size={22} />
+		</div>
+		<a href="/" class="brand-name font-cinzel">GANA <span class="gold-gradient-text">PRO</span></a>
+	</div>
+
+	<div class="header-actions">
+		<ThemeToggle />
+
+		<BalanceChip
+			balance={balance}
+			level={userLevel}
+			walletType={walletType}
+			walletNumber={walletNumber}
+			adminWalletType={adminWalletType}
+			adminWalletNumber={adminWalletNumber}
+		/>
+
+		<div class="user-chip">
+			<div class="avatar">{session?.username.charAt(0).toUpperCase()}</div>
+			<div class="user-meta">
+				<span class="user-name">{session?.username}</span>
+				<span class="user-badge">{role}</span>
+			</div>
+		</div>
+
+		<form method="POST" action="/api/logout">
+			<button type="submit" class="btn-logout" title="Cerrar sesión">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+					<polyline points="16 17 21 12 16 7"></polyline>
+					<line x1="21" y1="12" x2="9" y2="12"></line>
+				</svg>
+				<span>Salir</span>
+			</button>
+		</form>
+	</div>
+</header>
+
+<style>
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 16px 36px;
+		background: var(--bg-surface, rgba(15, 23, 42, 0.75));
+		backdrop-filter: blur(16px);
+		border-bottom: 1px solid var(--gold-border, rgba(212, 175, 55, 0.35));
+		position: sticky;
+		top: 0;
+		z-index: 50;
+	}
+
+	/* La barra lateral del dashboard se dibuja sobre esta zona: se le deja hueco. */
+	.header.has-sidebar { padding-left: 72px; }
+
+	.brand { display: flex; align-items: center; gap: 12px; }
+
+	.logo-shield {
+		flex: 0 0 36px;
+		width: 36px;
+		height: 36px;
+		border-radius: 8px;
+		background: rgba(212, 175, 55, 0.15);
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.35));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--gold-primary, #d4af37);
+	}
+
+	.brand-name {
+		font-size: 1.3rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-decoration: none;
+		color: var(--text-primary);
+		white-space: nowrap;
+	}
+
+	.brand-name:hover { color: var(--gold-primary); }
+
+	.header-actions { display: flex; align-items: center; gap: 20px; }
+
+	.user-chip {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 6px 14px 6px 6px;
+		background: rgba(212, 175, 55, 0.08);
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.35));
+		border-radius: 9999px;
+	}
+
+	.avatar {
+		flex: 0 0 34px;
+		width: 34px;
+		height: 34px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #d4af37, #996515);
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 14px;
+	}
+
+	.user-meta { display: flex; flex-direction: column; }
+
+	.user-name { font-size: 13.5px; font-weight: 600; line-height: 1.2; }
+
+	.user-badge { font-size: 11px; color: var(--gold-primary, #d4af37); font-weight: 600; }
+
+	.btn-logout {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 16px;
+		background: transparent;
+		color: var(--text-secondary);
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.35));
+		border-radius: 8px;
+		cursor: pointer;
+		font-family: inherit;
+		transition: color 0.2s ease, border-color 0.2s ease;
+	}
+
+	.btn-logout:hover { color: #ef4444; border-color: #ef4444; }
+
+	@media (max-width: 768px) {
+		.header { padding: 12px 16px; gap: 12px; }
+		.header-actions { gap: 10px; }
+		.user-meta { display: none; }
+		.user-chip { padding: 5px; }
+		.brand-name { font-size: 1.1rem; }
+		.btn-logout { padding: 8px 12px; }
+		/* En móvil solo queda el icono: el texto no cabe junto al saldo. */
+		.btn-logout span { display: none; }
+	}
+
+	@media (max-width: 380px) {
+		.header { padding: 10px 12px; }
+		.brand-name { font-size: 1rem; }
+	}
+</style>
