@@ -22,6 +22,39 @@ describe('findUserParent', () => {
 		expect(findUserParent(root, { username: 'cami' })?.name).toBe('GANA PRO');
 	});
 
+	it('el nivel superior de la matriz es quien trajo al usuario', () => {
+		// Es el dato que dibuja la tarjeta de arriba: el patrocinador real, no
+		// el primer hijo de su rama.
+		const usuarios = [
+			user('ganapro'),
+			user('ana'),
+			user('beto'),
+			user('cami'),
+			user('dani'),
+			user('eva'),
+			user('fabi'),
+		];
+		const personal = buildPersonalHierarchy(usuarios, { username: 'fabi' });
+
+		expect(personal.upline?.name).toBe('ana');
+	});
+
+	it('un miembro del primer nivel ve GANA PRO como nivel superior', () => {
+		const usuarios = [user('ganapro'), user('ana'), user('beto')];
+		const personal = buildPersonalHierarchy(usuarios, { username: 'ana' });
+
+		expect(personal.upline?.name).toBe('GANA PRO');
+	});
+
+	it('el administrador no tiene nivel superior: es la raíz', () => {
+		// Mostrarle a sí mismo como patrocinador sería un error: no hay nadie
+		// por encima del admin.
+		const usuarios = [user('ganapro'), user('ana'), user('beto')];
+		const personal = buildPersonalHierarchy(usuarios, { username: 'ganapro' });
+
+		expect(personal.upline).toBeNull();
+	});
+
 	it('nadie es patrocinador de sí mismo', () => {
 		// ana cuelga de la raíz, así que su patrocinador es GANA PRO, no ella.
 		expect(findUserParent(root, { username: 'ana' })?.name).toBe('GANA PRO');

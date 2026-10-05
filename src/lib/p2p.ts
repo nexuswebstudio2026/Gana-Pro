@@ -158,6 +158,7 @@ export function conceptAmount(concept: P2PConcept, balance: number): number {
 export const RECEIPT_TYPES: readonly string[] = [
 	'image/jpeg',
 	'image/png',
+	'image/webp',
 	'application/pdf',
 ];
 
@@ -179,7 +180,7 @@ export function validateReceipt(
 ): string | null {
 	if (!file || !file.size) return 'Adjunta el comprobante del pago.';
 	if (!RECEIPT_TYPES.includes(String(file.type ?? ''))) {
-		return 'El comprobante debe ser JPG, PNG o PDF.';
+		return 'El comprobante debe ser JPG, PNG, WebP o PDF.';
 	}
 	if (file.size > MAX_RECEIPT_BYTES) {
 		return 'El comprobante supera el límite de 3 MB.';

@@ -82,8 +82,8 @@ describe('canSubmitConcept', () => {
 });
 
 describe('validateReceipt', () => {
-	it('acepta JPG, PNG y PDF dentro del límite', () => {
-		for (const type of ['image/jpeg', 'image/png', 'application/pdf']) {
+	it('acepta JPG, PNG, WebP y PDF dentro del límite', () => {
+		for (const type of ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']) {
 			expect(validateReceipt({ type, size: 1024 })).toBeNull();
 		}
 	});
@@ -95,10 +95,10 @@ describe('validateReceipt', () => {
 
 	it('rechaza tipos no admitidos', () => {
 		expect(validateReceipt({ type: 'application/zip', size: 100 })).toBe(
-			'El comprobante debe ser JPG, PNG o PDF.'
+			'El comprobante debe ser JPG, PNG, WebP o PDF.'
 		);
 		expect(validateReceipt({ type: 'text/html', size: 100 })).toBe(
-			'El comprobante debe ser JPG, PNG o PDF.'
+			'El comprobante debe ser JPG, PNG, WebP o PDF.'
 		);
 	});
 

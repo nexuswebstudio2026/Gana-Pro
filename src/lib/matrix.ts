@@ -138,3 +138,84 @@ export function computeProgress(nodes: readonly MatrixNode[], level: number): Ma
 		complete: active >= MAX_DIRECT_TEAM,
 	};
 }
+
+/** Una persona concreta dentro de la matriz, con su estado de recarga. */
+export interface MatrixPerson {
+	/** Nombre de la persona, o `null` si el nivel está vacío. */
+	name: string | null;
+	/** Estado de su recarga inicial, o `null` si no hay ninguna. */
+	topupStatus: string | null;
+	/** Estado derivado de la recarga, igual que el de un puesto. */
+	state: NodeState;
+	/** Nivel declarado en la hoja (`"2"`, `"Oro"`...). `null` si no tiene. */
+	level: string | null;
+}
+
+/**
+ * Los tres niveles que ve un miembro en su matriz.
+ *
+ * Arriba está quien lo trajo, en el centro el propio usuario y abajo los cinco
+ * puestos de su equipo directo. El admin no tiene nivel superior (es la raíz de
+ * GANA PRO), así que ahí `upline` llega `null` y la vista lo dice en pantalla en
+ * vez de inventar un patrocinador.
+ */
+export interface MatrixView {
+	/** Nivel superior: la persona que trajo al usuario conectado. */
+	upline: MatrixPerson | null;
+	/** Nivel central: el usuario conectado. */
+	self: MatrixPerson;
+	/** Nivel inferior: los cinco puestos del equipo directo. */
+	downline: MatrixNode[];
+	/** Avance hacia el siguiente nivel, calculado sobre los puestos de abajo. */
+	progress: MatrixProgress;
+}
+
+/** Datos mínimos para dibujar a una persona dentro de la matriz. */
+export interface MatrixPersonInput {
+	name?: string | null;
+	level?: string | null;
+}
+
+/** Convierte un nodo del organigrama en una persona de la matriz. */
+function toMatrixPerson(
+	node: MatrixPersonInput | null | undefined,
+	topupsByUser: Readonly<Record<string, string>>
+): MatrixPerson {
+	const name = node?.name?.trim() || null;
+	const topupStatus = name ? topupsByUser[normalize(name)] ?? null : null;
+	return {
+		name,
+		topupStatus,
+		state: resolveNodeState(name, topupStatus),
+		level: node?.level?.trim() || null,
+	};
+}
+
+/**
+ * Arma la matriz completa: nivel superior, usuario conectado y nivel inferior.
+ *
+ * Todo se resuelve en el servidor y en un módulo puro, como el resto de la
+ * lógica de dinero del panel: el componente solo pinta lo que recibe. Así el
+ * admin y cualquier miembro ven exactamente el mismo dibujo.
+ */
+export function buildMatrixView(params: {
+	/** El usuario conectado (raíz de su organigrama personal). */
+	self: MatrixPersonInput;
+	/** Quien lo trajo, o `null` si no tiene (admin o usuario sin hoja). */
+	upline?: MatrixPersonInput | null;
+	/** Sus cinco puestos directos. */
+	downline?: readonly MatrixPersonInput[];
+	/** Estado de la última recarga por nombre normalizado. */
+	topupsByUser?: Readonly<Record<string, string>>;
+	/** Nivel del usuario conectado (para la barra de ascenso). */
+	level: number;
+}): MatrixView {
+	const topupsByUser = params.topupsByUser ?? {};
+	const downline = buildMatrixNodes(params.downline ?? [], topupsByUser);
+	return {
+		upline: params.upline ? toMatrixPerson(params.upline, topupsByUser) : null,
+		self: toMatrixPerson(params.self, topupsByUser),
+		downline,
+		progress: computeProgress(downline, params.level),
+	};
+}

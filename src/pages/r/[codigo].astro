@@ -4,18 +4,155 @@
  *
  * Los miembros comparten esta ruta mucho (WhatsApp, historias, tarjetas), así que
  * cuanto más corta mejor: se quitan el `register?ref=` de cada mensaje. La ruta
- * no renderiza nada, solo redirige al formulario de alta, que ya lee el código
- * de `ref` y lo deja escrito.
+ * lleva al formulario de alta, que ya lee el código de `ref` y lo deja escrito.
+ *
+ * **Por qué esto renderiza HTML en vez de redirigir directamente:** al compartir
+ * el enlace, WhatsApp y Facebook siguen el enlace para leer sus etiquetas Open
+ * Graph. Con un `302` sin cuerpo no hay nada que leer, así que el mensaje se ve
+ * como texto pelado y se pierde toda la identidad visual de la plataforma.
+ *
+ * Aquí se resuelve lo contrario: se sirve una página real, con sus etiquetas
+ * `og:*`, que además manda al registro de tres formas que no dependen de
+ * JavaScript —`meta refresh`, `window.location` y un botón visible— por si el
+ * rastreador o el navegador decide no seguir ninguna.
  *
  * El código NO se valida contra la hoja a propósito. Puede no existir todavía
  * (la fila se sincroniza después del alta) y, en cualquier caso, el formulario y
  * `/api/register` ya lo comprueban. Validarlo aquí convertiría un enlace mal
  * copiado en un error que además espantaría a quien aún no tiene cuenta.
  */
+import { getPublicSiteUrl } from '../../lib/sheets';
+import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
+import { formatCOP } from '../../lib/referrals';
+
 export const prerender = false;
 
 // Se acota la longitud para no propagar un texto arbitrario en la URL.
 const code = (Astro.params.codigo ?? '').trim().slice(0, 60);
 
-return Astro.redirect(`/register?ref=${encodeURIComponent(code)}`, 302);
+// El destino real: el mismo de antes, con el código puesto en `ref`.
+const target = `/register?ref=${encodeURIComponent(code)}`;
+const targetUrl = new URL(target, getPublicSiteUrl(Astro.request)).href;
+
+// Descripción personalizada con el código, para que se lea en la vista previa.
+const shareTitle = `${code || 'GANA PRO'} te invita a GANA PRO`;
+const shareDescription =
+	`Te invitaron a GANA PRO con el código ${code || 'GANA PRO'}. ` +
+	`Activa tu puesto en la matriz 5x1 con una recarga de ${formatCOP(RECARGA_INICIAL_AMOUNT)} ` +
+	'y empieza a construir tu red de referidos.';
+
+const ogImage = new URL('/og-image.png', getPublicSiteUrl(Astro.request)).href;
 ---
+
+<!doctype html>
+<html lang="es" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{shareTitle}</title>
+		<meta name="description" content={shareDescription} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="robots" content="noindex, nofollow" />
+
+		<!-- Open Graph: la tarjeta que se ve al compartir en WhatsApp. -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="GANA PRO" />
+		<meta property="og:locale" content="es_CO" />
+		<meta property="og:title" content={shareTitle} />
+		<meta property="og:description" content={shareDescription} />
+		<meta property="og:url" content={targetUrl} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:secure_url" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={`${shareTitle} — GANA PRO`} />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={shareTitle} />
+		<meta name="twitter:description" content={shareDescription} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<!--
+			Redirección hacia el formulario. Va en el `<head>` para que el
+			traslado empiece antes de que se descargue el resto de la página, y se
+			combina con el script del final para cubrir el caso de que el
+			navegador tenga bloqueado el `refresh`.
+		-->
+		<meta http-equiv="refresh" content={`0;url=${target}`} />
+		<link rel="canonical" href={targetUrl} />
+		<style>
+			:root { color-scheme: dark; }
+			body {
+				margin: 0;
+				min-height: 100vh;
+				display: grid;
+				place-items: center;
+				gap: 20px;
+				grid-template-rows: 1fr auto;
+				padding: 40px 20px;
+				box-sizing: border-box;
+				background: #09090b;
+				color: #e4e4e7;
+				font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+				text-align: center;
+			}
+
+			.brand {
+				font-family: 'Cinzel', Georgia, serif;
+				font-size: clamp(2.6rem, 12vw, 4.5rem);
+				font-weight: 900;
+				letter-spacing: 0.06em;
+				line-height: 1;
+				background: linear-gradient(135deg, #eab308, #fef3c7);
+				-webkit-background-clip: text;
+				background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+
+			.code {
+				margin: 18px auto 0;
+				padding: 10px 22px;
+				display: inline-block;
+				border: 1px solid rgba(234, 179, 8, 0.45);
+				border-radius: 9999px;
+				background: rgba(234, 179, 8, 0.1);
+				color: #eab308;
+				font-size: 1.05rem;
+				font-weight: 700;
+				letter-spacing: 0.08em;
+			}
+
+			.cta {
+				display: inline-block;
+				margin-top: 28px;
+				padding: 15px 34px;
+				border: 1px solid rgba(255, 235, 150, 0.6);
+				border-radius: 9999px;
+				background: linear-gradient(135deg, #eab308, #fef3c7);
+				box-shadow: 0 10px 30px rgba(234, 179, 8, 0.28);
+				color: #09090b;
+				font-size: 0.95rem;
+				font-weight: 700;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				text-decoration: none;
+			}
+
+			.hint { margin: 0; font-size: 0.85rem; color: #71717a; }
+		</style>
+	</head>
+	<body>
+		<main>
+			<p class="brand">GANA PRO</p>
+			{code && <p class="code">{code}</p>}
+			<a class="cta" href={target}>Crear Cuenta / Activar</a>
+		</main>
+		<p class="hint">Te estamos llevando al formulario de registro…</p>
+	</body>
+</html>
+
+<script define:vars={{ target }}>
+	// El `meta refresh` cubre el caso sin JavaScript; esto lo adelanta cuando sí
+	// lo hay, para que el traslado sea inmediato en lugar de esperar al refresh.
+	window.location.replace(target);
+</script>

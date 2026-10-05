@@ -1,24 +1,36 @@
 ---
 /**
- * Estado de la matriz 5x1 del miembro.
+ * La matriz del miembro: nivel superior, usuario conectado y nivel inferior.
  *
- * Muestra los cinco puestos directos con el estado de cada uno y la barra de
- * avance al siguiente nivel. Los datos ya vienen calculados desde `matrix.ts`:
- * este componente solo dibuja, y las reglas viven en la librería, donde se
- * prueban.
+ * Los tres niveles llegan ya calculados desde `matrix.ts`: este componente solo
+ * dibuja, y las reglas (quién está arriba, qué puestos cuentan) viven en la
+ * librería, donde se prueban.
  */
-import { NODE_TONE, type MatrixNode, type MatrixProgress } from '../../lib/matrix';
+import { NODE_TONE, type MatrixPerson, type MatrixProgress } from '../../lib/matrix';
+import { levelName } from '../../lib/users';
+import type { MatrixView } from '../../lib/matrix';
 
 interface Props {
-	nodes: MatrixNode[];
-	progress: MatrixProgress;
+	/** Los tres niveles de la matriz, ya resueltos en el servidor. */
+	view: MatrixView;
 	/** `true` si no se pudo leer la hoja: se avisa en vez de mostrar ceros. */
 	loadFailed?: boolean;
 }
 
-const { nodes, progress, loadFailed = false } = Astro.props;
+const { view, loadFailed = false } = Astro.props;
 
+const { upline, self, downline, progress } = view;
 const nextLevel = Math.min(5, progress.level + 1);
+
+const initials = (person: MatrixPerson) =>
+	(person.name ? person.name.charAt(0).toUpperCase() : '○');
+
+/** "Nivel 2 · Plata": el número y el nombre de piedra del nivel declarado. */
+const levelLabel = (person: MatrixPerson) => {
+	if (!person.level) return 'Nivel sin definir';
+	const name = levelName(person.level);
+	return name ? `${person.level} · ${name}` : `Nivel ${person.level}`;
+};
 ---
 
 <section class="matrix luxury-card" aria-label="Estado de mi matriz">
@@ -67,23 +79,73 @@ const nextLevel = Math.min(5, progress.level + 1);
 				</div>
 			</div>
 
-			<ol class="matrix-grid">
-				{nodes.map((node) => (
-					<li class:list={['matrix-node', `is-${NODE_TONE[node.state]}`]}>
-						<span class="matrix-node-pos">Puesto {node.position}</span>
-						<span class="matrix-node-avatar" aria-hidden="true">
-							{node.name ? node.name.charAt(0).toUpperCase() : '○'}
-						</span>
-						<strong class="matrix-node-name">{node.name ?? 'Libre'}</strong>
-						<span class="matrix-node-state">{node.state}</span>
-						{node.name && node.topupStatus && node.topupStatus !== 'Aprobado' && (
-							<span class="matrix-node-note">
-								Recarga {node.topupStatus.toLowerCase()}
+			<div class="matrix-tree">
+				<!-- Nivel superior: la persona que trajo al usuario. -->
+				<div class="matrix-tier">
+					<span class="matrix-tier-cap">Nivel superior</span>
+					{upline ? (
+						<div class="matrix-person">
+							<span class="matrix-person-avatar" aria-hidden="true">
+								{initials(upline)}
 							</span>
-						)}
-					</li>
-				))}
-			</ol>
+							<div class="matrix-person-copy">
+								<strong>{upline.name}</strong>
+								<span>{levelLabel(upline)}</span>
+								<span class="matrix-person-role">Te trajo a la plataforma</span>
+							</div>
+						</div>
+					) : (
+						<div class="matrix-person is-vacant">
+							<span class="matrix-person-avatar" aria-hidden="true">◇</span>
+							<div class="matrix-person-copy">
+								<strong>Sin nivel superior</strong>
+								<span>Eres la raíz de GANA PRO</span>
+							</div>
+						</div>
+					)}
+				</div>
+
+				<span class="matrix-link" aria-hidden="true"></span>
+
+				<!-- Nivel central: el usuario conectado. -->
+				<div class="matrix-tier">
+					<span class="matrix-tier-cap">Usuario conectado</span>
+					<div class="matrix-person is-self">
+						<span class="matrix-person-avatar" aria-hidden="true">
+							{initials(self)}
+						</span>
+						<div class="matrix-person-copy">
+							<strong>{self.name ?? 'Tú'}</strong>
+							<span>{levelLabel(self)}</span>
+							<span class="matrix-person-role">Tú · raíz de tu rama</span>
+						</div>
+					</div>
+				</div>
+
+				<span class="matrix-link" aria-hidden="true"></span>
+
+				<!-- Nivel inferior: los cinco puestos del equipo directo. -->
+				<div class="matrix-tier">
+					<span class="matrix-tier-cap">Nivel inferior · tu equipo directo</span>
+					<ol class="matrix-grid">
+						{downline.map((node) => (
+							<li class:list={['matrix-node', `is-${NODE_TONE[node.state]}`]}>
+								<span class="matrix-node-pos">Puesto {node.position}</span>
+								<span class="matrix-node-avatar" aria-hidden="true">
+									{node.name ? node.name.charAt(0).toUpperCase() : '○'}
+								</span>
+								<strong class="matrix-node-name">{node.name ?? 'Libre'}</strong>
+								<span class="matrix-node-state">{node.state}</span>
+								{node.name && node.topupStatus && node.topupStatus !== 'Aprobado' && (
+									<span class="matrix-node-note">
+										Recarga {node.topupStatus.toLowerCase()}
+									</span>
+								)}
+							</li>
+						))}
+					</ol>
+				</div>
+			</div>
 
 			<ul class="matrix-legend">
 				<li><span class="legend-dot is-free" aria-hidden="true"></span>Libre</li>
@@ -197,10 +259,102 @@ const nextLevel = Math.min(5, progress.level + 1);
 		color: #10b981;
 	}
 
+	/* Los tres niveles de la matriz: superior, conectado e inferior */
+	.matrix-tree {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-bottom: 18px;
+	}
+
+	.matrix-tier {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.matrix-tier-cap {
+		font-size: 10.5px;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--gold-primary);
+	}
+
+	/* Tarjeta de una persona: la del nivel superior y la del usuario conectado */
+	.matrix-person {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 18px;
+		border: 1px solid var(--gold-border);
+		border-radius: 16px;
+		background: var(--bg-primary);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+	}
+
+	.matrix-person.is-self {
+		min-width: 240px;
+		justify-content: center;
+		border-color: var(--gold-primary);
+		background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), var(--bg-primary));
+	}
+
+	.matrix-person.is-vacant {
+		border-style: dashed;
+		background: transparent;
+		opacity: 0.75;
+	}
+
+	.matrix-person-avatar {
+		width: 40px;
+		height: 40px;
+		flex: 0 0 40px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: rgba(212, 175, 55, 0.18);
+		color: var(--gold-primary);
+		font-size: 15px;
+		font-weight: 700;
+	}
+
+	.matrix-person.is-self .matrix-person-avatar {
+		background: var(--gold-primary);
+		color: #101827;
+	}
+
+	.matrix-person-copy {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+
+	.matrix-person-copy strong {
+		color: var(--text-primary);
+		font-size: 13.5px;
+		overflow-wrap: anywhere;
+	}
+
+	.matrix-person-copy span { color: var(--text-secondary); font-size: 11.5px; overflow-wrap: anywhere; }
+
+	.matrix-person-role { color: var(--gold-primary) !important; font-weight: 600; }
+
+	/* Conector vertical entre niveles */
+	.matrix-link {
+		width: 2px;
+		height: 22px;
+		background: var(--gold-border);
+	}
+
 	.matrix-grid {
 		list-style: none;
-		margin: 0 0 18px;
+		margin: 0;
 		padding: 0;
+		width: 100%;
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 		gap: 14px;
@@ -321,6 +475,8 @@ const nextLevel = Math.min(5, progress.level + 1);
 		.matrix-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
 		.matrix-node { padding: 14px 8px; }
 		.matrix-progress-text { font-size: 12px; }
+		.matrix-person { width: 100%; padding: 12px; }
+		.matrix-person.is-self { min-width: 0; }
 	}
 </style>
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	NODE_STATE,
 	buildMatrixNodes,
+	buildMatrixView,
 	computeProgress,
 	resolveNodeState,
 } from './matrix';
@@ -104,5 +105,71 @@ describe('computeProgress', () => {
 
 	it('conserva el nivel en el resumen', () => {
 		expect(computeProgress([], 4).level).toBe(4);
+	});
+});
+describe('buildMatrixView', () => {
+	it('coloca arriba a quien trajo al usuario y abajo sus cinco puestos', () => {
+		const view = buildMatrixView({
+			self: { name: 'Beto', level: '2' },
+			upline: { name: 'Ana', level: '3' },
+			downline: [{ name: 'Cami' }, { name: 'Dani' }],
+			topupsByUser: { ana: 'Aprobado' },
+			level: 2,
+		});
+
+		expect(view.upline?.name).toBe('Ana');
+		expect(view.upline?.level).toBe('3');
+		expect(view.self.name).toBe('Beto');
+		// Los cinco puestos se dibujan siempre, ocupados o no.
+		expect(view.downline).toHaveLength(5);
+		expect(view.downline.map((n) => n.name)).toEqual(['Cami', 'Dani', null, null, null]);
+	});
+
+	it('deja el nivel superior vacío cuando el usuario no tiene patrocinador', () => {
+		// El admin es la raíz de GANA PRO: no hay nadie encima y la vista tiene
+		// que decirlo, no mostrar un nombre inventado.
+		const view = buildMatrixView({
+			self: { name: 'GANA PRO', level: '5' },
+			upline: null,
+			downline: [],
+			level: 5,
+		});
+
+		expect(view.upline).toBeNull();
+		expect(view.self.name).toBe('GANA PRO');
+		expect(view.downline.every((n) => n.state === NODE_STATE.libre)).toBe(true);
+	});
+
+	it('el estado del nivel superior sale de su propia recarga', () => {
+		const verificado = buildMatrixView({
+			self: { name: 'Beto' },
+			upline: { name: 'Ana' },
+			topupsByUser: { ana: 'Aprobado' },
+			level: 1,
+		});
+		const pendiente = buildMatrixView({
+			self: { name: 'Beto' },
+			upline: { name: 'Ana' },
+			topupsByUser: { ana: 'Pendiente' },
+			level: 1,
+		});
+
+		expect(verificado.upline?.state).toBe(NODE_STATE.activo);
+		expect(pendiente.upline?.state).toBe(NODE_STATE.registrado);
+	});
+
+	it('el avance se calcula sobre los puestos inferiores, no sobre el superior', () => {
+		const view = buildMatrixView({
+			self: { name: 'Beto', level: '1' },
+			upline: { name: 'Ana' },
+			downline: [{ name: 'Cami' }, { name: 'Dani' }, { name: 'Eva' }],
+			topupsByUser: { ana: 'Aprobado', cami: 'Aprobado', dani: 'Aprobado' },
+			level: 1,
+		});
+
+		// Ana (el superior) está activa, pero solo cuentan los 2 de abajo.
+		expect(view.progress.active).toBe(2);
+		expect(view.progress.percent).toBe(40);
+		expect(view.progress.level).toBe(1);
 	});
 });

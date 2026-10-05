@@ -77,14 +77,15 @@ const toneOf = (status: string) =>
 			</p>
 
 			<label class="p2p-field">
-				<span>Comprobante (JPG, PNG o PDF · máx. 3 MB)</span>
+				<span>Comprobante (JPG, PNG, WebP o PDF · máx. 3 MB)</span>
 				<input
 					type="file"
 					name="receipt"
-					accept="image/jpeg,image/png,application/pdf"
+					accept="image/jpeg,image/png,image/webp,application/pdf"
 					required
 					data-receipt-file
 				/>
+				<small class="p2p-hint" data-receipt-hint hidden></small>
 			</label>
 
 			<label class="p2p-field">
@@ -263,6 +264,16 @@ const toneOf = (status: string) =>
 
 	.p2p-feedback { margin: 0; font-size: 13px; min-height: 1.2em; }
 	.p2p-feedback.is-error { color: #fca5a5; }
+	.p2p-hint {
+		display: block;
+		margin-top: 6px;
+		font-size: 11.5px;
+		line-height: 1.4;
+		color: var(--gold-primary);
+	}
+
+	.p2p-hint[hidden] { display: none; }
+
 	.p2p-feedback.is-ok { color: #10b981; }
 
 	.p2p-spinner {
@@ -347,10 +358,106 @@ const toneOf = (status: string) =>
 	const amountOut = document.querySelector<HTMLElement>('[data-receipt-amount]');
 
 	/** Tipos y tamaño que acepta el endpoint, para no subir un archivo inútil. */
-	const ACCEPTED = ['image/jpeg', 'image/png', 'application/pdf'];
+	const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 	const MAX_BYTES = 3 * 1024 * 1024;
 
+	/** Umbral a partir del cual se recomprime en el navegador. */
+	const COMPRESS_ABOVE = 220 * 1024;
+	const MAX_EDGE = 1600;
+	const QUALITY = 0.82;
+
+	const fileInput = form?.querySelector<HTMLInputElement>('input[name="receipt"]');
+	const hint = document.querySelector<HTMLElement>('[data-receipt-hint]');
+
+	/** El navegador sabe recodificar a WebP si lo puede exportar a Blob. */
+	const supportsWebP = (() => {
+		try {
+			const canvas = document.createElement('canvas');
+			canvas.width = 1;
+			canvas.height = 1;
+			return canvas.toDataURL('image/webp').startsWith('data:image/webp');
+		} catch {
+			return false;
+		}
+	})();
+
 	const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
+
+	const kb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+	/**
+	 * Recomprime una imagen para que ocupe menos en Vercel Blob.
+	 *
+	 * Devuelve el archivo original intacto si algo falla (el navegador no
+	 * soporta `canvas`, la imagen está corrupta, el resultado sale más grande o
+	 * no cabe en el límite). Perder la evidencia de un pago por no haber podido
+	 * comprimirla sería un fallo mucho peor que guardar 2 MB de más.
+	 */
+	const compressImage = async (file: File): Promise<File> => {
+		try {
+			const bitmap = await createImageBitmap(file);
+			const longest = Math.max(bitmap.width, bitmap.height);
+
+			// Canvas tiene un límite de área en algunos navegadores: por debajo de
+			// este tamaño no se toca nada, porque ya es razonable.
+			if (longest <= 0 || longest * longest > 16_000_000) return file;
+
+			const ratio = Math.min(1, MAX_EDGE / longest);
+			const width = Math.max(1, Math.round(bitmap.width * ratio));
+			const height = Math.max(1, Math.round(bitmap.height * ratio));
+
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			const context = canvas.getContext('2d');
+			if (!context) return file;
+
+			// Fondo blanco antes de dibujar: un PNG con transparencia al pasarse a
+			// JPEG se volvería negro, y un comprobante negro no se puede leer.
+			context.fillStyle = '#ffffff';
+			context.fillRect(0, 0, width, height);
+			context.drawImage(bitmap, 0, 0, width, height);
+			bitmap.close();
+
+			const type = supportsWebP ? 'image/webp' : 'image/jpeg';
+			const blob = await new Promise<Blob | null>((resolve) =>
+				canvas.toBlob(resolve, type, QUALITY)
+			);
+			if (!blob) return file;
+
+			// Si la compresión no ajudou (o casi nada), se manda el original: así
+			// nunca se pierde calidad por ahorrarse unos bytes.
+			if (blob.size >= file.size) return file;
+			if (blob.size > MAX_BYTES) return file;
+
+			const ext = type === 'image/webp' ? 'webp' : 'jpg';
+			const base = file.name.replace(/\.[^.]+$/, '') || 'comprobante';
+			return new File([blob], `${base}.${ext}`, { type });
+		} catch {
+			return file;
+		}
+	};
+
+	/** Avisa de cuánto se va a ahorrar antes de que el usuario envíe. */
+	const previewCompression = async () => {
+		if (!hint || !fileInput) return;
+		const file = fileInput.files?.[0];
+		hint.hidden = true;
+
+		if (!file || file.type === 'application/pdf' || file.size <= COMPRESS_ABOVE) return;
+
+		const compressed = await compressImage(file);
+		if (compressed === file) return;
+
+		const saved = file.size - compressed.size;
+		const percent = Math.round((saved / file.size) * 100);
+		hint.textContent =
+			`Se optimizará antes de subir: ${kb(file.size)} → ${kb(compressed.size)} ` +
+			`(${percent} % menos).`;
+		hint.hidden = false;
+	};
+
+	fileInput?.addEventListener('change', previewCompression);
 
 	openBtn?.addEventListener('click', () => modal?.showModal());
 
@@ -379,7 +486,7 @@ const toneOf = (status: string) =>
 		// Se comprueba antes de subir: el archivo va a Vercel Blob y no vale la
 		// pena gastar la subida para que el servidor lo rechace.
 		if (!file) return say('Adjunta el comprobante del pago.', false);
-		if (!ACCEPTED.includes(file.type)) return say('El comprobante debe ser JPG, PNG o PDF.', false);
+		if (!ACCEPTED.includes(file.type)) return say('El comprobante debe ser JPG, PNG, WebP o PDF.', false);
 		if (file.size > MAX_BYTES) return say('El comprobante supera el límite de 3 MB.', false);
 
 		submitBtn?.setAttribute('disabled', 'true');
@@ -388,9 +495,16 @@ const toneOf = (status: string) =>
 		if (feedback) feedback.textContent = '';
 
 		try {
+			// El comprobante viaja comprimido si eso lo hace más ligero. Si la
+			// compresión falla se manda el original, así que nunca se bloquea un
+			// pago por un problema del optimizador.
+			const payload = new FormData(form);
+			const optimized = await compressImage(file);
+			if (optimized !== file) payload.set('receipt', optimized, optimized.name);
+
 			const response = await fetch('/api/p2p/receipts', {
 				method: 'POST',
-				body: new FormData(form),
+				body: payload,
 			});
 			const data = (await response.json()) as { ok: boolean; message: string };
 

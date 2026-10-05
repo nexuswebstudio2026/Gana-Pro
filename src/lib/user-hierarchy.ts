@@ -13,6 +13,12 @@ export interface OrganizationNode {
 	children: OrganizationNode[];
 }
 
+/** Identificador de la raíz del organigrama. */
+export const ORGANIZATION_ROOT_ID = 'gana-pro';
+
+/** Nombre visible de la raíz del organigrama. */
+export const ORGANIZATION_ROOT_NAME = 'GANA PRO';
+
 const ROOT_ALIASES = new Set(['gana pro', 'ganapro', 'gana-pro']);
 
 /** Máximo de usuarios que cuelgan de cada nodo (incluida la raíz GANA PRO). */
@@ -30,6 +36,13 @@ export interface PersonalHierarchy {
 	root: OrganizationNode;
 	/** Sus usuarios del segundo nivel (como máximo `MAX_DIRECT_TEAM`). */
 	team: OrganizationNode[];
+	/**
+	 * Nodo que está por encima del usuario en la matriz: quien lo trajo.
+	 *
+	 * Es `null` para el administrador (es la raíz de GANA PRO, no tiene nadie
+	 * encima) y para un usuario que todavía no aparece en la hoja.
+	 */
+	upline: OrganizationNode | null;
 	/** `true` si el usuario aún no aparece en la hoja de cálculo. */
 	orphan: boolean;
 }
@@ -70,8 +83,8 @@ function createNode(user: User, position: number, depth: number): OrganizationNo
  */
 export function buildUserHierarchy(users: User[]): OrganizationNode {
 	const root: OrganizationNode = {
-		id: 'gana-pro',
-		name: 'GANA PRO',
+		id: ORGANIZATION_ROOT_ID,
+		name: ORGANIZATION_ROOT_NAME,
 		position: 1,
 		depth: 0,
 		children: [],
@@ -217,7 +230,10 @@ export function buildPersonalHierarchy(
 			depth: 0,
 			children: globalRoot.children.slice(0, MAX_DIRECT_TEAM),
 		};
-		return { root, team: root.children, orphan: false };
+		// El admin ES la raíz: no hay nadie por encima de él, así que el nivel
+		// superior de su matriz queda vacío en vez de mostrar un patrocinador
+		// inventado (él mismo).
+		return { root, team: root.children, upline: null, orphan: false };
 	}
 
 	const node = findUserNode(globalRoot, identity);
@@ -234,6 +250,7 @@ export function buildPersonalHierarchy(
 				children: [],
 			},
 			team: [],
+			upline: null,
 			orphan: true,
 		};
 	}
@@ -261,6 +278,10 @@ export function buildPersonalHierarchy(
 	return {
 		root,
 		team: root.children,
+		// El nivel superior se busca en el árbol GLOBAL (no en `root`, que ya
+		// está rebasado): es el único sitio donde el padre del usuario sigue
+		// siendo el patrocinador real y no un hijo suyo.
+		upline: findUserParent(globalRoot, identity),
 		orphan: false,
 	};
 }
