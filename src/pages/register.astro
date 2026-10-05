@@ -6,8 +6,13 @@ import { DOCUMENT_TYPES } from '../lib/testimonials';
 export const prerender = false;
 
 const error = Astro.url.searchParams.get('error');
-// Si llegan con ?ref=CODIGO (enlace de referido), se precarga el campo
+// Si llegan con ?ref=CODIGO (enlace de referido), se precarga el campo.
 const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
+// El código que viene del enlace se muestra pero NO se puede editar: es la
+// prueba de quién invitó. Solo llega `ref` en la URL cuando procede del enlace
+// (`/r/CODIGO` o `?ref=`), porque `/api/register` lo reenvía en la URL de error
+// únicamente si así entró, y lo descarta si el código resultó inválido.
+const refLocked = referralCode.length > 0;
 // Si el registro se rechazó por un tipo de documento no válido, se repone el
 // que el usuario había elegido en vez de dejar el select en el primer valor.
 const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
@@ -77,17 +82,47 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		</div>
 
 		<div class="field">
-			<label for="ref">Código de Referido (opcional)</label>
-			<input
-				type="text"
-				id="ref"
-				name="ref"
-				value={referralCode}
-				placeholder={referralCode ? '' : 'Si alguien te invitó, escribe su código'}
-				maxlength="60"
-				autocomplete="off"
-			/>
-			<span class="field-hint">Por cada persona que se registre con tu código ganas $1.000 (una sola vez).</span>
+			<label for="ref">
+				Código de Referido {refLocked ? '(de quien te invitó)' : '(opcional)'}
+			</label>
+			<div class="input-lock">
+				<input
+					type="text"
+					id="ref"
+					name="ref"
+					value={referralCode}
+					placeholder={refLocked ? '' : 'Si alguien te invitó, escribe su código'}
+					maxlength="60"
+					autocomplete="off"
+					readonly={refLocked ? true : undefined}
+					aria-readonly={refLocked ? 'true' : undefined}
+				/>
+				{refLocked && (
+					<svg
+						class="lock-icon"
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+						<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+					</svg>
+				)}
+			</div>
+			{/* Marca el origen del código: el API solo conserva en la URL de error
+			    el que vino del enlace, para no bloquear uno escrito a mano. */}
+			{refLocked && <input type="hidden" name="refFromLink" value="1" />}
+			<span class="field-hint">
+				{refLocked
+					? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
+					: 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).'}
+			</span>
 		</div>
 
 		<div class="section-divider" role="separator">
@@ -267,6 +302,36 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		outline: none;
 		border-color: var(--gold-primary);
 		box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+	}
+
+	/* Contenedor del candado: el input sigue ocupando todo el ancho y el icono
+	   se superpone a la derecha sin empujar el texto del código. */
+	.input-lock {
+		position: relative;
+		display: flex;
+	}
+
+	.input-lock input {
+		flex: 1;
+		min-width: 0;
+	}
+
+	/* Código que llegó desde el enlace de referido: se ve, pero no se toca. */
+	.input-lock input[readonly] {
+		padding-right: 42px;
+		cursor: not-allowed;
+		color: var(--gold-primary);
+		letter-spacing: 0.04em;
+	}
+
+	.lock-icon {
+		position: absolute;
+		right: 14px;
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--gold-primary);
+		opacity: 0.7;
+		pointer-events: none;
 	}
 
 	/* El option se pinta con el fondo del tema: en Windows el desplegable

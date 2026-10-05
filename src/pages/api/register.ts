@@ -48,8 +48,18 @@ export const POST: APIRoute = async (Astro) => {
 		const password = params.get('password') ?? '';
 		const passwordConfirm = params.get('passwordConfirm') ?? '';
 		const referralInput = params.get('ref')?.trim() ?? '';
-		const errorParam = (msg: string) =>
-			Astro.redirect('/register?error=' + encodeURIComponent(msg), 303);
+		// El formulario marca con `refFromLink` el código que vino del enlace de
+		// referido. Solo ese se reenvía en la URL de error, para que el campo siga
+		// precargado y bloqueado; uno escrito a mano se descarta, como ya pasaba.
+		// Los errores propios del código usan `keepRef = false`: sin eso, el campo
+		// quedaría bloqueado con un código que ya se sabe inválido y no habría
+		// forma de corregirlo ni de registrarse sin él.
+		const refFromLink = params.get('refFromLink') === '1';
+		const errorParam = (msg: string, keepRef = true) => {
+			const query = new URLSearchParams({ error: msg });
+			if (keepRef && refFromLink && referralInput) query.set('ref', referralInput);
+			return Astro.redirect('/register?' + query.toString(), 303);
+		};
 
 		// --- Validation ---
 		if (!username || !email || !password) {
@@ -126,7 +136,8 @@ export const POST: APIRoute = async (Astro) => {
 			const referrer = await findReferrerByCode(referralInput);
 			if (!referrer) {
 				return errorParam(
-					'El código de referido no es válido. Verifícalo o regístrate sin él.'
+					'El código de referido no es válido. Verifícalo o regístrate sin él.',
+					false
 				);
 			}
 			// No se permite autoreferirse
@@ -134,7 +145,7 @@ export const POST: APIRoute = async (Astro) => {
 				referrer.username?.toLowerCase() === username.toLowerCase() ||
 				referrer.email?.toLowerCase() === email
 			) {
-				return errorParam('No puedes usar tu propio código de referido.');
+				return errorParam('No puedes usar tu propio código de referido.', false);
 			}
 			referralCode = ownCodeOf(referrer) || referrer.username || referralInput;
 		}
