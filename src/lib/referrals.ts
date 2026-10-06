@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { getGoogleSheetUsers } from './sheets';
+import { readJSON } from './store';
 import type { User } from './types';
 
 /**
@@ -66,25 +67,85 @@ export function isReferredBy(user: User, code: string): boolean {
 }
 
 /**
- * Busca al usuario que trae el código de referido indicado.
- * Se puede introducir el "código propio" o el nombre de usuario.
+ * Busca al usuario que trae el código de referido indicado, dentro de una
+ * lista ya cargada. Se puede introducir el "código propio" o el nombre de
+ * usuario.
+ *
+ * Va aparte de `lookupReferrer` para poder comprobar la lógica de matching
+ * sin tocar Google Sheets.
  */
-export async function findReferrerByCode(code: string): Promise<User | null> {
+export function findUserByReferralCode(users: User[], code: string): User | null {
 	const target = normalize(code);
 	if (!target) return null;
 
-	let users: User[] = [];
-	try {
-		users = await getGoogleSheetUsers();
-	} catch {
-		return null;
-	}
-
 	return (
 		users.find(
-			(u) => normalize(ownCodeOf(u)) === target || normalize(u.username) === target
+			(u) =>
+				normalize(ownCodeOf(u)) === target ||
+				normalize(u.username) === target ||
+				normalize(u.email) === target ||
+				normalize(u.ownCode) === target ||
+				normalize(u.id) === target
 		) ?? null
 	);
+}
+
+/**
+ * Estado de un código de referido que llega en el enlace de registro.
+ *
+ * No basta con "encontrado / no encontrado": si la hoja no responde,
+ * `missing` sería mentira y el formulario mostraría "este usuario no está
+ * registrado" a alguien cuyo invitador sí existe. Por eso el fallo de lectura
+ * se devuelve aparte (`unavailable`) y quien llame decide qué mostrar.
+ */
+export type ReferrerLookup =
+	| { status: 'found'; user: User }
+	| { status: 'missing'; user: null }
+	| { status: 'unavailable'; user: null };
+
+/**
+ * Busca al usuario que trae el código de referido indicado y cuenta por qué
+ * no se encontró, si es el caso.
+ */
+export async function lookupReferrer(code: string): Promise<ReferrerLookup> {
+	const target = normalize(code);
+	if (!target) return { status: 'missing', user: null };
+
+	let sheetUsers: User[] = [];
+	try {
+		sheetUsers = await getGoogleSheetUsers();
+	} catch {
+		sheetUsers = [];
+	}
+
+	let localUsers: User[] = [];
+	try {
+		localUsers = readJSON<User[]>('users.json', []);
+	} catch {
+		localUsers = [];
+	}
+
+	const allUsers = [...sheetUsers, ...localUsers];
+	const user = findUserByReferralCode(allUsers, code);
+
+	if (user) {
+		return { status: 'found', user };
+	}
+
+	return { status: 'missing', user: null };
+}
+
+/**
+ * Busca al usuario que trae el código de referido indicado.
+ * Se puede introducir el "código propio" o el nombre de usuario.
+ *
+ * Devuelve `null` tanto si no existe como si la hoja no responde: para el
+ * alta da igual (sin hoja el registro no se puede guardar). Quién necesite
+ * distinguir ambos casos debe usar `lookupReferrer`.
+ */
+export async function findReferrerByCode(code: string): Promise<User | null> {
+	const result = await lookupReferrer(code);
+	return result.user;
 }
 
 /**

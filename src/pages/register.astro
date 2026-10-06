@@ -1,18 +1,31 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
 import { DOCUMENT_TYPES } from '../lib/testimonials';
+import { lookupReferrer } from '../lib/referrals';
 
 // SSR: query params are read at request time
 export const prerender = false;
 
 const error = Astro.url.searchParams.get('error');
 // Si llegan con ?ref=CODIGO (enlace de referido), se precarga el campo.
-const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim();
+// Se acota la longitud para no propagar un texto arbitrario en la URL.
+const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim().slice(0, 60);
+// El código que viene del enlace se comprueba contra la hoja ANTES de pintar
+// el formulario: si quien invitó no está registrado, se avisa en el mismo
+// momento en que se abre la página en lugar de dejar que el usuario llene
+// todo el formulario para rechazarlo después en `/api/register`.
+// Solo se avisa cuando el estado es `missing`: si la hoja no responde,
+// `unavailable` no permite afirmar que el usuario no existe y el formulario
+// se pinta como siempre, sin ningún mensaje.
+const lookup = referralCode ? await lookupReferrer(referralCode) : null;
+const refInvalid = lookup?.status === 'missing';
 // El código que viene del enlace se muestra pero NO se puede editar: es la
-// prueba de quién invitó. Solo llega `ref` en la URL cuando procede del enlace
-// (`/r/CODIGO` o `?ref=`), porque `/api/register` lo reenvía en la URL de error
-// únicamente si así entró, y lo descarta si el código resultó inválido.
-const refLocked = referralCode.length > 0;
+// prueba de quién invitó. Solo se bloquea si además existe el invitador;
+// uno inválido queda editable para poder corregirlo o vaciarlo.
+// Solo llega `ref` en la URL cuando procede del enlace (`/r/CODIGO` o
+// `?ref=`), porque `/api/register` lo reenvía en la URL de error únicamente
+// si así entró, y lo descarta si el código resultó inválido.
+const refLocked = lookup?.status === 'found';
 // Si el registro se rechazó por un tipo de documento no válido, se repone el
 // que el usuario había elegido en vez de dejar el select en el primer valor.
 const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
@@ -27,6 +40,22 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 				<line x1="12" y1="16" x2="12.01" y2="16"></line>
 			</svg>
 			<span>{error}</span>
+		</div>
+	)}
+
+	{/* El enlace de referido apunta a alguien que no tiene cuenta: se avisa
+	    aquí mismo y el campo queda editable para corregirlo o vaciarlo. */}
+	{refInvalid && (
+		<div class="msg msg-error" role="alert">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="12" cy="12" r="10"></circle>
+				<line x1="12" y1="8" x2="12" y2="12"></line>
+				<line x1="12" y1="16" x2="12.01" y2="16"></line>
+			</svg>
+			<span>
+				El usuario «{referralCode}» no está registrado. Verifica el código de
+				referido o regístrate sin él.
+			</span>
 		</div>
 	)}
 
@@ -83,9 +112,13 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 
 		<div class="field">
 			<label for="ref">
-				Código de Referido {refLocked ? '(de quien te invitó)' : '(opcional)'}
+				Código de Referido {refLocked
+					? '(de quien te invitó)'
+					: refInvalid
+						? '(no registrado)'
+						: '(opcional)'}
 			</label>
-			<div class="input-lock">
+			<div class="input-lock" id="ref-container">
 				<input
 					type="text"
 					id="ref"
@@ -118,10 +151,12 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			{/* Marca el origen del código: el API solo conserva en la URL de error
 			    el que vino del enlace, para no bloquear uno escrito a mano. */}
 			{refLocked && <input type="hidden" name="refFromLink" value="1" />}
-			<span class="field-hint">
-				{refLocked
-					? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
-					: 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).'}
+			<span class="field-hint" id="ref-hint">
+				{refInvalid
+					? 'Nadie usa todavía ese código: corrígelo o déjalo vacío para continuar.'
+					: refLocked
+						? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
+						: 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).'}
 			</span>
 		</div>
 
@@ -240,6 +275,78 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 	<div class="links">
 		<a href="/login" class="auth-link gold-link">¿Ya es miembro distinguido? Inicie sesión</a>
 	</div>
+
+	<script>
+		const refInput = document.getElementById('ref') as HTMLInputElement | null;
+		const refHint = document.getElementById('ref-hint');
+		const lockContainer = document.getElementById('ref-container');
+
+		if (refInput && !refInput.readOnly) {
+			let timer: number | undefined;
+
+			const checkCode = async (val: string) => {
+				const clean = val.trim();
+				if (!clean) {
+					if (refHint) refHint.textContent = 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).';
+					return;
+				}
+
+				try {
+					const res = await fetch(`/api/check-referrer?ref=${encodeURIComponent(clean)}`);
+					const data = await res.json();
+					if (data.valid) {
+						refInput.readOnly = true;
+						refInput.setAttribute('aria-readonly', 'true');
+
+						if (lockContainer && !lockContainer.querySelector('.lock-icon')) {
+							const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+							lockSvg.setAttribute('class', 'lock-icon');
+							lockSvg.setAttribute('width', '15');
+							lockSvg.setAttribute('height', '15');
+							lockSvg.setAttribute('viewBox', '0 0 24 24');
+							lockSvg.setAttribute('fill', 'none');
+							lockSvg.setAttribute('stroke', 'currentColor');
+							lockSvg.setAttribute('stroke-width', '2');
+							lockSvg.setAttribute('stroke-linecap', 'round');
+							lockSvg.setAttribute('stroke-linejoin', 'round');
+							lockSvg.setAttribute('aria-hidden', 'true');
+							lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
+							lockContainer.appendChild(lockSvg);
+						}
+
+						let hidden = document.querySelector('input[name="refFromLink"]') as HTMLInputElement;
+						if (!hidden && lockContainer?.parentNode) {
+							hidden = document.createElement('input');
+							hidden.type = 'hidden';
+							hidden.name = 'refFromLink';
+							hidden.value = '1';
+							lockContainer.parentNode.appendChild(hidden);
+						}
+
+						if (refHint) {
+							refHint.textContent = `Código de tu invitador: se muestra tal cual y no se puede modificar.`;
+						}
+					} else if (data.reason === 'missing') {
+						if (refHint) {
+							refHint.textContent = 'Nadie usa todavía ese código: corrígelo o déjalo vacío para continuar.';
+						}
+					}
+				} catch (err) {
+					console.error('Error al verificar código:', err);
+				}
+			};
+
+			refInput.addEventListener('input', () => {
+				window.clearTimeout(timer);
+				timer = window.setTimeout(() => checkCode(refInput.value), 450);
+			});
+
+			refInput.addEventListener('blur', () => {
+				window.clearTimeout(timer);
+				checkCode(refInput.value);
+			});
+		}
+	</script>
 </AuthLayout>
 
 <style>

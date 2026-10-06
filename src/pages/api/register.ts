@@ -11,7 +11,7 @@ import {
 	isValidPhone,
 	PROFILE_FIELD_LIMITS,
 } from '../../lib/account-profile';
-import { findReferrerByCode, ownCodeOf } from '../../lib/referrals';
+import { lookupReferrer, ownCodeOf } from '../../lib/referrals';
 import { normalizeDocumentType, esNitValido } from '../../lib/testimonials';
 import type { RegistrationContact } from '../../lib/sheets';
 import type { User } from '../../lib/types';
@@ -130,16 +130,31 @@ export const POST: APIRoute = async (Astro) => {
 
 		// --- Código de referido (opcional) ---
 		// Si viene informado debe existir: así el usuario sabe de inmediato
-		// que su código no es válido en lugar de creer que seguardó la comisión.
+		// que su código no es válido en lugar de creer que se guardó la comisión.
+		// El mismo aviso ya aparece al abrir `/register?ref=...`, así que aquí
+		// solo se repite por si el código se escribió a mano o caducó después.
 		let referralCode = '';
 		if (referralInput) {
-			const referrer = await findReferrerByCode(referralInput);
-			if (!referrer) {
+			const lookup = await lookupReferrer(referralInput);
+			// El código se recorta antes de meterlo en la URL de error: una
+			// petición hecha a mano podría traer un texto enorme.
+			const shownCode = referralInput.slice(0, 60);
+			if (lookup.status === 'missing') {
 				return errorParam(
-					'El código de referido no es válido. Verifícalo o regístrate sin él.',
+					`El usuario «${shownCode}» no está registrado. Verifica el código de referido o regístrate sin él.`,
 					false
 				);
 			}
+			if (lookup.status === 'unavailable') {
+				// No se pudo leer la hoja: no se puede decir que el código sea
+				// bueno ni malo, así que se reintenta conservando el enlace
+				// (keepRef) en lugar de tumbar un código que puede ser válido.
+				return errorParam(
+					'No se pudo verificar el código de referido. Intenta de nuevo en unos minutos.',
+					refFromLink
+				);
+			}
+			const referrer = lookup.user;
 			// No se permite autoreferirse
 			if (
 				referrer.username?.toLowerCase() === username.toLowerCase() ||
