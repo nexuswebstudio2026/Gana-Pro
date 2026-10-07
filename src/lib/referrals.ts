@@ -112,10 +112,12 @@ export async function lookupReferrer(code: string): Promise<ReferrerLookup> {
 	if (!target) return { status: 'missing', user: null };
 
 	let sheetUsers: User[] = [];
+	let sheetAvailable = true;
 	try {
 		sheetUsers = await getGoogleSheetUsers();
-	} catch {
-		sheetUsers = [];
+	} catch (err) {
+		sheetAvailable = false;
+		console.error('No se pudo verificar el código de referido en Google Sheets:', err);
 	}
 
 	let localUsers: User[] = [];
@@ -132,7 +134,9 @@ export async function lookupReferrer(code: string): Promise<ReferrerLookup> {
 		return { status: 'found', user };
 	}
 
-	return { status: 'missing', user: null };
+	return sheetAvailable
+		? { status: 'missing', user: null }
+		: { status: 'unavailable', user: null };
 }
 
 /**

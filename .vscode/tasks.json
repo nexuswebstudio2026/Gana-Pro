@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Astro development server",
+			"type": "shell",
+			"command": "node_modules\\.bin\\astro.cmd",
+			"args": [
+				"dev",
+				"--background"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

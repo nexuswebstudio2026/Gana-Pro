@@ -1,31 +1,34 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
 import { DOCUMENT_TYPES } from '../lib/testimonials';
-import { lookupReferrer } from '../lib/referrals';
+import { lookupReferrer, ownCodeOf } from '../lib/referrals';
 
 // SSR: query params are read at request time
 export const prerender = false;
 
 const error = Astro.url.searchParams.get('error');
-// Si llegan con ?ref=CODIGO (enlace de referido), se precarga el campo.
-// Se acota la longitud para no propagar un texto arbitrario en la URL.
-const referralCode = (Astro.url.searchParams.get('ref') ?? '').trim().slice(0, 60);
+// Si llegaron con /registrarusuario/cod=Ankamo, se extrae el código de referido.
+let referralCode = (Astro.url.searchParams.get('ref') ?? '').trim().slice(0, 60);
+
+if (!referralCode) {
+    const newFormatMatch = Astro.url.pathname.match(/\/registrarusuario\/cod=(.+)/);
+    if (newFormatMatch) {
+        referralCode = newFormatMatch[1].trim().slice(0, 60);
+    }
+}
 // El código que viene del enlace se comprueba contra la hoja ANTES de pintar
 // el formulario: si quien invitó no está registrado, se avisa en el mismo
 // momento en que se abre la página en lugar de dejar que el usuario llene
 // todo el formulario para rechazarlo después en `/api/register`.
-// Solo se avisa cuando el estado es `missing`: si la hoja no responde,
-// `unavailable` no permite afirmar que el usuario no existe y el formulario
-// se pinta como siempre, sin ningún mensaje.
+// Si la hoja no responde, `unavailable` muestra un aviso distinto sin afirmar
+// que el usuario no existe.
 const lookup = referralCode ? await lookupReferrer(referralCode) : null;
 const refInvalid = lookup?.status === 'missing';
-// El código que viene del enlace se muestra pero NO se puede editar: es la
-// prueba de quién invitó. Solo se bloquea si además existe el invitador;
-// uno inválido queda editable para poder corregirlo o vaciarlo.
-// Solo llega `ref` en la URL cuando procede del enlace (`/r/CODIGO` o
-// `?ref=`), porque `/api/register` lo reenvía en la URL de error únicamente
-// si así entró, y lo descarta si el código resultó inválido.
+const refUnavailable = lookup?.status === 'unavailable';
 const refLocked = lookup?.status === 'found';
+if (refLocked && lookup?.user) {
+	referralCode = ownCodeOf(lookup.user);
+}
 // Si el registro se rechazó por un tipo de documento no válido, se repone el
 // que el usuario había elegido en vez de dejar el select en el primer valor.
 const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
@@ -56,6 +59,17 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 				El usuario «{referralCode}» no está registrado. Verifica el código de
 				referido o regístrate sin él.
 			</span>
+		</div>
+	)}
+
+	{refUnavailable && (
+		<div class="msg msg-error" role="alert">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="12" cy="12" r="10"></circle>
+				<line x1="12" y1="8" x2="12" y2="12"></line>
+				<line x1="12" y1="16" x2="12.01" y2="16"></line>
+			</svg>
+			<span>No se pudo verificar el código de referido en este momento. Intenta de nuevo más tarde.</span>
 		</div>
 	)}
 
@@ -116,7 +130,9 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 					? '(de quien te invitó)'
 					: refInvalid
 						? '(no registrado)'
-						: '(opcional)'}
+						: refUnavailable
+							? '(pendiente de verificación)'
+							: '(opcional)'}
 			</label>
 			<div class="input-lock" id="ref-container">
 				<input
@@ -154,9 +170,11 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			<span class="field-hint" id="ref-hint">
 				{refInvalid
 					? 'Nadie usa todavía ese código: corrígelo o déjalo vacío para continuar.'
-					: refLocked
-						? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
-						: 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).'}
+					: refUnavailable
+						? 'No pudimos verificar este código. Puedes volver a intentarlo más tarde o quitarlo.'
+						: refLocked
+							? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
+							: 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).'}
 			</span>
 		</div>
 
@@ -295,6 +313,7 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 					const res = await fetch(`/api/check-referrer?ref=${encodeURIComponent(clean)}`);
 					const data = await res.json();
 					if (data.valid) {
+						if (data.ownCode) refInput.value = data.ownCode;
 						refInput.readOnly = true;
 						refInput.setAttribute('aria-readonly', 'true');
 
@@ -329,6 +348,10 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 					} else if (data.reason === 'missing') {
 						if (refHint) {
 							refHint.textContent = 'Nadie usa todavía ese código: corrígelo o déjalo vacío para continuar.';
+						}
+					} else if (data.reason === 'unavailable') {
+						if (refHint) {
+							refHint.textContent = 'No pudimos verificar este código. Intenta de nuevo más tarde o quítalo.';
 						}
 					}
 				} catch (err) {

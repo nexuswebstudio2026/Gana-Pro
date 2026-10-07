@@ -51,13 +51,13 @@ export const POST: APIRoute = async (Astro) => {
 		// El formulario marca con `refFromLink` el código que vino del enlace de
 		// referido. Solo ese se reenvía en la URL de error, para que el campo siga
 		// precargado y bloqueado; uno escrito a mano se descarta, como ya pasaba.
-		// Los errores propios del código usan `keepRef = false`: sin eso, el campo
+		// Los errores propios del código usan `keepRef = true`: sin eso, el campo
 		// quedaría bloqueado con un código que ya se sabe inválido y no habría
 		// forma de corregirlo ni de registrarse sin él.
 		const refFromLink = params.get('refFromLink') === '1';
 		const errorParam = (msg: string, keepRef = true) => {
 			const query = new URLSearchParams({ error: msg });
-			if (keepRef && refFromLink && referralInput) query.set('ref', referralInput);
+			if (keepRef && referralInput) query.set('ref', referralInput);
 			return Astro.redirect('/register?' + query.toString(), 303);
 		};
 
@@ -142,7 +142,7 @@ export const POST: APIRoute = async (Astro) => {
 			if (lookup.status === 'missing') {
 				return errorParam(
 					`El usuario «${shownCode}» no está registrado. Verifica el código de referido o regístrate sin él.`,
-					false
+					true
 				);
 			}
 			if (lookup.status === 'unavailable') {

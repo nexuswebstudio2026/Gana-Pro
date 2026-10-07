@@ -1,5 +1,6 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
+import { findUser } from '../lib/users';
 
 // SSR: query params are read at request time
 export const prerender = false;
@@ -8,6 +9,18 @@ const error = Astro.url.searchParams.get('error');
 const registered = Astro.url.searchParams.get('registered') === '1';
 const loggedout = Astro.url.searchParams.get('loggedout') === '1';
 const reset = Astro.url.searchParams.get('reset') === '1';
+
+// Usuario logueado, resuelto desde la sesión.
+let sessionUser = Astro.locals.user as { username?: string; email?: string } | undefined;
+
+// Código de referido del usuario logueado, consultado contra la hoja/local.
+let referralCode = '';
+if (sessionUser && sessionUser.username) {
+    const username = sessionUser.username;
+    const email = sessionUser.email;
+    const user = await findUser(username as string, email as string);
+    referralCode = user?.ownCode || user?.username || user?.referralCode || '';
+}
 ---
 
 <AuthLayout title="Acceso Exclusivo" subtitle="Ingrese sus credenciales de miembro para entrar al portal">
@@ -84,7 +97,16 @@ const reset = Astro.url.searchParams.get('reset') === '1';
 
 	<div class="links">
 		<a href="/forgot-password" class="auth-link">¿Olvidó su contraseña?</a>
-		<a href="/register" class="auth-link gold-link">¿Desea solicitar membresía? Regístrese</a>
+		<a
+		href={
+			referralCode
+				? `/registrarusuario/cod=${encodeURIComponent(referralCode)}`
+				: '/register'
+		}
+		class="auth-link gold-link"
+	>
+		¿Desea solicitar membresía? Regístrese
+	</a>
 	</div>
 </AuthLayout>
 
