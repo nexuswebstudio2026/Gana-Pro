@@ -33,6 +33,28 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Validate registration changes",
+			"type": "shell",
+			"command": "npm.cmd",
+			"args": [
+				"run",
+				"check"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check registration form",
+			"type": "shell",
+			"command": "npm.cmd",
+			"args": [
+				"run",
+				"check"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

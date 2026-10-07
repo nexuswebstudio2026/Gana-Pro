@@ -1,7 +1,6 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
 import { DOCUMENT_TYPES } from '../lib/testimonials';
-import { lookupReferrer } from '../lib/referrals';
 
 // SSR: query params are read at request time
 export const prerender = false;
@@ -16,19 +15,9 @@ if (!referralCode) {
         referralCode = newFormatMatch[1].trim().slice(0, 60);
     }
 }
-// El código que viene del enlace se comprueba contra la hoja ANTES de pintar
-// el formulario: si quien invitó no está registrado, se avisa en el mismo
-// momento en que se abre la página en lugar de dejar que el usuario llene
-// todo el formulario para rechazarlo después en `/api/register`.
-// Si la hoja no responde, `unavailable` muestra un aviso distinto sin afirmar
-// que el usuario no existe.
-const lookup = referralCode ? await lookupReferrer(referralCode) : null;
-const refInvalid = lookup?.status === 'missing';
-const refUnavailable = lookup?.status === 'unavailable';
-const refLocked = lookup?.status === 'found';
-if (refLocked && lookup?.user) {
-	referralCode = lookup.user.username || referralCode;
-}
+// Un código que llega por enlace/QR se presenta sin permitir que lo cambien.
+// Su existencia se comprueba al pulsar el botón, antes de mostrar el registro.
+const refLocked = Boolean(referralCode);
 // Si el registro se rechazó por un tipo de documento no válido, se repone el
 // que el usuario había elegido en vez de dejar el select en el primer valor.
 const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
@@ -49,13 +38,7 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 	<form method="POST" action="/api/register" class="form">
 		<div class="field">
 			<label for="ref">
-				Código de Referido {refUnavailable
-					? '(pendiente de verificación)'
-					: refLocked
-						? '(de quien te invitó)'
-					: refInvalid
-						? '(no registrado)'
-						: '(obligatorio)'}
+				Código de Referido {refLocked ? '(de quien te invitó)' : '(obligatorio)'}
 			</label>
 			<div class="input-lock" id="ref-container">
 				<input
@@ -89,22 +72,18 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 				)}
 			</div>
 			{refLocked && <input type="hidden" name="refFromLink" value="1" />}
-			<button type="button" id="verify-ref" class="gold-button btn-full" hidden={refLocked}>
+			<button type="button" id="verify-ref" class="gold-button btn-full">
 				Verificar código de referido
 			</button>
-			<span class="field-hint" id="ref-hint" role={refInvalid || refUnavailable ? 'alert' : 'status'} aria-live="polite">
-				{refInvalid
-					? `El usuario «${referralCode}» no está registrado en la base de datos.`
-					: refUnavailable
-						? 'No se pudo verificar el código en Google Sheets. Intenta de nuevo.'
-						: refLocked
-							? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
-							: 'Ingresa el usuario de quien te invitó y verifica que esté registrado en Google Sheets.'}
+			<span class="field-hint" id="ref-hint" role="status" aria-live="polite">
+				{refLocked
+					? 'Código recibido del enlace. Verifícalo para continuar.'
+					: 'Ingresa el usuario de quien te invitó y verifica que esté registrado en Google Sheets.'}
 			</span>
 		</div>
 
-		<div id="registration-details" hidden={!refLocked}>
-		<fieldset id="registration-fields" aria-label="Datos del registro" disabled={!refLocked}>
+		<div id="registration-details" hidden>
+		<fieldset id="registration-fields" aria-label="Datos del registro" disabled>
 		<div class="field">
 			<label for="username">Nombre de Usuario VIP</label>
 			<input
@@ -281,7 +260,7 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		const details = document.getElementById('registration-details') as HTMLDivElement | null;
 		const registrationFields = document.getElementById('registration-fields') as HTMLFieldSetElement | null;
 		const registrationForm = refInput?.form;
-		let refVerified = Boolean(refInput?.readOnly);
+		let refVerified = false;
 		let verificationInProgress = false;
 
 		const showVerificationError = (message: string) => {
@@ -345,13 +324,20 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 					lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
 					lockContainer?.appendChild(lockSvg);
 
-					const linkMarker = document.createElement('input');
-					linkMarker.type = 'hidden';
-					linkMarker.name = 'refFromLink';
-					linkMarker.value = '1';
-					registrationForm?.appendChild(linkMarker);
+					let linkMarker = registrationForm?.querySelector(
+						'input[name="refFromLink"]'
+					) as HTMLInputElement | null;
+					if (!linkMarker && registrationForm) {
+						linkMarker = document.createElement('input');
+						linkMarker.type = 'hidden';
+						linkMarker.name = 'refFromLink';
+						linkMarker.value = '1';
+						registrationForm.appendChild(linkMarker);
+					}
 					refHint.textContent = 'Usuario verificado en Google Sheets. Completa el formulario para continuar.';
 					refHint.setAttribute('role', 'status');
+					details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					document.getElementById('username')?.focus({ preventScroll: true });
 				} else if (result.reason === 'missing') {
 					refVerified = false;
 					details.hidden = true;
