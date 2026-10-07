@@ -11,7 +11,7 @@ import {
 	isValidPhone,
 	PROFILE_FIELD_LIMITS,
 } from '../../lib/account-profile';
-import { lookupReferrer, ownCodeOf } from '../../lib/referrals';
+import { lookupReferrer } from '../../lib/referrals';
 import { normalizeDocumentType, esNitValido } from '../../lib/testimonials';
 import type { RegistrationContact } from '../../lib/sheets';
 import type { User } from '../../lib/types';
@@ -48,12 +48,8 @@ export const POST: APIRoute = async (Astro) => {
 		const password = params.get('password') ?? '';
 		const passwordConfirm = params.get('passwordConfirm') ?? '';
 		const referralInput = params.get('ref')?.trim() ?? '';
-		// El formulario marca con `refFromLink` el código que vino del enlace de
-		// referido. Solo ese se reenvía en la URL de error, para que el campo siga
-		// precargado y bloqueado; uno escrito a mano se descarta, como ya pasaba.
-		// Los errores propios del código usan `keepRef = true`: sin eso, el campo
-		// quedaría bloqueado con un código que ya se sabe inválido y no habría
-		// forma de corregirlo ni de registrarse sin él.
+		// El formulario marca con `refFromLink` los códigos que ya pasaron la
+		// verificación para conservarlos si ocurre un error temporal al registrar.
 		const refFromLink = params.get('refFromLink') === '1';
 		const errorParam = (msg: string, keepRef = true) => {
 			const query = new URLSearchParams({ error: msg });
@@ -62,6 +58,9 @@ export const POST: APIRoute = async (Astro) => {
 		};
 
 		// --- Validation ---
+		if (!referralInput) {
+			return errorParam('Ingresa y verifica un código de referido registrado en Google Sheets.', false);
+		}
 		if (!username || !email || !password) {
 			return errorParam('Todos los campos son obligatorios.');
 		}
@@ -128,42 +127,37 @@ export const POST: APIRoute = async (Astro) => {
 			return errorParam('El correo electrónico ya está registrado.');
 		}
 
-		// --- Código de referido (opcional) ---
-		// Si viene informado debe existir: así el usuario sabe de inmediato
-		// que su código no es válido en lugar de creer que se guardó la comisión.
-		// El mismo aviso ya aparece al abrir `/register?ref=...`, así que aquí
-		// solo se repite por si el código se escribió a mano o caducó después.
+		// --- Código de referido ---
+		// La verificación del navegador solo habilita el formulario; se repite
+		// aquí para impedir registros con códigos inexistentes o manipulados.
 		let referralCode = '';
-		if (referralInput) {
-			const lookup = await lookupReferrer(referralInput);
-			// El código se recorta antes de meterlo en la URL de error: una
-			// petición hecha a mano podría traer un texto enorme.
-			const shownCode = referralInput.slice(0, 60);
-			if (lookup.status === 'missing') {
-				return errorParam(
-					`El usuario «${shownCode}» no está registrado. Verifica el código de referido o regístrate sin él.`,
-					true
-				);
-			}
-			if (lookup.status === 'unavailable') {
-				// No se pudo leer la hoja: no se puede decir que el código sea
-				// bueno ni malo, así que se reintenta conservando el enlace
-				// (keepRef) en lugar de tumbar un código que puede ser válido.
-				return errorParam(
-					'No se pudo verificar el código de referido. Intenta de nuevo en unos minutos.',
-					refFromLink
-				);
-			}
-			const referrer = lookup.user;
-			// No se permite autoreferirse
-			if (
-				referrer.username?.toLowerCase() === username.toLowerCase() ||
-				referrer.email?.toLowerCase() === email
-			) {
-				return errorParam('No puedes usar tu propio código de referido.', false);
-			}
-			referralCode = ownCodeOf(referrer) || referrer.username || referralInput;
+		const lookup = await lookupReferrer(referralInput);
+		// El código se recorta antes de meterlo en la URL de error: una
+		// petición hecha a mano podría traer un texto enorme.
+		const shownCode = referralInput.slice(0, 60);
+		if (lookup.status === 'missing') {
+			return errorParam(
+				`El usuario «${shownCode}» no está registrado en la base de datos. Verifica el código de referido.`,
+				true
+			);
 		}
+		if (lookup.status === 'unavailable') {
+			// No se pudo leer la hoja: no se puede decir que el código sea
+			// bueno ni malo, así que se reintenta conservando el código verificado.
+			return errorParam(
+				'No se pudo verificar el código de referido. Intenta de nuevo en unos minutos.',
+				refFromLink
+			);
+		}
+		const referrer = lookup.user;
+		// No se permite autoreferirse
+		if (
+			referrer.username?.toLowerCase() === username.toLowerCase() ||
+			referrer.email?.toLowerCase() === email
+		) {
+			return errorParam('No puedes usar tu propio código de referido.', false);
+		}
+		referralCode = referrer.username || referralInput;
 
 		// --- Hash password and save ---
 		const passwordHash = hashPassword(password);

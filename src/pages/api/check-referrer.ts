@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { lookupReferrer, ownCodeOf } from '../../lib/referrals';
+import { lookupReferrer } from '../../lib/referrals';
 
 export const prerender = false;
 
@@ -14,12 +14,12 @@ export const GET: APIRoute = async ({ url }) => {
 
 	const lookup = await lookupReferrer(ref);
 	if (lookup.status === 'found') {
-		const ownCode = ownCodeOf(lookup.user) || lookup.user.username || ref;
+		const username = lookup.user.username;
 		return new Response(
 			JSON.stringify({
 				valid: true,
-				username: lookup.user.username,
-				ownCode,
+				username,
+				ownCode: username,
 			}),
 			{
 				status: 200,

@@ -41,7 +41,7 @@ export const GET: APIRoute = async (Astro) => {
 				// El QR solo cambia si cambia el código propio, así que se cachea
 				// un poco y se vuelve a pedir al pasar ese tiempo.
 				'Cache-Control': 'private, max-age=300',
-				'X-Referral-Code': ownCodeOf(me),
+				'X-Referral-Code': me.username || ownCodeOf(me),
 			},
 		});
 	} catch (err) {

@@ -1,1 +1,16 @@
-﻿[]
+[
+  {
+    "username": "Felipe",
+    "email": "felipe@gmail.com",
+    "password": "2282fffa712f583132839d3a3ce95a3e:b9ca9302d54a48e7ba6998a8c841af5d224cb2cc1f0f1130fc84cb95d660ca403891bce3ad2befe7cdc1f0731301db3226ad50ce78a38d96cc9fdf6c386a2c2e",
+    "referralCode": "GanaPro",
+    "ownCode": "Felipe",
+    "documentType": "CC",
+    "documentNumber": "1004284928",
+    "address": "Pasto",
+    "neighborhood": "Gualcaloma",
+    "city": "Pasto",
+    "phone": "3043876483",
+    "whatsapp": "3043876483"
+  }
+]

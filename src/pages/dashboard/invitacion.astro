@@ -1,7 +1,7 @@
 ---
 import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
-import { ownCodeOf, referralShortUrl, COMMISSION_PER_REFERRAL, formatCOP } from '../../lib/referrals';
+import { referralShortUrl, COMMISSION_PER_REFERRAL, formatCOP } from '../../lib/referrals';
 import type { User } from '../../lib/types';
 
 export const prerender = false;
@@ -29,7 +29,7 @@ if (!isAdmin && !userDetail) {
 // El QR se sirve desde /api/referral-qr, que ya devuelve el SVG del usuario
 // conectado con el dominio público correcto.
 const referralCode = userDetail
-	? ownCodeOf(userDetail)
+	? String(userDetail.username || '').trim()
 	: String(session.username || '').trim();
 const siteUrl = getPublicSiteUrl(Astro.request);
 // El QR codifica el enlace corto `/r/CODIGO`, que redirige al registro: es lo

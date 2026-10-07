@@ -11,6 +11,28 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Read local Astro logs",
+			"type": "shell",
+			"command": "node_modules\\.bin\\astro.cmd",
+			"args": [
+				"dev",
+				"logs"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check local Astro response",
+			"type": "shell",
+			"command": "curl.exe",
+			"args": [
+				"-I",
+				"http://localhost:4321/register"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

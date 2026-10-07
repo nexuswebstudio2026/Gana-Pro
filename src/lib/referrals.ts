@@ -1,6 +1,5 @@
 import QRCode from 'qrcode';
 import { getGoogleSheetUsers } from './sheets';
-import { readJSON } from './store';
 import type { User } from './types';
 
 /**
@@ -104,44 +103,33 @@ export type ReferrerLookup =
 	| { status: 'unavailable'; user: null };
 
 /**
- * Busca al usuario que trae el código de referido indicado y cuenta por qué
- * no se encontró, si es el caso.
+ * Busca el nombre de usuario referido exclusivamente en la columna `Usuario`
+ * de Google Sheets y cuenta por qué no se encontró, si es el caso.
  */
 export async function lookupReferrer(code: string): Promise<ReferrerLookup> {
 	const target = normalize(code);
 	if (!target) return { status: 'missing', user: null };
 
-	let sheetUsers: User[] = [];
-	let sheetAvailable = true;
+	let sheetUsers: User[];
 	try {
 		sheetUsers = await getGoogleSheetUsers();
 	} catch (err) {
-		sheetAvailable = false;
 		console.error('No se pudo verificar el código de referido en Google Sheets:', err);
+		return { status: 'unavailable', user: null };
 	}
 
-	let localUsers: User[] = [];
-	try {
-		localUsers = readJSON<User[]>('users.json', []);
-	} catch {
-		localUsers = [];
-	}
-
-	const allUsers = [...sheetUsers, ...localUsers];
-	const user = findUserByReferralCode(allUsers, code);
+	const user = sheetUsers.find((candidate) => normalize(candidate.username) === target);
 
 	if (user) {
 		return { status: 'found', user };
 	}
 
-	return sheetAvailable
-		? { status: 'missing', user: null }
-		: { status: 'unavailable', user: null };
+	return { status: 'missing', user: null };
 }
 
 /**
- * Busca al usuario que trae el código de referido indicado.
- * Se puede introducir el "código propio" o el nombre de usuario.
+ * Busca en Google Sheets al usuario cuyo nombre de usuario coincide con el
+ * referido indicado.
  *
  * Devuelve `null` tanto si no existe como si la hoja no responde: para el
  * alta da igual (sin hoja el registro no se puede guardar). Quién necesite
@@ -186,12 +174,18 @@ export interface ReferralStats {
  * Si la hoja no está disponible devuelve las estadísticas vacías.
  */
 export async function getReferralStats(user: User, origin: string): Promise<ReferralStats> {
-	const ownCode = ownCodeOf(user) || user.username || '';
+	// Los enlaces compartidos se validan contra la columna Usuario.
+	const ownCode = user.username || ownCodeOf(user);
 
 	let referred: User[] = [];
 	try {
 		const all = await getGoogleSheetUsers();
-		referred = all.filter((u) => isReferredBy(u, ownCode));
+		const legacyCode = ownCodeOf(user);
+		referred = all.filter(
+			(u) =>
+				isReferredBy(u, ownCode) ||
+				(legacyCode !== ownCode && isReferredBy(u, legacyCode))
+		);
 	} catch (err) {
 		console.error('No se pudo calcular la red de referidos:', err);
 	}
@@ -201,6 +195,6 @@ export async function getReferralStats(user: User, origin: string): Promise<Refe
 		referred,
 		count: referred.length,
 		commission: referred.length * COMMISSION_PER_REFERRAL * REFERRAL_COMMISSION_PAYMENTS,
-		shareUrl: referralShortUrl(origin, ownCode),
+		shareUrl: referralShortUrl(origin, user.username || ownCode),
 	};
 }

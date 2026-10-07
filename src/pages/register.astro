@@ -1,7 +1,7 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
 import { DOCUMENT_TYPES } from '../lib/testimonials';
-import { lookupReferrer, ownCodeOf } from '../lib/referrals';
+import { lookupReferrer } from '../lib/referrals';
 
 // SSR: query params are read at request time
 export const prerender = false;
@@ -27,7 +27,7 @@ const refInvalid = lookup?.status === 'missing';
 const refUnavailable = lookup?.status === 'unavailable';
 const refLocked = lookup?.status === 'found';
 if (refLocked && lookup?.user) {
-	referralCode = ownCodeOf(lookup.user);
+	referralCode = lookup.user.username || referralCode;
 }
 // Si el registro se rechazó por un tipo de documento no válido, se repone el
 // que el usuario había elegido en vez de dejar el select en el primer valor.
@@ -46,34 +46,65 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		</div>
 	)}
 
-	{/* El enlace de referido apunta a alguien que no tiene cuenta: se avisa
-	    aquí mismo y el campo queda editable para corregirlo o vaciarlo. */}
-	{refInvalid && (
-		<div class="msg msg-error" role="alert">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<circle cx="12" cy="12" r="10"></circle>
-				<line x1="12" y1="8" x2="12" y2="12"></line>
-				<line x1="12" y1="16" x2="12.01" y2="16"></line>
-			</svg>
-			<span>
-				El usuario «{referralCode}» no está registrado. Verifica el código de
-				referido o regístrate sin él.
+	<form method="POST" action="/api/register" class="form">
+		<div class="field">
+			<label for="ref">
+				Código de Referido {refUnavailable
+					? '(pendiente de verificación)'
+					: refLocked
+						? '(de quien te invitó)'
+					: refInvalid
+						? '(no registrado)'
+						: '(obligatorio)'}
+			</label>
+			<div class="input-lock" id="ref-container">
+				<input
+					type="text"
+					id="ref"
+					name="ref"
+					value={referralCode}
+					placeholder={refLocked ? '' : 'Escribe el usuario de quien te invitó'}
+					maxlength="60"
+					required
+					autocomplete="off"
+					readonly={refLocked ? true : undefined}
+					aria-readonly={refLocked ? 'true' : undefined}
+				/>
+				{refLocked && (
+					<svg
+						class="lock-icon"
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+						<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+					</svg>
+				)}
+			</div>
+			{refLocked && <input type="hidden" name="refFromLink" value="1" />}
+			<button type="button" id="verify-ref" class="gold-button btn-full" hidden={refLocked}>
+				Verificar código de referido
+			</button>
+			<span class="field-hint" id="ref-hint" role={refInvalid || refUnavailable ? 'alert' : 'status'} aria-live="polite">
+				{refInvalid
+					? `El usuario «${referralCode}» no está registrado en la base de datos.`
+					: refUnavailable
+						? 'No se pudo verificar el código en Google Sheets. Intenta de nuevo.'
+						: refLocked
+							? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
+							: 'Ingresa el usuario de quien te invitó y verifica que esté registrado en Google Sheets.'}
 			</span>
 		</div>
-	)}
 
-	{refUnavailable && (
-		<div class="msg msg-error" role="alert">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<circle cx="12" cy="12" r="10"></circle>
-				<line x1="12" y1="8" x2="12" y2="12"></line>
-				<line x1="12" y1="16" x2="12.01" y2="16"></line>
-			</svg>
-			<span>No se pudo verificar el código de referido en este momento. Intenta de nuevo más tarde.</span>
-		</div>
-	)}
-
-	<form method="POST" action="/api/register" class="form">
+		<div id="registration-details" hidden={!refLocked}>
+		<fieldset id="registration-fields" aria-label="Datos del registro" disabled={!refLocked}>
 		<div class="field">
 			<label for="username">Nombre de Usuario VIP</label>
 			<input
@@ -122,60 +153,6 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 				required
 				minlength="6"
 			/>
-		</div>
-
-		<div class="field">
-			<label for="ref">
-				Código de Referido {refLocked
-					? '(de quien te invitó)'
-					: refInvalid
-						? '(no registrado)'
-						: refUnavailable
-							? '(pendiente de verificación)'
-							: '(opcional)'}
-			</label>
-			<div class="input-lock" id="ref-container">
-				<input
-					type="text"
-					id="ref"
-					name="ref"
-					value={referralCode}
-					placeholder={refLocked ? '' : 'Si alguien te invitó, escribe su código'}
-					maxlength="60"
-					autocomplete="off"
-					readonly={refLocked ? true : undefined}
-					aria-readonly={refLocked ? 'true' : undefined}
-				/>
-				{refLocked && (
-					<svg
-						class="lock-icon"
-						width="15"
-						height="15"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-						<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-					</svg>
-				)}
-			</div>
-			{/* Marca el origen del código: el API solo conserva en la URL de error
-			    el que vino del enlace, para no bloquear uno escrito a mano. */}
-			{refLocked && <input type="hidden" name="refFromLink" value="1" />}
-			<span class="field-hint" id="ref-hint">
-				{refInvalid
-					? 'Nadie usa todavía ese código: corrígelo o déjalo vacío para continuar.'
-					: refUnavailable
-						? 'No pudimos verificar este código. Puedes volver a intentarlo más tarde o quitarlo.'
-						: refLocked
-							? 'Código de tu invitador: se muestra tal cual y no se puede modificar.'
-							: 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).'}
-			</span>
 		</div>
 
 		<div class="section-divider" role="separator">
@@ -288,6 +265,8 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			<span>Registrar y Activar Membresía</span>
 			<span>→</span>
 		</button>
+		</fieldset>
+		</div>
 	</form>
 
 	<div class="links">
@@ -298,77 +277,118 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		const refInput = document.getElementById('ref') as HTMLInputElement | null;
 		const refHint = document.getElementById('ref-hint');
 		const lockContainer = document.getElementById('ref-container');
+		const verifyButton = document.getElementById('verify-ref') as HTMLButtonElement | null;
+		const details = document.getElementById('registration-details') as HTMLDivElement | null;
+		const registrationFields = document.getElementById('registration-fields') as HTMLFieldSetElement | null;
+		const registrationForm = refInput?.form;
+		let refVerified = Boolean(refInput?.readOnly);
+		let verificationInProgress = false;
 
-		if (refInput && !refInput.readOnly) {
-			let timer: number | undefined;
+		const showVerificationError = (message: string) => {
+			if (refHint) {
+				refHint.textContent = message;
+				refHint.setAttribute('role', 'alert');
+			}
+		};
 
-			const checkCode = async (val: string) => {
-				const clean = val.trim();
-				if (!clean) {
-					if (refHint) refHint.textContent = 'Por cada persona que se registre con tu código ganas $1.000 (una sola vez).';
-					return;
+		const verifyCode = async () => {
+			if (
+				!refInput ||
+				!refHint ||
+				!details ||
+				!registrationFields ||
+				!verifyButton ||
+				verificationInProgress
+			) {
+				return;
+			}
+			const code = refInput.value.trim();
+			if (!code) {
+				showVerificationError('Ingresa el usuario de quien te invitó.');
+				refInput.focus();
+				return;
+			}
+
+			verificationInProgress = true;
+			verifyButton.disabled = true;
+			verifyButton.textContent = 'Verificando…';
+			refInput.setAttribute('aria-busy', 'true');
+			refHint.textContent = 'Consultando Google Sheets…';
+			refHint.setAttribute('role', 'status');
+
+			try {
+				const response = await fetch(`/api/check-referrer?ref=${encodeURIComponent(code)}`);
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				const result: { valid: boolean; username?: string; reason?: string } = await response.json();
+
+				if (result.valid && result.username) {
+					refInput.value = result.username;
+					refInput.readOnly = true;
+					refInput.setAttribute('aria-readonly', 'true');
+					refInput.removeAttribute('aria-busy');
+					refVerified = true;
+					details.hidden = false;
+					registrationFields.disabled = false;
+					verifyButton.hidden = true;
+
+					const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+					lockSvg.setAttribute('class', 'lock-icon');
+					lockSvg.setAttribute('width', '15');
+					lockSvg.setAttribute('height', '15');
+					lockSvg.setAttribute('viewBox', '0 0 24 24');
+					lockSvg.setAttribute('fill', 'none');
+					lockSvg.setAttribute('stroke', 'currentColor');
+					lockSvg.setAttribute('stroke-width', '2');
+					lockSvg.setAttribute('stroke-linecap', 'round');
+					lockSvg.setAttribute('stroke-linejoin', 'round');
+					lockSvg.setAttribute('aria-hidden', 'true');
+					lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
+					lockContainer?.appendChild(lockSvg);
+
+					const linkMarker = document.createElement('input');
+					linkMarker.type = 'hidden';
+					linkMarker.name = 'refFromLink';
+					linkMarker.value = '1';
+					registrationForm?.appendChild(linkMarker);
+					refHint.textContent = 'Usuario verificado en Google Sheets. Completa el formulario para continuar.';
+					refHint.setAttribute('role', 'status');
+				} else if (result.reason === 'missing') {
+					refVerified = false;
+					details.hidden = true;
+					registrationFields.disabled = true;
+					showVerificationError(`El usuario «${code}» no está registrado en la base de datos.`);
+				} else if (result.reason === 'unavailable') {
+					refVerified = false;
+					details.hidden = true;
+					registrationFields.disabled = true;
+					showVerificationError('No se pudo consultar Google Sheets. Intenta verificar el usuario de nuevo.');
+				} else {
+					refVerified = false;
+					details.hidden = true;
+					registrationFields.disabled = true;
+					showVerificationError('No se pudo verificar el usuario en Google Sheets. Intenta de nuevo.');
 				}
+			} catch (error) {
+				console.error('Error al verificar código de referido:', error);
+				refVerified = false;
+				details.hidden = true;
+				registrationFields.disabled = true;
+				showVerificationError('No se pudo conectar con Google Sheets. Intenta de nuevo.');
+			} finally {
+				verificationInProgress = false;
+				verifyButton.disabled = false;
+				verifyButton.textContent = 'Verificar código de referido';
+				refInput.removeAttribute('aria-busy');
+			}
+		};
 
-				try {
-					const res = await fetch(`/api/check-referrer?ref=${encodeURIComponent(clean)}`);
-					const data = await res.json();
-					if (data.valid) {
-						if (data.ownCode) refInput.value = data.ownCode;
-						refInput.readOnly = true;
-						refInput.setAttribute('aria-readonly', 'true');
-
-						if (lockContainer && !lockContainer.querySelector('.lock-icon')) {
-							const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-							lockSvg.setAttribute('class', 'lock-icon');
-							lockSvg.setAttribute('width', '15');
-							lockSvg.setAttribute('height', '15');
-							lockSvg.setAttribute('viewBox', '0 0 24 24');
-							lockSvg.setAttribute('fill', 'none');
-							lockSvg.setAttribute('stroke', 'currentColor');
-							lockSvg.setAttribute('stroke-width', '2');
-							lockSvg.setAttribute('stroke-linecap', 'round');
-							lockSvg.setAttribute('stroke-linejoin', 'round');
-							lockSvg.setAttribute('aria-hidden', 'true');
-							lockSvg.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
-							lockContainer.appendChild(lockSvg);
-						}
-
-						let hidden = document.querySelector('input[name="refFromLink"]') as HTMLInputElement;
-						if (!hidden && lockContainer?.parentNode) {
-							hidden = document.createElement('input');
-							hidden.type = 'hidden';
-							hidden.name = 'refFromLink';
-							hidden.value = '1';
-							lockContainer.parentNode.appendChild(hidden);
-						}
-
-						if (refHint) {
-							refHint.textContent = `Código de tu invitador: se muestra tal cual y no se puede modificar.`;
-						}
-					} else if (data.reason === 'missing') {
-						if (refHint) {
-							refHint.textContent = 'Nadie usa todavía ese código: corrígelo o déjalo vacío para continuar.';
-						}
-					} else if (data.reason === 'unavailable') {
-						if (refHint) {
-							refHint.textContent = 'No pudimos verificar este código. Intenta de nuevo más tarde o quítalo.';
-						}
-					}
-				} catch (err) {
-					console.error('Error al verificar código:', err);
-				}
-			};
-
-			refInput.addEventListener('input', () => {
-				window.clearTimeout(timer);
-				timer = window.setTimeout(() => checkCode(refInput.value), 450);
-			});
-
-			refInput.addEventListener('blur', () => {
-				window.clearTimeout(timer);
-				checkCode(refInput.value);
-			});
-		}
+		verifyButton?.addEventListener('click', verifyCode);
+		registrationForm?.addEventListener('submit', (event) => {
+			if (!refVerified) {
+				event.preventDefault();
+				void verifyCode();
+			}
+		});
 	</script>
 </AuthLayout>
 
@@ -395,6 +415,26 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		flex-direction: column;
 		gap: 18px;
 		margin-bottom: 24px;
+	}
+
+	#registration-details {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+
+	#registration-details[hidden] {
+		display: none;
+	}
+
+	#registration-fields {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
 	}
 
 	.field {
