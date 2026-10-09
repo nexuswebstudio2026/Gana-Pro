@@ -4,7 +4,6 @@ interface NavChild { href: string; label: string; }
 interface NavItem { href: string; label: string; icon?: string; adminOnly?: boolean; children?: NavChild[]; }
 const { isAdmin } = Astro.props;
 const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/dashboard';
-const currentHash = Astro.url.hash.replace('#', '');
 const isActive = (path: string) => currentPath === path;
 const items: NavItem[] = [
 	{ href: '/dashboard', label: 'Inicio', icon: '⌂' },
@@ -21,25 +20,35 @@ const items: NavItem[] = [
 	{ href: '/dashboard/gastos', label: 'Gastos', icon: '↘', adminOnly: true, children: [{ href: '/dashboard/retiros', label: 'Solicitudes de retiro' }] },
 	{ href: '/dashboard/negocio', label: 'Negocio', icon: '◆', adminOnly: true, children: [{ href: '/dashboard/negocio', label: 'Configuración del negocio' }] },
 	{ href: '/dashboard/mi-organigrama', label: 'Mi cuenta', icon: '◇', children: [
-		{ href: '/dashboard/mi-organigrama', label: 'Mi organigrama y matriz 5x1' },
-		{ href: '/dashboard/billetera', label: 'Mi billetera y movimientos' },
-		{ href: '/dashboard/informacion-cuenta', label: 'Información de perfil' },
+		{ href: '/dashboard/mi-organigrama', label: 'Mi red · Matriz 5x1' },
+		{ href: '/dashboard/billetera', label: 'Billetera y comprobantes' },
+		{ href: '/dashboard/informacion-cuenta#profile-tools-title', label: 'Información de perfil' },
 	] },
 ];
 const visibleItems = items.filter((item) => !item.adminOnly || isAdmin);
-const isChildActive = (href: string) => { const [path, anchor] = href.split('#'); return anchor ? currentHash === anchor : isActive(path); };
+const isChildActive = (href: string) => isActive(href.split('#')[0]);
 ---
 <button class="sidebar-mobile-toggle" type="button" data-sidebar-toggle aria-controls="dashboard-sidebar" aria-expanded="false" aria-label="Abrir menú del panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
 <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Navegación del panel"><nav class="sidebar-nav" aria-label="Secciones del panel">
 	{visibleItems.map((item, index) => {
-		const active = item.children ? false : (item.href === '/dashboard' ? isActive('/dashboard') && !currentHash : isActive(item.href));
+		const active = item.children ? false : isActive(item.href);
 		const groupActive = item.children ? item.children.some((child) => isChildActive(child.href)) : active;
 		return <div class:list={['nav-group', { 'nav-group-first': index === 0 }]}><a class:list={['sidebar-link', { active: groupActive, 'nav-parent': Boolean(item.children) }]} href={item.href} aria-current={groupActive ? 'location' : undefined}>{item.icon && <span class="nav-icon" aria-hidden="true">{item.icon}</span>}<span class="sidebar-label">{item.label}</span>{item.children && <span class="nav-chevron" aria-hidden="true">⌄</span>}</a>{item.children && <div class="nav-children">{item.children.map((child) => <a class:list={['sidebar-link', 'nested-child', { active: isChildActive(child.href) }]} href={child.href} aria-current={isChildActive(child.href) ? 'location' : undefined}><span class="nav-icon" aria-hidden="true">›</span><span class="sidebar-label">{child.label}</span></a>)}</div>}</div>;
 	})}
+	<form class="sidebar-logout-form" method="POST" action="/api/logout">
+		<button class="sidebar-logout-button" type="submit">
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+				<polyline points="16 17 21 12 16 7"></polyline>
+				<line x1="21" y1="12" x2="9" y2="12"></line>
+			</svg>
+			<span>Cerrar sesión</span>
+		</button>
+	</form>
 </nav></aside>
 <div class="sidebar-backdrop" data-sidebar-backdrop aria-hidden="true"></div>
 <style>
-	.dashboard-sidebar{width:260px;height:100vh;min-height:100vh;box-sizing:border-box;padding:14px 8px 14px 0;background:var(--bg-surface);border-right:1px solid var(--gold-border);backdrop-filter:blur(18px);position:sticky;top:0;z-index:60}.sidebar-nav{height:100%;overflow-y:auto;scrollbar-width:none}.sidebar-nav::-webkit-scrollbar{display:none}.nav-group+.nav-group{margin-top:4px}.sidebar-link{display:flex;align-items:center;gap:9px;min-height:38px;padding:7px 10px;border:1px solid transparent;border-left:2px solid transparent;border-radius:0 10px 10px 0;color:var(--text-secondary);font-size:12.5px;font-weight:600;line-height:1.3;text-decoration:none;transition:.2s ease}.sidebar-link:hover,.sidebar-link.active{color:var(--gold-primary);background:rgba(212,175,55,.12);border-color:var(--gold-border);border-left-color:var(--gold-primary)}.sidebar-link.nav-parent{color:var(--text-primary);font-weight:700}.nav-children{display:flex;flex-direction:column;margin:2px 0 5px 17px;border-left:1px solid var(--gold-border)}.sidebar-link.nested-child{min-height:34px;padding:6px 8px;font-size:11.5px;font-weight:500;border-radius:0 8px 8px 0}.nav-icon{width:18px;flex:0 0 18px;display:grid;place-items:center;font-size:15px;line-height:1}.nav-chevron{margin-left:auto;color:var(--text-tertiary)}.sidebar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sidebar-mobile-toggle,.sidebar-backdrop{display:none}@media(max-width:1024px){.dashboard-sidebar{position:fixed;inset:0 auto 0 0;width:min(290px,calc(100vw - 36px));padding-top:72px;transform:translateX(-105%);transition:transform .25s ease;box-shadow:18px 0 45px rgba(0,0,0,.28)}.dashboard-sidebar.is-open{transform:translateX(0)}.sidebar-mobile-toggle{display:grid;place-items:center;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border:1px solid var(--gold-border);border-radius:10px;background:var(--bg-surface);color:var(--gold-primary);cursor:pointer}.sidebar-mobile-toggle svg{width:21px;height:21px}.sidebar-mobile-toggle.is-hidden{opacity:0;pointer-events:none}.sidebar-backdrop{display:block;position:fixed;inset:0;z-index:55;background:rgba(2,7,18,.62);opacity:0;pointer-events:none;transition:opacity .25s ease}.sidebar-backdrop.is-visible{opacity:1;pointer-events:auto}}
+	.dashboard-sidebar{width:260px;height:100vh;min-height:100vh;box-sizing:border-box;padding:18px 12px 16px 0;background:var(--bg-surface);border-right:1px solid var(--gold-border);backdrop-filter:blur(18px);position:sticky;top:0;z-index:60}.sidebar-nav{height:100%;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none}.sidebar-nav::-webkit-scrollbar{display:none}.nav-group{flex-shrink:0}.nav-group+.nav-group{margin-top:7px}.sidebar-link{display:flex;align-items:center;gap:11px;min-height:44px;padding:9px 14px;border:1px solid transparent;border-left:3px solid transparent;border-radius:0 12px 12px 0;color:var(--text-secondary);font-size:13px;font-weight:600;line-height:1.35;text-decoration:none;transition:background .2s ease,color .2s ease,border-color .2s ease}.sidebar-link:hover,.sidebar-link.active{color:var(--gold-primary);background:rgba(212,175,55,.1);border-color:var(--gold-border);border-left-color:var(--gold-primary)}.sidebar-link.nav-parent{color:var(--text-primary);font-weight:700}.nav-children{display:flex;flex-direction:column;gap:3px;margin:5px 0 10px 19px;padding-left:8px;border-left:1px solid var(--gold-border)}.sidebar-link.nested-child{min-height:40px;padding:8px 10px;font-size:12px;font-weight:500;border-radius:9px}.nav-icon{width:20px;flex:0 0 20px;display:grid;place-items:center;font-size:17px;line-height:1}.nav-chevron{margin-left:auto;color:var(--text-tertiary)}.sidebar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sidebar-logout-form{margin-top:auto;padding:16px 8px 8px;flex-shrink:0}.sidebar-logout-button{width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--gold-border);border-radius:10px;background:rgba(239,68,68,.07);color:var(--text-secondary);font:inherit;font-size:12.5px;font-weight:700;text-align:left;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease}.sidebar-logout-button:hover{border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.13);color:#ef4444}.sidebar-mobile-toggle,.sidebar-backdrop{display:none}@media(max-width:1024px){.dashboard-sidebar{position:fixed;inset:0 auto 0 0;width:min(290px,calc(100vw - 36px));padding-top:72px;transform:translateX(-105%);transition:transform .25s ease;box-shadow:18px 0 45px rgba(0,0,0,.28)}.dashboard-sidebar.is-open{transform:translateX(0)}.sidebar-mobile-toggle{display:grid;place-items:center;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border:1px solid var(--gold-border);border-radius:10px;background:var(--bg-surface);color:var(--gold-primary);cursor:pointer}.sidebar-mobile-toggle svg{width:21px;height:21px}.sidebar-mobile-toggle.is-hidden{opacity:0;pointer-events:none}.sidebar-backdrop{display:block;position:fixed;inset:0;z-index:55;background:rgba(2,7,18,.62);opacity:0;pointer-events:none;transition:opacity .25s ease}.sidebar-backdrop.is-visible{opacity:1;pointer-events:auto}}
 </style>
 <script>
 	const sidebar = document.getElementById('dashboard-sidebar'); const toggle = document.querySelector<HTMLButtonElement>('[data-sidebar-toggle]');

@@ -78,15 +78,36 @@ if (sessionUser && sessionUser.username) {
 
 		<div class="field">
 			<label for="password">Contraseña</label>
-			<input
-				type="password"
-				id="password"
-				name="password"
-				placeholder="••••••••••••"
-				required
-				minlength="6"
-				autocomplete="current-password"
-			/>
+			<div class="password-field">
+				<input
+					type="password"
+					id="password"
+					name="password"
+					placeholder="••••••••••••"
+					required
+					minlength="6"
+					autocomplete="current-password"
+				/>
+				<button
+					type="button"
+					class="password-toggle"
+					data-password-toggle
+					aria-label="Mostrar contraseña"
+					aria-pressed="false"
+					aria-controls="password"
+				>
+					<svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path>
+						<circle cx="12" cy="12" r="3"></circle>
+					</svg>
+					<svg class="eye-closed is-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="m3 3 18 18"></path>
+						<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>
+						<path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a14.8 14.8 0 0 1-3.2 4.1"></path>
+						<path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.6-.8"></path>
+					</svg>
+				</button>
+			</div>
 		</div>
 
 		<button type="submit" class="gold-button btn-full">
@@ -165,6 +186,29 @@ if (sessionUser && sessionUser.username) {
 		transition: all 0.25s ease;
 	}
 
+	.password-field { position: relative; }
+	.password-field input { width: 100%; padding-right: 48px; }
+	.password-toggle {
+		position: absolute;
+		top: 50%;
+		right: 10px;
+		width: 36px;
+		height: 36px;
+		transform: translateY(-50%);
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--text-secondary);
+		cursor: pointer;
+		transition: color 0.2s ease, background 0.2s ease;
+	}
+	.password-toggle:hover { color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+	.password-toggle:focus-visible { outline: 2px solid var(--gold-primary); outline-offset: 1px; }
+	.password-toggle svg { width: 20px; height: 20px; }
+	.password-toggle svg.is-hidden { display: none; }
+
 	:global([data-theme="dark"]) .field input {
 		background: rgba(4, 11, 28, 0.6);
 	}
@@ -228,3 +272,22 @@ if (sessionUser && sessionUser.username) {
 		}
 	}
 </style>
+
+<script>
+	const passwordInput = document.querySelector<HTMLInputElement>('#password');
+	const passwordToggle = document.querySelector<HTMLButtonElement>('[data-password-toggle]');
+
+	passwordToggle?.addEventListener('click', () => {
+		if (!passwordInput) return;
+
+		const showPassword = passwordInput.type === 'password';
+		passwordInput.type = showPassword ? 'text' : 'password';
+		passwordToggle.setAttribute('aria-pressed', String(showPassword));
+		passwordToggle.setAttribute(
+			'aria-label',
+			showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+		);
+		passwordToggle.querySelector('.eye-open')?.classList.toggle('is-hidden', showPassword);
+		passwordToggle.querySelector('.eye-closed')?.classList.toggle('is-hidden', !showPassword);
+	});
+</script>

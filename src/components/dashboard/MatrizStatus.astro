@@ -6,7 +6,7 @@
  * dibuja, y las reglas (quién está arriba, qué puestos cuentan) viven en la
  * librería, donde se prueban.
  */
-import { NODE_TONE, type MatrixPerson, type MatrixProgress } from '../../lib/matrix';
+import { NODE_TONE, type MatrixPerson } from '../../lib/matrix';
 import { levelName } from '../../lib/users';
 import type { MatrixView } from '../../lib/matrix';
 
@@ -15,9 +15,10 @@ interface Props {
 	view: MatrixView;
 	/** `true` si no se pudo leer la hoja: se avisa en vez de mostrar ceros. */
 	loadFailed?: boolean;
+	leaderUsername?: string;
 }
 
-const { view, loadFailed = false } = Astro.props;
+const { view, loadFailed = false, leaderUsername = '' } = Astro.props;
 
 const { upline, self, downline, progress } = view;
 const nextLevel = Math.min(5, progress.level + 1);
@@ -92,7 +93,7 @@ const levelLabel = (person: MatrixPerson) => {
 								<strong>{upline.name}</strong>
 								<span>{levelLabel(upline)}</span>
 								<span class="matrix-person-role">Te trajo a la plataforma</span>
-								<a class="matrix-action" href="/dashboard/comprobantes">Enviar dinero al líder</a>
+								<a class="matrix-action" href={`/dashboard/billetera?destino=${encodeURIComponent(leaderUsername || upline.name || 'lider')}#enviar-dinero`}>Enviar dinero al líder</a>
 							</div>
 						</div>
 					) : (
@@ -501,7 +502,15 @@ const levelLabel = (person: MatrixPerson) => {
 	document.querySelectorAll<HTMLButtonElement>('.matrix-request').forEach((button) => {
 		button.addEventListener('click', () => {
 			const member = button.dataset.member || 'tu usuario';
-			window.alert(`Tu solicitud de dinero para ${member} quedó lista para gestionar. Próximamente podrás enviarla directamente desde aquí.`);
+			const raw = window.prompt(`¿Cuánto dinero deseas solicitarle a ${member}?`);
+			if (raw === null) return;
+			const amount = Number(raw.replace(/\./g, '').replace(',', '.'));
+			if (!(amount > 0)) { window.alert('Ingresa un monto válido.'); return; }
+			button.disabled = true;
+			fetch('/api/member-money-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'request', to: member, amount }) })
+				.then(async (response) => { const data = await response.json() as { ok: boolean; message: string }; window.alert(data.message); })
+				.catch(() => window.alert('No se pudo enviar la solicitud. Inténtalo de nuevo.'))
+				.finally(() => { button.disabled = false; });
 		});
 	});
 </script>

@@ -11,9 +11,12 @@ import { getSheetUserLevel, getUserBalance, getUserWallet, canWithdraw } from '.
 import { parseSheetBalance } from '../../lib/sheets';
 import { listWithdrawals } from '../../lib/withdrawals';
 import { listP2PPayments } from '../../lib/p2p-payments';
+import { P2P_CONCEPTS, P2P_CONCEPT_INFO, canSubmitConcept, conceptAmount } from '../../lib/p2p';
 import { buildWalletSummary, sumApproved, sumPending } from '../../lib/wallet-summary';
+import { listMemberMoneyRequests } from '../../lib/member-money-requests';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import WalletOverview from '../../components/dashboard/WalletOverview.astro';
+import UploadReceiptModal from '../../components/dashboard/UploadReceiptModal.astro';
 import type { Session } from '../../lib/session';
 
 export const prerender = false;
@@ -52,6 +55,17 @@ const summary = buildWalletSummary({
 	paidOut: sumApproved(ownWithdrawals),
 });
 
+const receiptConcepts = P2P_CONCEPTS.map((id) => {
+	const info = P2P_CONCEPT_INFO[id];
+	return { id, label: info.label, detail: info.detail, amount: conceptAmount(id, parseSheetBalance(balance)), enabled: canSubmitConcept(id, level) };
+});
+
+const isAdmin = isAdminRole(session.role);
+const transferTo = Astro.url.searchParams.get('destino')?.trim() || '';
+let moneyRequests: Awaited<ReturnType<typeof listMemberMoneyRequests>> = [];
+try { moneyRequests = await listMemberMoneyRequests(session.username); }
+catch (error) { console.error('No se pudieron cargar solicitudes de dinero:', error); }
+
 const movements = [
 	...p2p.map((payment) => ({
 		date: payment.createdAt,
@@ -67,9 +81,15 @@ const movements = [
 		amount: request.amount,
 		status: request.status,
 	})),
+	...moneyRequests.filter((request) => request.status === 'Pagado').map((request) => ({
+		date: request.createdAt,
+		concept: `Transferencia con ${request.requester.toLowerCase() === session.username.toLowerCase() ? request.recipient : request.requester}`,
+		direction: request.requester.toLowerCase() === session.username.toLowerCase() ? 'Recibido' : 'Envío',
+		amount: request.amount,
+		status: 'Aprobado',
+	})),
 ].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
-const isAdmin = isAdminRole(session.role);
 ---
 
 <AdminPageLayout
@@ -85,5 +105,17 @@ const isAdmin = isAdminRole(session.role);
 		walletNumber={wallet?.walletNumber ?? ''}
 		canWithdrawLevel={canWithdraw(level)}
 		movements={movements}
+		transferTo={transferTo}
+		moneyRequests={moneyRequests}
+		currentUsername={session.username}
 	/>
+	<section id="comprobantes" class="wallet-receipts" aria-label="Comprobantes de pago">
+		<header><span>Pagos y soporte</span><h2>Comprobantes de pago</h2><p>Adjunta y consulta los comprobantes asociados a tus pagos.</p></header>
+		<UploadReceiptModal concepts={receiptConcepts} payments={p2p} />
+	</section>
 </AdminPageLayout>
+
+<style>
+	.wallet-receipts{margin-top:24px;padding:24px;border:1px solid var(--gold-border);border-radius:16px;background:var(--bg-surface)}
+	.wallet-receipts header{margin-bottom:18px}.wallet-receipts header>span{color:var(--gold-primary);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.wallet-receipts h2{margin:6px 0;font-size:1.2rem}.wallet-receipts header p{margin:0;color:var(--text-secondary);font-size:13px}
+</style>

@@ -4,6 +4,7 @@ import {
 	moveBalance,
 	parseSheetBalance,
 } from '../../lib/sheets';
+import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
 import { createWithdrawal, adminCommission, netAmount } from '../../lib/withdrawals';
 import {
 	getUserBalance,
@@ -141,6 +142,10 @@ export const POST: APIRoute = async (Astro) => {
 				}
 
 				const users = await getGoogleSheetUsers();
+				const personal = buildPersonalHierarchy(users, { username, email: session.email });
+				if (!personal.upline || personal.upline.name.toLowerCase() !== target.toLowerCase()) {
+					return json({ ok: false, message: 'Solo puedes enviar saldo a tu líder registrado.' }, 403);
+				}
 				const found = users.find(
 					(u) => String(u.username ?? '').trim().toLowerCase() === target.toLowerCase()
 				);

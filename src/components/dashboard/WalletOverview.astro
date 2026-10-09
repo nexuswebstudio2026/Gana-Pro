@@ -15,10 +15,13 @@ interface Props {
 	walletNumber: string;
 	/** `false` cuando el nivel todavía no habilita retiros. */
 	canWithdrawLevel: boolean;
+	transferTo?: string;
+	moneyRequests?: Array<{ id: string; createdAt: string; requester: string; recipient: string; amount: number; status: string }>;
+	currentUsername: string;
 	movements?: Array<{ date: string; concept: string; direction: string; amount: number; status: string }>;
 }
 
-const { summary, walletType, walletNumber, canWithdrawLevel, movements = [] } = Astro.props;
+const { summary, walletType, walletNumber, canWithdrawLevel, movements = [], transferTo = '', moneyRequests = [], currentUsername } = Astro.props;
 
 const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 
@@ -76,6 +79,8 @@ const reason = !canWithdrawLevel
 	</div>
 
 	{reason && <p class="wallet-blocked" id="wallet-reason">{reason}</p>}
+	{transferTo && <section class="wallet-transfer" id="enviar-dinero"><div><span class="wallet-label">Transferencia interna</span><h3>Enviar saldo a {transferTo}</h3><p>Este envío solo se autoriza si el destinatario es tu líder registrado.</p></div><form data-transfer-form><input type="hidden" name="to" value={transferTo}/><label>Monto<input name="amount" type="number" min="1" max={String(summary.available)} step="1" required/></label><button type="submit" class="gold-button wallet-btn">Enviar dinero</button><p data-transfer-feedback role="status" aria-live="polite"></p></form></section>}
+	<section class="wallet-movements" aria-labelledby="money-requests-title"><div class="wallet-section-heading"><div><span class="wallet-label">Red directa</span><h3 id="money-requests-title">Solicitudes de dinero</h3></div></div>{moneyRequests.length === 0 ? <p class="wallet-empty">No tienes solicitudes de dinero pendientes o enviadas.</p> : <div class="wallet-table-wrap"><table class="wallet-table"><thead><tr><th>Fecha</th><th>Solicita</th><th>Destinatario</th><th>Monto</th><th>Estado / acción</th></tr></thead><tbody>{moneyRequests.map((request) => <tr><td>{request.createdAt ? new Date(request.createdAt).toLocaleDateString('es-CO') : '—'}</td><td>{request.requester}</td><td>{request.recipient}</td><td class="movement-amount">{fmt(request.amount)}</td><td>{request.status === 'Pendiente' && request.recipient.toLowerCase() === currentUsername.toLowerCase() ? <button class="wallet-pay-button" type="button" data-pay-request={request.id}>Pagar y enviar</button> : <span class="movement-status">{request.status}</span>}</td></tr>)}</tbody></table></div>}</section>
 
 	<section class="wallet-movements" aria-labelledby="wallet-movements-title">
 		<div class="wallet-section-heading"><div><span class="wallet-label">Historial financiero</span><h3 id="wallet-movements-title">Envíos, retiros y recibidos</h3></div><span class="movement-count">{movements.length} movimiento{movements.length === 1 ? '' : 's'}</span></div>
@@ -143,6 +148,7 @@ const reason = !canWithdrawLevel
 <style>
 	.wallet { display: flex; flex-direction: column; gap: 18px; }
 	.wallet-movements { padding: 24px; border: 1px solid var(--gold-border); border-radius: 16px; background: var(--bg-surface); }
+	.wallet-transfer{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px;border:1px solid var(--gold-border);border-radius:16px;background:var(--bg-surface)}.wallet-transfer h3{margin:5px 0;font-size:1.1rem}.wallet-transfer p{margin:0;color:var(--text-secondary);font-size:12px}.wallet-transfer form{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.wallet-transfer label{display:grid;gap:5px;color:var(--text-secondary);font-size:12px}.wallet-transfer input{width:160px;padding:10px;background:var(--bg-primary);border:1px solid var(--gold-border);border-radius:8px;color:var(--text-primary)}.wallet-transfer [data-transfer-feedback]{flex-basis:100%}
 	.wallet-section-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
 	.wallet-section-heading h3 { margin:5px 0 0; font-size:1.15rem; }
 	.movement-count { color:var(--text-secondary); font-size:12px; }
@@ -366,10 +372,37 @@ const reason = !canWithdrawLevel
 	const submitLabel = document.querySelector<HTMLElement>('[data-submit-label]');
 	const amountInput = form?.querySelector<HTMLInputElement>('input[name="amount"]');
 	const preview = document.querySelector<HTMLElement>('[data-net-preview]');
+	const transferForm = document.querySelector<HTMLFormElement>('[data-transfer-form]');
+	const transferFeedback = document.querySelector<HTMLElement>('[data-transfer-feedback]');
+	document.querySelectorAll<HTMLButtonElement>('[data-pay-request]').forEach((button) => button.addEventListener('click', async () => {
+		button.disabled = true;
+		try {
+			const response = await fetch('/api/member-money-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', id: button.dataset.payRequest }) });
+			const result = await response.json() as { ok: boolean; message: string };
+			window.alert(result.message);
+			if (result.ok) window.location.reload(); else button.disabled = false;
+		} catch { window.alert('No se pudo completar el pago.'); button.disabled = false; }
+	}));
+	document.querySelectorAll<HTMLButtonElement>('[data-pay-request]').forEach((button) => button.addEventListener('click', async () => {
+		button.disabled = true;
+		try { const response = await fetch('/api/member-money-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', id: button.dataset.payRequest }) }); const result = await response.json() as { ok: boolean; message: string }; window.alert(result.message); if (result.ok) window.location.reload(); }
+		catch { window.alert('No se pudo completar el pago.'); button.disabled = false; }
+	}));
 
 	const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 
 	openBtn?.addEventListener('click', () => modal?.showModal());
+	transferForm?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const data = new FormData(transferForm);
+		const amount = Number(data.get('amount'));
+		try {
+			const response = await fetch('/api/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'enviar', amount, to: data.get('to') }) });
+			const result = await response.json() as { ok: boolean; message: string };
+			if (transferFeedback) { transferFeedback.textContent = result.message; transferFeedback.className = result.ok ? 'is-ok' : 'is-error'; }
+			if (result.ok) window.setTimeout(() => window.location.reload(), 1000);
+		} catch { if (transferFeedback) transferFeedback.textContent = 'No se pudo conectar con el servidor.'; }
+	});
 
 	/**
 	 * Muestra el neto antes de confirmar, para que la comisión del 5 % no

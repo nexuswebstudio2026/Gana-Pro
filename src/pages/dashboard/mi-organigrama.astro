@@ -57,5 +57,5 @@ const isAdmin = isAdminRole(session.role);
 	eyebrow="Configuración · Usuario"
 	description="Consulta los cinco usuarios que aparecen en tu rama dentro de la estructura de GANA PRO."
 >
-	<MatrizStatus view={view} loadFailed={loadFailed} />
+	<MatrizStatus view={view} loadFailed={loadFailed} leaderUsername={personal.upline?.name ?? ''} />
 </AdminPageLayout>
