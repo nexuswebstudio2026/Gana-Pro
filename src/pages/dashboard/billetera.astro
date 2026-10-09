@@ -52,20 +52,38 @@ const summary = buildWalletSummary({
 	paidOut: sumApproved(ownWithdrawals),
 });
 
+const movements = [
+	...p2p.map((payment) => ({
+		date: payment.createdAt,
+		concept: payment.concept,
+		direction: 'Envío',
+		amount: payment.amount,
+		status: payment.status,
+	})),
+	...ownWithdrawals.map((request) => ({
+		date: request.createdAt,
+		concept: 'Solicitud de retiro',
+		direction: 'Retiro',
+		amount: request.amount,
+		status: request.status,
+	})),
+].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
 const isAdmin = isAdminRole(session.role);
 ---
 
 <AdminPageLayout
 	session={session}
 	isAdmin={isAdmin}
-	title="Mi billetera"
-	eyebrow="Configuración · Usuario"
-	description="Consulta tu saldo disponible, lo que ya está comprometido en solicitudes abiertas y tu total acumulado."
+	title="Mi billetera y movimientos"
+	eyebrow="Mi cuenta"
+	description="Consulta tu saldo, envíos, retiros y dinero recibido en un solo historial."
 >
 	<WalletOverview
 		summary={summary}
 		walletType={wallet?.walletType ?? ''}
 		walletNumber={wallet?.walletNumber ?? ''}
 		canWithdrawLevel={canWithdraw(level)}
+		movements={movements}
 	/>
 </AdminPageLayout>

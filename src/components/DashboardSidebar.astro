@@ -1,4 +1,4 @@
----
+<!-- Legacy sidebar kept for compatibility; the active sidebar is DashboardSidebarV2.astro.
 interface Props {
 	isAdmin: boolean;
 }
@@ -13,7 +13,6 @@ interface NavItem {
 	label: string;
 	icon?: string;
 	adminOnly?: boolean;
-	/** Sub-elementos. El grupo se dibuja abierto siempre, sin desplegable. */
 	children?: NavChild[];
 }
 
@@ -22,22 +21,20 @@ const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/dashboard';
 const currentHash = Astro.url.hash.replace('#', '');
 const isActive = (path: string) => currentPath === path;
 
-/**
- * Estructura del menú lateral. Las secciones con sub-elementos se dibujan
- * abiertas: no hay desplegables, la jerarquía se ve de un vistazo.
- */
+/** Estructura del menú lateral. Las secciones con sub-elementos se dibujan
+ * abiertas: no hay desplegables, la jerarquía se ve de un vistazo. */
 const items: NavItem[] = [
-	{ href: '/dashboard', label: 'Inicio', icon: '⌂' },
+	{ href: '/dashboard', label: 'Inicio', icon: '•' },
 	{
 		href: '/dashboard/organigrama-global',
 		label: 'Organigrama Global de Usuarios',
-		icon: '⌘',
+		icon: '‣',
 		adminOnly: true,
 	},
 	{
 		href: '/dashboard/usuarios-registrados',
 		label: 'Usuarios Registrados',
-		icon: '♙',
+		icon: '↓',
 		adminOnly: true,
 		children: [
 			{ href: '/dashboard/usuarios-registrados', label: 'Ver Usuarios' },
@@ -47,61 +44,10 @@ const items: NavItem[] = [
 	{
 		href: '/dashboard/pagos-p2p',
 		label: 'Pagos entre Usuarios',
-		icon: '⇄',
+		icon: '↔',
 		adminOnly: true,
 	},
 	{
-		href: '/dashboard/ingresos',
-		label: 'Ingresos',
-		icon: '＋',
-		adminOnly: true,
-		children: [{ href: '/dashboard/recargas', label: 'Solicitudes de Recargas' }, { href: '/dashboard/comisiones', label: 'Comisiones de Referidos' }],
-	},
-	{
-		href: '/dashboard/gastos',
-		label: 'Gastos',
-		icon: '－',
-		adminOnly: true,
-		children: [{ href: '/dashboard/retiros', label: 'Solicitudes de Retiros' }],
-	},
-	{
-		href: '/dashboard/negocio',
-		label: 'Negocio',
-		icon: '▣',
-		adminOnly: true,
-		children: [
-			{ href: '/dashboard/negocio', label: 'Configuración del Negocio' },
-		],
-	},
-	{
-		href: '/dashboard/mi-organigrama',
-		label: 'Mi Cuenta',
-		icon: '◉',
-		children: [
-			{ href: '/dashboard/mi-organigrama', label: 'Mi organigrama' },
-			{ href: '/dashboard/matriz', label: 'Mi matriz 5x1' },
-			{ href: '/dashboard/billetera', label: 'Mi billetera' },
-			{ href: '/dashboard/comprobantes', label: 'Comprobantes de pago' },
-			{ href: '/dashboard/informacion-cuenta', label: 'Información del Perfil' },
-			{ href: '/dashboard/ubicacion', label: 'Ubicación' },
-			// El RUT (DIAN) es del negocio, así que solo se ofrece al admin. El
-			// resto de miembros se identifica con su documento de identidad.
-			isAdmin
-				? { href: '/dashboard/rut', label: 'RUT (DIAN)' }
-				: { href: '/dashboard/documento', label: 'Documento de Identidad' },
-		],
-	},
-];
-
-const visibleItems = items.filter((item) => !item.adminOnly || isAdmin);
-
-/** Un sub-elemento está activo si su ruta o su ancla coincide con la URL. */
-const isChildActive = (href: string) => {
-	const [path, anchor] = href.split('#');
-	return anchor ? currentHash === anchor : isActive(path);
-};
----
-
 <button
 	class="sidebar-mobile-toggle"
 	type="button"
@@ -132,86 +78,32 @@ const isChildActive = (href: string) => {
 					<a
 						class:list={['sidebar-link', { active: groupActive, 'nav-parent': Boolean(item.children) }]}
 						href={item.href}
-						data-nav-link
-						data-home-link={path === '/dashboard' ? true : undefined}
-						aria-current={groupActive ? 'page' : undefined}
+						{...(!item.children && {
+							'data-nav-anchor': item.href,
+						})}
 					>
-						{item.icon && (
-							<span class="nav-icon" aria-hidden="true">{item.icon}</span>
-						)}
-						<span>{item.label}</span>
+						{item.icon && <span class="nav-icon" aria-hidden="true">{item.icon}</span>}
+						<span class="sidebar-label">{item.label}</span>
+						{item.children && <span class="nav-chevron" aria-hidden="true">▼</span>}
 					</a>
-
-					{item.children && item.children.length > 0 && (
+					{item.children ? (
 						<div class="nav-children">
-							{item.children.map((child) => {
-								const childActive = isChildActive(child.href);
-								const childPath = child.href.split('#')[0];
-								return (
-									<a
-										class:list={['sidebar-link', 'nested-child', { active: childActive }]}
-										href={child.href}
-										data-nav-link
-										data-home-link={childPath === '/dashboard' ? true : undefined}
-										aria-current={childActive ? 'page' : undefined}
-									>
-										<span>{child.label}</span>
-									</a>
-								);
-							})}
-						</div>
-					)}
-				</div>
-			);
-		})}
-	</nav>
-</aside>
-<div class="sidebar-backdrop" data-sidebar-backdrop></div>
-
-<script>
-	const sidebar = document.getElementById('dashboard-sidebar');
-	const toggle = document.querySelector<HTMLButtonElement>('[data-sidebar-toggle]');
-	const backdrop = document.querySelector<HTMLElement>('[data-sidebar-backdrop]');
-	const setSidebar = (open: boolean) => {
-		toggle?.classList.toggle('is-hidden', open);
-		sidebar?.classList.toggle('is-open', open);
-		backdrop?.classList.toggle('is-visible', open);
-		toggle?.setAttribute('aria-expanded', String(open));
-	};
-
-	const syncAnchorNavigation = () => {
-		const hash = window.location.hash.slice(1);
-		const homeLink = sidebar?.querySelector<HTMLElement>('[data-home-link]');
-		const isDashboardHome = window.location.pathname.replace(/\/+$/, '') === '/dashboard';
-		homeLink?.classList.toggle('active', isDashboardHome && !hash);
-		if (isDashboardHome && !hash) homeLink?.setAttribute('aria-current', 'page');
-		else homeLink?.removeAttribute('aria-current');
-
-		sidebar?.querySelectorAll<HTMLElement>('[data-nav-anchor]').forEach((link) => {
-			const active = link.dataset.navAnchor === hash;
-			link.classList.toggle('active', active);
-			if (active) link.setAttribute('aria-current', 'location');
-			else link.removeAttribute('aria-current');
-		});
-	};
-
-	toggle?.addEventListener('click', () => setSidebar(!sidebar?.classList.contains('is-open')));
-	backdrop?.addEventListener('click', () => setSidebar(false));
-	sidebar?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setSidebar(false)));
-	document.addEventListener('keydown', (event) => {
-		if (event.key === 'Escape') setSidebar(false);
-	});
-	window.addEventListener('hashchange', syncAnchorNavigation);
-	syncAnchorNavigation();
-</script>
-
+							{item.children.map((child) => (
+								<a
+									class="sidebar-link nested-child"
+									href={child.href}
+									data-nav-anchor={child.href}
+									aria-current={isChildActive(child.href) ? 'location' : undefined}
+								>
+									<span class="nav-icon" aria-hidden="true">▼</span>
+									<span class="sidebar-label">{child.label}</span>
+								</a>
 <style>
 	.dashboard-sidebar {
 		width: 260px;
 		height: 100vh;
 		min-height: 100vh;
 		box-sizing: border-box;
-		/* Sin padding ni margin a la izquierda: el panel vive pegado al borde. */
 		margin: 0;
 		padding: 10px 8px 10px 0;
 		background: var(--bg-surface);
@@ -222,6 +114,7 @@ const isChildActive = (href: string) => {
 		top: 0;
 		z-index: 60;
 	}
+
 	.sidebar-nav {
 		height: 100%;
 		padding: 0;
@@ -229,10 +122,13 @@ const isChildActive = (href: string) => {
 		overflow-y: auto;
 		scrollbar-width: none;
 	}
+
 	.sidebar-nav::-webkit-scrollbar { display: none; }
+
 	.nav-group { margin: 0; padding: 0; }
 	.nav-group + .nav-group { margin-top: 2px; }
 	.nav-group-first { margin-top: 0; }
+
 	.sidebar-link {
 		display: flex;
 		align-items: center;
@@ -250,22 +146,192 @@ const isChildActive = (href: string) => {
 		text-decoration: none;
 		transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 	}
-	.sidebar-link:hover { color: var(--text-primary); background: rgba(212, 175, 55, 0.08); border-color: var(--gold-border); border-left-color: var(--gold-primary); }
-	.sidebar-link.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.14); border-color: var(--gold-border); border-left-color: var(--gold-primary); }
+
+	.sidebar-link:hover {
+		color: var(--text-primary);
+		background: rgba(212, 175, 55, 0.08);
+		border-color: var(--gold-border);
+		border-left-color: var(--gold-primary);
+	}
+	.sidebar-link.active {
+		color: var(--gold-primary);
+		background: rgba(212, 175, 55, 0.14);
+		border-color: var(--gold-border);
+		border-left-color: var(--gold-primary);
+	}
 	.sidebar-link.nav-parent { font-weight: 700; color: var(--text-primary); }
-	.nav-children { display: flex; flex-direction: column; margin: 0; padding: 0; border-left: 1px solid var(--gold-border); }
-	.sidebar-link.nested-child { min-height: 30px; padding: 4px 6px 4px 11px; font-size: 12px; font-weight: 500; line-height: 1.25; border-left: 2px solid transparent; border-radius: 0 6px 6px 0; }
+
+	.nav-children {
+		display: flex;
+		flex-direction: column;
+		margin: 0;
+		padding: 0;
+		border-left: 1px solid var(--gold-border);
+	}
+	.sidebar-link.nested-child {
+		min-height: 30px;
+		padding: 4px 6px 4px 11px;
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.25;
+		border-left: 2px solid transparent;
+		border-radius: 0 6px 6px 0;
+	}
 	.sidebar-link.nested-child.active { border-left-color: var(--gold-primary); }
+
 	.nav-icon { width: 17px; flex: 0 0 17px; display: grid; place-items: center; color: currentColor; font-size: 15px; line-height: 1; }
+	.nav-chevron { margin-left: auto; color: var(--text-tertiary); font-size: 10px; }
+	.sidebar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 	.sidebar-mobile-toggle, .sidebar-backdrop { display: none; }
 
 	@media (max-width: 1024px) {
-		.dashboard-sidebar { position: fixed; inset: 0 auto 0 0; width: min(280px, calc(100vw - 36px)); margin: 0; padding: 10px 8px 10px 0; transform: translateX(-105%); transition: transform 0.25s ease; box-shadow: 18px 0 45px rgba(0, 0, 0, 0.28); }
+		.dashboard-sidebar {
+			position: fixed;
+			inset: 0 auto 0 0;
+			width: min(280px, calc(100vw - 36px));
+			margin: 0;
+			padding: 10px 8px 10px 0;
+			transform: translateX(-105%);
+			transition: transform 0.25s ease;
+			box-shadow: 18px 0 45px rgba(0, 0, 0, 0.28);
+		}
 		.dashboard-sidebar.is-open { transform: translateX(0); }
-		.sidebar-mobile-toggle { display: grid; place-items: center; position: fixed; top: 16px; left: 16px; z-index: 70; width: 42px; height: 42px; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--bg-surface); color: var(--gold-primary); cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); transition: opacity 0.2s ease, transform 0.2s ease; }
+		.sidebar-mobile-toggle {
+			display: grid;
+			place-items: center;
+			position: fixed;
+			top: 16px;
+			left: 16px;
+			z-index: 70;
+			width: 42px;
+			height: 42px;
+			border: 1px solid var(--gold-border);
+			border-radius: 10px;
+			background: var(--bg-surface);
+			color: var(--gold-primary);
+			cursor: pointer;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+			transition: opacity 0.2s ease, transform 0.2s ease;
+		}
 		.sidebar-mobile-toggle svg { width: 21px; height: 21px; }
 		.sidebar-mobile-toggle.is-hidden { opacity: 0; pointer-events: none; transform: translateY(-8px); }
-		.sidebar-backdrop { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(2, 7, 18, 0.62); opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+		.sidebar-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 55;
+			background: rgba(2, 7, 18, 0.62);
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.25s ease;
+		}
 		.sidebar-backdrop.is-visible { opacity: 1; pointer-events: auto; }
 	}
 </style>
+
+							))}
+						</div>
+					) : null}
+				</div>
+			);
+		})}
+	</nav>
+</aside>
+
+<script>
+	const sidebar = document.getElementById('dashboard-sidebar');
+	if (!sidebar) return;
+
+	const toggle = sidebar.querySelector('[data-sidebar-toggle]');
+	if (toggle) {
+		toggle.addEventListener('click', () => {
+			sidebar.classList.toggle('is-open');
+			toggle.setAttribute('aria-expanded', String(sidebar.classList.contains('is-open')));
+		});
+	}
+
+	const backdrop = document.createElement('div');
+	backdrop.className = 'sidebar-backdrop';
+	backdrop.setAttribute('aria-hidden', 'true');
+	sidebar.after(backdrop);
+
+	const syncAnchorNavigation = () => {
+		const hash = window.location.hash.replace('#', '');
+		if (!hash) return;
+
+		sidebar.querySelectorAll('a').forEach((link) => {
+			const anchor = link.dataset.navAnchor;
+			const active = anchor === hash;
+			link.classList.toggle('active', active);
+			if (active) link.setAttribute('aria-current', 'location');
+			else link.removeAttribute('aria-current');
+		});
+	};
+
+	toggle?.addEventListener('click', () => {
+		const isOpen = sidebar.classList.contains('is-open');
+		setSidebar(!isOpen);
+	});
+
+	backdrop?.addEventListener('click', () => setSidebar(false));
+
+	sidebar.querySelectorAll('a').forEach((link) => {
+		link.addEventListener('click', () => setSidebar(false));
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') setSidebar(false);
+	});
+
+	window.addEventListener('hashchange', syncAnchorNavigation);
+	syncAnchorNavigation();
+</script>
+
+		href: '/dashboard/ingresos',
+		label: 'Ingresos',
+		icon: 'µ',
+		adminOnly: true,
+		children: [
+			{ href: '/dashboard/recargas', label: 'Solicitudes de Recargas' },
+			{ href: '/dashboard/comisiones', label: 'Comisiones de Referidos' },
+		],
+	},
+	{
+		href: '/dashboard/gastos',
+		label: 'Gastos',
+		icon: '÷',
+		adminOnly: true,
+		children: [
+			{ href: '/dashboard/retiros', label: 'Solicitudes de Retiros' },
+		],
+	},
+	{
+		href: '/dashboard/negocio',
+		label: 'Negocio',
+		icon: '▢',
+		adminOnly: true,
+		children: [
+			{ href: '/dashboard/negocio', label: 'Configuración del Negocio' },
+		],
+	},
+	{
+		href: '/dashboard/mi-formacion',
+		label: 'Mi Cuenta',
+		icon: '▸',
+		children: [
+			{ href: '/dashboard/mi-formacion', label: 'Mi formación' },
+			{ href: '/dashboard/tus-transacciones', label: 'Tus transacciones' },
+			{ href: '/dashboard/informacion-perfil', label: 'Información de perfil' },
+		],
+	},
+];
+
+const visibleItems = items.filter((item) => !item.adminOnly || isAdmin);
+
+/** Un sub-elemento está activo si su ruta o su ancla coincide con la URL. */
+const isChildActive = (href: string) => {
+	const [path, anchor] = href.split('#');
+	return anchor ? currentHash === anchor : isActive(path);
+};
+-->

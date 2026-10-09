@@ -15,9 +15,10 @@ interface Props {
 	walletNumber: string;
 	/** `false` cuando el nivel todavía no habilita retiros. */
 	canWithdrawLevel: boolean;
+	movements?: Array<{ date: string; concept: string; direction: string; amount: number; status: string }>;
 }
 
-const { summary, walletType, walletNumber, canWithdrawLevel } = Astro.props;
+const { summary, walletType, walletNumber, canWithdrawLevel, movements = [] } = Astro.props;
 
 const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 
@@ -75,6 +76,11 @@ const reason = !canWithdrawLevel
 	</div>
 
 	{reason && <p class="wallet-blocked" id="wallet-reason">{reason}</p>}
+
+	<section class="wallet-movements" aria-labelledby="wallet-movements-title">
+		<div class="wallet-section-heading"><div><span class="wallet-label">Historial financiero</span><h3 id="wallet-movements-title">Envíos, retiros y recibidos</h3></div><span class="movement-count">{movements.length} movimiento{movements.length === 1 ? '' : 's'}</span></div>
+		{movements.length === 0 ? <p class="wallet-empty">Todavía no tienes movimientos registrados.</p> : <div class="wallet-table-wrap"><table class="wallet-table"><thead><tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Monto</th><th>Estado</th></tr></thead><tbody>{movements.map((movement) => <tr><td>{movement.date ? new Date(movement.date).toLocaleDateString('es-CO') : '—'}</td><td>{movement.concept}</td><td class:list={['movement-direction', { 'is-in': movement.direction === 'Recibido' }]}>{movement.direction}</td><td class="movement-amount">{fmt(movement.amount)}</td><td><span class="movement-status">{movement.status || 'Pendiente'}</span></td></tr>)}</tbody></table></div>}
+	</section>
 
 	<dialog class="wallet-modal" data-withdrawal-modal aria-labelledby="wallet-modal-title">
 		<form method="dialog" class="wallet-modal-close">
@@ -136,6 +142,16 @@ const reason = !canWithdrawLevel
 </section>
 <style>
 	.wallet { display: flex; flex-direction: column; gap: 18px; }
+	.wallet-movements { padding: 24px; border: 1px solid var(--gold-border); border-radius: 16px; background: var(--bg-surface); }
+	.wallet-section-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+	.wallet-section-heading h3 { margin:5px 0 0; font-size:1.15rem; }
+	.movement-count { color:var(--text-secondary); font-size:12px; }
+	.wallet-empty { margin:0; padding:20px; border:1px dashed var(--gold-border); border-radius:10px; color:var(--text-secondary); text-align:center; font-size:13px; }
+	.wallet-table-wrap { overflow-x:auto; }
+	.wallet-table { width:100%; min-width:680px; border-collapse:collapse; font-size:13px; }
+	.wallet-table th,.wallet-table td { padding:12px 10px; border-bottom:1px solid rgba(212,175,55,.14); text-align:left; white-space:nowrap; }
+	.wallet-table th { color:var(--text-secondary); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+	.movement-direction { color:#fbbf24; font-weight:700; }.movement-direction.is-in { color:#34d399; }.movement-amount { color:var(--gold-primary); font-weight:700 }.movement-status { padding:4px 9px; border:1px solid var(--gold-border); border-radius:999px; color:var(--text-secondary); font-size:11px; }
 
 	.wallet-grid {
 		display: grid;

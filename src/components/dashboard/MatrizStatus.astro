@@ -92,6 +92,7 @@ const levelLabel = (person: MatrixPerson) => {
 								<strong>{upline.name}</strong>
 								<span>{levelLabel(upline)}</span>
 								<span class="matrix-person-role">Te trajo a la plataforma</span>
+								<a class="matrix-action" href="/dashboard/comprobantes">Enviar dinero al líder</a>
 							</div>
 						</div>
 					) : (
@@ -136,6 +137,7 @@ const levelLabel = (person: MatrixPerson) => {
 								</span>
 								<strong class="matrix-node-name">{node.name ?? 'Libre'}</strong>
 								<span class="matrix-node-state">{node.state}</span>
+								{node.name && <button type="button" class="matrix-action matrix-request" data-member={node.name}>Solicitar dinero</button>}
 								{node.name && node.topupStatus && node.topupStatus !== 'Aprobado' && (
 									<span class="matrix-node-note">
 										Recarga {node.topupStatus.toLowerCase()}
@@ -342,6 +344,8 @@ const levelLabel = (person: MatrixPerson) => {
 	.matrix-person-copy span { color: var(--text-secondary); font-size: 11.5px; overflow-wrap: anywhere; }
 
 	.matrix-person-role { color: var(--gold-primary) !important; font-weight: 600; }
+	.matrix-action { display:inline-flex; align-items:center; justify-content:center; margin-top:6px; padding:6px 10px; border:1px solid var(--gold-border); border-radius:999px; background:rgba(212,175,55,.1); color:var(--gold-primary); font-size:10.5px; font-weight:700; text-decoration:none; cursor:pointer; font-family:inherit; }
+	.matrix-action:hover { background:rgba(212,175,55,.22); }
 
 	/* Conector vertical entre niveles */
 	.matrix-link {
@@ -492,3 +496,12 @@ const levelLabel = (person: MatrixPerson) => {
 		</>
 	)}
 </section>
+
+<script>
+	document.querySelectorAll<HTMLButtonElement>('.matrix-request').forEach((button) => {
+		button.addEventListener('click', () => {
+			const member = button.dataset.member || 'tu usuario';
+			window.alert(`Tu solicitud de dinero para ${member} quedó lista para gestionar. Próximamente podrás enviarla directamente desde aquí.`);
+		});
+	});
+</script>

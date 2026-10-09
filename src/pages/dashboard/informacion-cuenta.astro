@@ -468,6 +468,19 @@ const referralWhatsappUrl = referralUrl
 		</dl>
 	</section>
 
+	<section class="account-panel luxury-card profile-tools" aria-labelledby="profile-tools-title">
+		<header class="account-heading">
+			<div>
+				<h2 id="profile-tools-title">Ubicación y documento de identidad</h2>
+				<p>Estos datos hacen parte de tu perfil y se gestionan desde aquí cuando necesites actualizarlos.</p>
+			</div>
+		</header>
+		<div class="profile-tool-grid">
+			<a class="profile-tool" href="/dashboard/ubicacion"><strong>Mi ubicación</strong><span>Compartir o actualizar tu ubicación en el mapa.</span><b>Gestionar →</b></a>
+			<a class="profile-tool" href="/dashboard/documento"><strong>Documento de identidad</strong><span>Consultar estado o cargar un documento nuevo.</span><b>Gestionar →</b></a>
+		</div>
+	</section>
+
 	<script>
 		// Evita borrados accidentales: pide confirmación antes de enviar el
 		// formulario de eliminación. Sin JS el formulario sigue funcionando.
@@ -515,6 +528,10 @@ const referralWhatsappUrl = referralUrl
 
 <style>
 	.account-panel { padding: 28px; margin-bottom: 24px; }
+	.profile-tool-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+	.profile-tool { display:flex; flex-direction:column; gap:7px; padding:18px; border:1px solid var(--gold-border); border-radius:12px; color:var(--text-primary); text-decoration:none; background:rgba(212,175,55,.05); transition:.2s ease; }
+	.profile-tool:hover { transform:translateY(-2px); border-color:var(--gold-primary); background:rgba(212,175,55,.1); }
+	.profile-tool span { color:var(--text-secondary); font-size:12px; line-height:1.5; }.profile-tool b { color:var(--gold-primary); font-size:12px; }
 	.account-heading { margin-bottom: 20px; }
 	.account-heading h2 { margin: 0 0 8px; font-size: 1.25rem; }
 	.account-heading p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
