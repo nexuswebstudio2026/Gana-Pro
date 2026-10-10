@@ -36,11 +36,11 @@ const ways = [
 		title: 'Red de Referidos',
 		anchor: '#via-referidos-detalle',
 		icon: 'referrals',
-		description: `La vía directa. Captas personas con tu código de referido y ganas ${fmt(COMMISSION_PER_REFERRAL)} por cada alta, sin aportar capital. No dependes de que un grupo se complete: cuenta cada persona que consignes.`,
+		description: `La vía directa. Captas personas con tu código de referido y ganas ${fmt(COMMISSION_PER_REFERRAL)} cuando cada referido active su cuenta con la recarga inicial aprobada de ${fmt(RECARGA_INICIAL_AMOUNT)}. El registro por sí solo no genera comisión.`,
 		points: [
-			{ lead: 'Cómo ganas:', text: `${fmt(COMMISSION_PER_REFERRAL)} de una sola vez por cada persona que se registra con tu código. Sin llenar los cinco espacios.` },
-			{ lead: 'Requisito:', text: 'solo compartir tu enlace. Sin aporte inicial ni grupo que completar.' },
-			{ lead: 'Escala:', text: 'ancha y de entrada rápida: cada referido suma una vez y no hay tope.' },
+			{ lead: 'Cómo ganas:', text: `${fmt(COMMISSION_PER_REFERRAL)} una sola vez, cuando se aprueba la recarga inicial de ${fmt(RECARGA_INICIAL_AMOUNT)} del referido.` },
+			{ lead: 'Requisito:', text: 'la persona invitada completa y obtiene la aprobación de su recarga inicial.' },
+			{ lead: 'Escala:', text: 'cada referido puede generar una sola comisión al activar su cuenta.' },
 		],
 	},
 ];

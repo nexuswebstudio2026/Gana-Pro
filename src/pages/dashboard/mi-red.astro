@@ -29,6 +29,22 @@ try {
 }
 
 const personal = buildPersonalHierarchy(sheetUsers, { username: session.username, email: session.email });
+const requestedNodeId = Astro.url.searchParams.get('usuario');
+const findPath = (node: typeof personal.root, id: string, path: typeof personal.root[] = []): typeof personal.root[] | null => {
+	const next = [...path, node];
+	if (node.id === id) return next;
+	for (const child of node.children) {
+		const found = findPath(child, id, next);
+		if (found) return found;
+	}
+	return null;
+};
+// A member can only navigate inside the subtree rooted at their own account.
+// The admin's personal root is GANA PRO, so it can browse the full organization.
+const selectedPath = requestedNodeId ? findPath(personal.root, requestedNodeId) : null;
+const activePath = selectedPath ?? [personal.root];
+const selected = activePath[activePath.length - 1] ?? personal.root;
+const selectedUpline = activePath.length > 1 ? activePath[activePath.length - 2] : personal.upline;
 const topupsByUser: Record<string, string> = {};
 if (!loadFailed) {
 	try {
@@ -41,12 +57,13 @@ if (!loadFailed) {
 	}
 }
 
+const selectedLevel = selected.level?.trim() || level;
 const view = buildMatrixView({
-	self: { name: personal.root.name, level },
-	upline: personal.upline ? { name: personal.upline.name, level: personal.upline.level } : null,
-	downline: personal.team,
+	self: { id: selected.id, name: selected.name, level: selectedLevel },
+	upline: selectedUpline ? { name: selectedUpline.name, level: selectedUpline.level } : null,
+	downline: selected.children,
 	topupsByUser,
-	level: toLevelNumber(level),
+	level: toLevelNumber(selectedLevel),
 });
 const isAdmin = isAdminRole(session.role);
 ---
@@ -58,5 +75,11 @@ const isAdmin = isAdminRole(session.role);
 	eyebrow="Mi red"
 	description="Consulta en una sola vista a tu líder, tu posición y los cinco usuarios directos de tu red."
 >
-	<MatrizStatus view={view} loadFailed={loadFailed} leaderUsername={personal.upline?.name ?? ''} />
+	<MatrizStatus
+		view={view}
+		loadFailed={loadFailed}
+		leaderUsername={selectedUpline?.name ?? ''}
+		selectedPath={activePath.map(({ id, name }) => ({ id, name }))}
+		viewerName={session.username}
+	/>
 </AdminPageLayout>

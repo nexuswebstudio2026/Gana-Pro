@@ -1,22 +1,14 @@
 import QRCode from 'qrcode';
 import { getGoogleSheetUsers } from './sheets';
+import { listTopups, TOPUP_STATUS } from './topups';
+import { RECARGA_INICIAL_AMOUNT } from './p2p';
 import type { User } from './types';
 
-/**
- * Comisión que recibe cada usuario por cada nuevo registro con su código.
- *
- * Es un pago ÚNICO por referido: se cuenta una vez por cada alta y nunca se
- * repite aunque el referido siga activo en la plataforma.
- */
-/**
- * Comisión por referido: $1.000 al aprobarse el registro y otros $1.000 al
- * aprobarse su primera recarga. Son dos pagos independientes, así que un
- * referido puede llegar a reportar el doble.
- */
+/** Comisión única por referido, pagada al aprobar la recarga inicial de $15.000. */
 export const COMMISSION_PER_REFERRAL = 1000;
 
-/** Pagos que puede generar cada referido: registro + primera recarga. */
-export const REFERRAL_COMMISSION_PAYMENTS = 2;
+/** Cada referido genera un pago de comisión, después de activar su cuenta. */
+export const REFERRAL_COMMISSION_PAYMENTS = 1;
 
 
 /**
@@ -155,11 +147,11 @@ export function referralShortUrl(origin: string, code: string): string {
 export interface ReferralStats {
 	/** Código con el que este usuario capta. */
 	ownCode: string;
-	/** Usuarios que se registraron con su código (pago único por cada uno). */
+	/** Usuarios que se registraron con su código. */
 	referred: User[];
 	/** Cuántos son. */
 	count: number;
-	/** Comisión pagada una sola vez por cada referido: $1.000. */
+	/** Comisión asociada a referidos activos: $1.000 por cada recarga inicial aprobada. */
 	commission: number;
 	/** Enlace listo para compartir. */
 	shareUrl: string;
@@ -168,9 +160,8 @@ export interface ReferralStats {
 /**
  * Estadísticas de la red de referidos de un usuario.
  *
- * Cada referido se cuenta una sola vez (pagamento único al registrarse), así
- * que la comisión se obtiene contando los registros que citan su código, en
- * lugar de leer un saldo almacenado: nunca se desincroniza de la realidad.
+	 * La tabla y los enlaces incluyen todos los registros que citan su código.
+	 * La comisión se gana únicamente cuando se aprueba la recarga inicial.
  * Si la hoja no está disponible devuelve las estadísticas vacías.
  */
 export async function getReferralStats(user: User, origin: string): Promise<ReferralStats> {
@@ -178,6 +169,7 @@ export async function getReferralStats(user: User, origin: string): Promise<Refe
 	const ownCode = user.username || ownCodeOf(user);
 
 	let referred: User[] = [];
+	let activatedNames = new Set<string>();
 	try {
 		const all = await getGoogleSheetUsers();
 		const legacyCode = ownCodeOf(user);
@@ -186,15 +178,22 @@ export async function getReferralStats(user: User, origin: string): Promise<Refe
 				isReferredBy(u, ownCode) ||
 				(legacyCode !== ownCode && isReferredBy(u, legacyCode))
 		);
+		const referredNames = new Set(referred.map((person) => normalize(person.username)).filter(Boolean));
+		const approvedInitialTopups = await listTopups(TOPUP_STATUS.aprobado);
+		activatedNames = new Set(
+			approvedInitialTopups
+				.filter((topup) => topup.amount === RECARGA_INICIAL_AMOUNT && referredNames.has(normalize(topup.username)))
+				.map((topup) => normalize(topup.username))
+		);
 	} catch (err) {
-		console.error('No se pudo calcular la red de referidos:', err);
+		console.error('No se pudo calcular la red o sus recargas aprobadas:', err);
 	}
 
 	return {
 		ownCode,
 		referred,
 		count: referred.length,
-		commission: referred.length * COMMISSION_PER_REFERRAL * REFERRAL_COMMISSION_PAYMENTS,
+		commission: activatedNames.size * COMMISSION_PER_REFERRAL * REFERRAL_COMMISSION_PAYMENTS,
 		shareUrl: referralShortUrl(origin, user.username || ownCode),
 	};
 }

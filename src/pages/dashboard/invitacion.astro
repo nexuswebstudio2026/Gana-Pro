@@ -2,6 +2,7 @@
 import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
 import { referralShortUrl, COMMISSION_PER_REFERRAL, formatCOP } from '../../lib/referrals';
+import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
 import type { User } from '../../lib/types';
 
 export const prerender = false;
@@ -61,8 +62,8 @@ const referralUrl = referralShortUrl(siteUrl, referralCode);
 				<span class="brand font-cinzel">GANA <em>PRO</em></span>
 				<h1>Te invito a GANA PRO</h1>
 				<p class="lead">
-					Gana {formatCOP(COMMISSION_PER_REFERRAL)} por cada persona que se registre con mi
-					código, cuando su primera recarga sea aprobada.
+					El registro no genera comisión. Gana {formatCOP(COMMISSION_PER_REFERRAL)} por cada
+					persona que active su cuenta con la recarga inicial aprobada de {formatCOP(RECARGA_INICIAL_AMOUNT)}.
 				</p>
 			</header>
 

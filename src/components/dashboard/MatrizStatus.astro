@@ -16,9 +16,11 @@ interface Props {
 	/** `true` si no se pudo leer la hoja: se avisa en vez de mostrar ceros. */
 	loadFailed?: boolean;
 	leaderUsername?: string;
+	selectedPath?: { id: string; name: string }[];
+	viewerName?: string;
 }
 
-const { view, loadFailed = false, leaderUsername = '' } = Astro.props;
+const { view, loadFailed = false, leaderUsername = '', selectedPath = [], viewerName = 'usuario' } = Astro.props;
 
 const { upline, self, downline, progress } = view;
 const nextLevel = Math.min(5, progress.level + 1);
@@ -48,6 +50,17 @@ const levelLabel = (person: MatrixPerson) => {
 			<span class="matrix-level-cap">Nivel actual</span>
 		</div>
 	</header>
+	{selectedPath.length > 0 && (
+		<nav class="matrix-breadcrumb" aria-label="Ruta de la red">
+			<a href="/dashboard/mi-red">Mi red de {viewerName}</a>
+			{selectedPath.slice(1).map((person) => (
+				<>
+					<span aria-hidden="true">/</span>
+					<a href={`/dashboard/mi-red?usuario=${encodeURIComponent(person.id)}`}>{person.name}</a>
+				</>
+			))}
+		</nav>
+	)}
 
 	{loadFailed ? (
 		<p class="matrix-alert" role="alert">
@@ -138,6 +151,7 @@ const levelLabel = (person: MatrixPerson) => {
 								</span>
 								<strong class="matrix-node-name">{node.name ?? 'Libre'}</strong>
 								<span class="matrix-node-state">{node.state}</span>
+								{node.id && <a class="matrix-action matrix-open-branch" href={`/dashboard/mi-red?usuario=${encodeURIComponent(node.id)}`} aria-label={`Ver la red de ${node.name}`}>Ver sus 5 usuarios ↓</a>}
 								{node.name && <button type="button" class="matrix-action matrix-request" data-member={node.name}>Solicitar dinero</button>}
 								{node.name && node.topupStatus && node.topupStatus !== 'Aprobado' && (
 									<span class="matrix-node-note">
@@ -347,6 +361,10 @@ const levelLabel = (person: MatrixPerson) => {
 	.matrix-person-role { color: var(--gold-primary) !important; font-weight: 600; }
 	.matrix-action { display:inline-flex; align-items:center; justify-content:center; margin-top:6px; padding:6px 10px; border:1px solid var(--gold-border); border-radius:999px; background:rgba(212,175,55,.1); color:var(--gold-primary); font-size:10.5px; font-weight:700; text-decoration:none; cursor:pointer; font-family:inherit; }
 	.matrix-action:hover { background:rgba(212,175,55,.22); }
+	.matrix-breadcrumb { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin:-8px 0 22px; color:var(--text-secondary); font-size:12px; }
+	.matrix-breadcrumb a { color:var(--gold-primary); text-decoration:none; }
+	.matrix-breadcrumb a:hover { text-decoration:underline; }
+	.matrix-open-branch { margin-top:8px; }
 
 	/* Conector vertical entre niveles */
 	.matrix-link {

@@ -1,7 +1,7 @@
 ---
 import { validateSession } from '../../lib/session';
 import { isAdminRole } from '../../lib/auth';
-import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
+import { getGoogleSheetUsers } from '../../lib/sheets';
 import { formatAppDateTime } from '../../lib/datetime';
 import {
 	PROFILE_FIELD_LIMITS,
@@ -14,7 +14,6 @@ import {
 } from '../../lib/account-profile';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
 import { WALLET_TYPE_SUGGESTIONS } from '../../lib/account-wallet';
-import { COMMISSION_PER_REFERRAL, formatCOP, getReferralStats, ownCodeOf } from '../../lib/referrals';
 import type { User } from '../../lib/types';
 
 export const prerender = false;
@@ -76,33 +75,6 @@ const successMessage =
 				? 'Tus datos de contacto fueron eliminados.'
 				: '';
 
-/**
- * Red de referidos del usuario. El QR se pide a /api/referral-qr, que exige la
- * sesión y devuelve el SVG del propio usuario: si no se puede calcular, el
- * panel se oculta en lugar de mostrar un código roto.
- */
-let referralCode = '';
-let referralCount = 0;
-let referralCommission = 0;
-let referralUrl = '';
-try {
-	if (userDetail) {
-		const stats = await getReferralStats(userDetail, getPublicSiteUrl(Astro.request));
-		referralCode = ownCodeOf(userDetail) || session.username;
-		referralCount = stats.count;
-		referralCommission = stats.commission;
-		referralUrl = stats.shareUrl;
-	}
-} catch (error) {
-	console.error('Error al calcular las estadísticas de referido:', error);
-}
-const hasReferralQr = Boolean(referralCode);
-// Enlace de WhatsApp: es como se comparte el QR en la práctica en Colombia.
-const referralWhatsappUrl = referralUrl
-	? `https://wa.me/?text=${encodeURIComponent(
-			`Únete a GANA PRO con mi código ${referralCode}: ${referralUrl}`
-		)}`
-	: '';
 ---
 
 <AdminPageLayout
@@ -134,78 +106,6 @@ const referralWhatsappUrl = referralUrl
 			<p class="account-alert ko" role="alert">
 				{profileMessage || 'No se pudo completar la operación.'}
 			</p>
-		)}
-
-		{hasReferralQr && (
-			<section class="referral-panel" aria-labelledby="referral-title">
-				<header class="referral-heading">
-					<h3 id="referral-title">Tu código de referido</h3>
-					<p>
-						Comparte tu QR o tu código. Cada persona que se registre con él te
-						acredita {formatCOP(COMMISSION_PER_REFERRAL)} al aprobarse su registro y
-						otros {formatCOP(COMMISSION_PER_REFERRAL)} cuando haga su primera recarga.
-					</p>
-				</header>
-
-				<div class="referral-body">
-					<figure class="referral-qr">
-						<img
-							src="/api/referral-qr"
-							alt={`Código QR de referido de ${referralCode}`}
-							width="180"
-							height="180"
-							loading="lazy"
-						/>
-						<figcaption>Escanea para registrarse con tu código</figcaption>
-					</figure>
-
-					{/* Sin esto el QR solo se veía en pantalla y no había forma de
-					    guardarlo ni enviarlo: que es justo para lo que se pide. */}
-					<div class="referral-actions">
-						<a href="/dashboard/invitacion" class="referral-btn">
-							Invitación en PDF
-						</a>
-						<a href={referralUrl} download={`QR-referido-${referralCode}.svg`} class="referral-btn">
-							Descargar QR
-						</a>
-						{referralWhatsappUrl && (
-							<a
-								href={referralWhatsappUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="referral-btn"
-							>
-								Compartir por WhatsApp
-							</a>
-						)}
-						<button type="button" class="referral-btn" data-copy-link={referralUrl}>
-							Copiar enlace
-						</button>
-					</div>
-					<p class="referral-copied" data-copied hidden>Enlace copiado.</p>
-
-					<dl class="referral-stats">
-						<div>
-							<dt>Tu código</dt>
-							<dd><strong class="referral-code-value">{referralCode}</strong></dd>
-						</div>
-						<div>
-							<dt>Personas traídas</dt>
-							<dd>{referralCount}</dd>
-						</div>
-						<div>
-							<dt>Comisión acumulada</dt>
-							<dd><strong>{formatCOP(referralCommission)}</strong></dd>
-						</div>
-						<div>
-							<dt>Comisión por referido</dt>
-							<dd>
-								{formatCOP(COMMISSION_PER_REFERRAL)} + {formatCOP(COMMISSION_PER_REFERRAL)}
-							</dd>
-						</div>
-					</dl>
-				</div>
-			</section>
 		)}
 
 		<dl class="account-details">
@@ -456,10 +356,6 @@ const referralWhatsappUrl = referralUrl
 			<div class="account-row">
 				<dt>Nivel de miembro</dt>
 				<dd>{userDetail?.level?.trim() || '—'}</dd>
-			</div>
-			<div class="account-row">
-				<dt>Código propio</dt>
-				<dd>{userDetail?.ownCode?.trim() || userDetail?.username || '—'}</dd>
 			</div>
 			<div class="account-row">
 				<dt>Estado del documento</dt>

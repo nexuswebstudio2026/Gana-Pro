@@ -38,6 +38,8 @@ export const NODE_TONE: Record<NodeState, 'free' | 'pending' | 'active'> = {
 
 /** Un puesto concreto de la matriz. */
 export interface MatrixNode {
+	/** ID interno del organigrama, usado para abrir la rama de esta persona. */
+	id?: string;
 	/** Posición 1..5 dentro del equipo del miembro. */
 	position: number;
 	state: NodeState;
@@ -93,7 +95,7 @@ export function resolveNodeState(
  * que sobran se completan como libres para que la vista siempre dibuje cinco.
  */
 export function buildMatrixNodes(
-	team: readonly { name?: string | null; email?: string | null }[],
+	team: readonly { id?: string; name?: string | null; email?: string | null }[],
 	topupsByUser: Readonly<Record<string, string>> = {}
 ): MatrixNode[] {
 	const nodes: MatrixNode[] = [];
@@ -103,6 +105,7 @@ export function buildMatrixNodes(
 		const name = member?.name?.trim() || null;
 		const status = name ? topupsByUser[normalize(name)] ?? null : null;
 		nodes.push({
+			...(member?.id ? { id: member.id } : {}),
 			position: index + 1,
 			state: resolveNodeState(name, status),
 			name,
@@ -172,6 +175,7 @@ export interface MatrixView {
 
 /** Datos mínimos para dibujar a una persona dentro de la matriz. */
 export interface MatrixPersonInput {
+	id?: string;
 	name?: string | null;
 	level?: string | null;
 }

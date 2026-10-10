@@ -1,0 +1,96 @@
+---
+import { validateSession } from '../../lib/session';
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
+import { formatAppDateTime } from '../../lib/datetime';
+import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
+import { COMMISSION_PER_REFERRAL, formatCOP, getReferralStats, ownCodeOf } from '../../lib/referrals';
+import { listCommissions } from '../../lib/referral-commissions';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+const session = validateSession(Astro.cookies.get('auth_session')?.value);
+if (!session) return Astro.redirect('/login?error=' + encodeURIComponent('Debes iniciar sesión para acceder a esta página.'), 303);
+
+let user: User | null = null;
+let referralCode = '';
+let referralCount = 0;
+let referralCommission = 0;
+let referralUrl = '';
+let referredUsers: User[] = [];
+try {
+	const users = await getGoogleSheetUsers();
+	user = users.find((item) => item.username?.toLowerCase() === session.username.toLowerCase() || item.email?.toLowerCase() === session.email.toLowerCase()) || null;
+	if (user) {
+		const stats = await getReferralStats(user, getPublicSiteUrl(Astro.request));
+		referralCode = ownCodeOf(user) || session.username;
+		referralCount = stats.count;
+		referralUrl = stats.shareUrl;
+		referredUsers = stats.referred;
+		try {
+			const commissionKeys = new Set([user.username, ownCodeOf(user)].map((value) => value.trim().toLowerCase()).filter(Boolean));
+			const paidCommissions = await listCommissions();
+			referralCommission = paidCommissions
+				.filter((record) => commissionKeys.has(record.referrer.trim().toLowerCase()))
+				.reduce((total, record) => total + record.amount, 0);
+		} catch (error) {
+			console.error('No se pudieron cargar las comisiones de referidos:', error);
+		}
+	}
+} catch (error) {
+	console.error('Error al cargar la información de referidos:', error);
+}
+const referralWhatsappUrl = referralUrl ? `https://wa.me/?text=${encodeURIComponent(`Únete a GANA PRO con mi código ${referralCode}: ${referralUrl}`)}` : '';
+const isAdmin = isAdminRole(user?.role || session.role);
+---
+
+<AdminPageLayout session={session} isAdmin={isAdmin} title="Mis referidos" eyebrow="Mi red · Referidos" description="Comparte tu código y consulta las personas que llegaron a GANA PRO con tu invitación.">
+	<section class="referrals-panel luxury-card" aria-labelledby="referral-title">
+		{referralCode ? <>
+			<header class="referrals-heading">
+				<div><h2 id="referral-title">Invita a nuevas personas</h2><p>El registro con tu código no genera comisión. Recibes {formatCOP(COMMISSION_PER_REFERRAL)} una sola vez cuando aprobemos la recarga inicial de {formatCOP(RECARGA_INICIAL_AMOUNT)} de esa persona.</p></div>
+			</header>
+			<div class="referrals-content">
+				<figure class="referral-qr"><img src="/api/referral-qr" alt={`Código QR de referido de ${referralCode}`} width="180" height="180"/><figcaption>Escanea para registrarse con tu código</figcaption></figure>
+				<div class="referral-info">
+					<div class="referral-code"><span>Tu código de referido</span><strong>{referralCode}</strong></div>
+					<div class="referral-actions">
+						<a href="/dashboard/invitacion" class="referral-btn">Invitación en PDF</a>
+						<a href={referralUrl} download={`QR-referido-${referralCode}.svg`} class="referral-btn">Descargar QR</a>
+						{referralWhatsappUrl && <a href={referralWhatsappUrl} target="_blank" rel="noopener noreferrer" class="referral-btn">Compartir por WhatsApp</a>}
+						<button type="button" class="referral-btn" data-copy-link={referralUrl}>Copiar enlace</button>
+					</div>
+					<p class="referral-copied" data-copied hidden>Enlace copiado.</p>
+				</div>
+			</div>
+			<dl class="referral-stats">
+				<div><dt>Personas referidas</dt><dd>{referralCount}</dd></div>
+				<div><dt>Comisión acumulada</dt><dd>{formatCOP(referralCommission)}</dd></div>
+				<div><dt>Comisión por recarga inicial aprobada</dt><dd>{formatCOP(COMMISSION_PER_REFERRAL)}</dd></div>
+			</dl>
+			<section class="referred-list" aria-labelledby="referred-list-title">
+				<div class="list-heading"><div><h2 id="referred-list-title">Personas vinculadas con tu código</h2><p>Usuarios que completaron su registro usando tu código de referido.</p></div><span>{referredUsers.length} {referredUsers.length === 1 ? 'usuario' : 'usuarios'}</span></div>
+				{referredUsers.length ? <div class="table-scroll"><table><thead><tr><th>Usuario</th><th>Correo electrónico</th><th>Fecha de registro</th></tr></thead><tbody>{referredUsers.map((referred) => <tr><td>{referred.username}</td><td>{referred.email || '—'}</td><td>{referred.registeredAt ? formatAppDateTime(referred.registeredAt) : '—'}</td></tr>)}</tbody></table></div> : <p class="empty-list">Aún no hay usuarios registrados con este código.</p>}
+			</section>
+		</> : <div class="referrals-empty"><h2 id="referral-title">Referidos</h2><p>No se pudo cargar tu código ahora. Inténtalo de nuevo más tarde.</p></div>}
+	</section>
+</AdminPageLayout>
+
+<script>
+	document.querySelector<HTMLButtonElement>('[data-copy-link]')?.addEventListener('click', async (event) => {
+		const button = event.currentTarget as HTMLButtonElement;
+		const link = button.dataset.copyLink || '';
+		try {
+			await navigator.clipboard.writeText(link);
+		} catch {
+			const input = document.createElement('textarea'); input.value = link; input.style.position = 'fixed'; input.style.opacity = '0'; document.body.append(input); input.select(); document.execCommand('copy'); input.remove();
+		}
+		const notice = document.querySelector<HTMLElement>('[data-copied]');
+		if (notice) { notice.hidden = false; window.setTimeout(() => { notice.hidden = true; }, 2400); }
+	});
+</script>
+
+<style>
+	.referrals-panel{padding:clamp(20px,3vw,32px)}.referrals-heading h2,.referrals-empty h2,.list-heading h2{margin:0 0 8px;font-family:'Cinzel',serif;font-size:1.4rem}.referrals-heading p,.referrals-empty p,.list-heading p{max-width:760px;margin:0;color:var(--text-secondary);font-size:14px;line-height:1.65}.referrals-content{display:flex;align-items:center;gap:28px;flex-wrap:wrap;margin-top:24px}.referral-qr{flex:0 0 auto;margin:0;text-align:center}.referral-qr img{display:block;width:180px;height:180px;border:1px solid var(--gold-border);border-radius:12px;background:#fff}.referral-qr figcaption{margin-top:8px;color:var(--text-secondary);font-size:12px}.referral-info{flex:1 1 320px;min-width:0}.referral-code{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:1px solid var(--gold-border);border-radius:12px;background:rgba(212,175,55,.06)}.referral-code span{color:var(--text-secondary);font-size:12px}.referral-code strong{color:var(--gold-primary);font-size:1.35rem;overflow-wrap:anywhere}.referral-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.referral-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 13px;border:1px solid var(--gold-border);border-radius:9px;background:rgba(212,175,55,.08);color:var(--text-primary);font:inherit;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer}.referral-btn:hover{background:rgba(212,175,55,.18);border-color:var(--gold-primary)}.referral-copied{margin:9px 0 0;color:var(--gold-primary);font-size:12px}.referral-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:24px 0 0}.referral-stats>div{padding:15px;border:1px solid var(--gold-border);border-radius:12px}.referral-stats dt{color:var(--text-secondary);font-size:12px}.referral-stats dd{margin:8px 0 0;color:var(--gold-primary);font-size:1.1rem;font-weight:700;overflow-wrap:anywhere}.referred-list{margin-top:32px;padding-top:26px;border-top:1px solid var(--gold-border)}.list-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.list-heading>span{flex-shrink:0;padding:7px 11px;border:1px solid var(--gold-border);border-radius:999px;color:var(--gold-primary);font-size:12px;font-weight:700}.table-scroll{overflow-x:auto;border:1px solid var(--gold-border);border-radius:12px}table{width:100%;border-collapse:collapse;text-align:left;min-width:560px}th,td{padding:13px 16px;border-bottom:1px solid rgba(212,175,55,.14);font-size:13px}th{color:var(--text-secondary);font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:rgba(212,175,55,.05)}td{color:var(--text-primary)}tbody tr:last-child td{border-bottom:0}.empty-list{margin:0;padding:20px;border:1px dashed var(--gold-border);border-radius:12px;color:var(--text-secondary);font-size:13px}.referrals-empty{padding:16px}@media(max-width:640px){.referral-stats{grid-template-columns:1fr}.referrals-content{justify-content:center}.referral-info{flex-basis:100%}.list-heading{flex-direction:column}th,td{padding:11px 12px}}
+</style>
