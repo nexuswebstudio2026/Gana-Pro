@@ -22,9 +22,10 @@ interface Props {
 		enabled: boolean;
 	}[];
 	payments: P2PPayment[];
+	matrixRecipients: { username: string; label: string }[];
 }
 
-const { concepts, payments } = Astro.props;
+const { concepts, payments, matrixRecipients = [] } = Astro.props;
 
 const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 
@@ -63,13 +64,22 @@ const toneOf = (status: string) =>
 						<option
 							value={concept.id}
 							data-amount={concept.amount}
+							data-matrix={concept.id === 'Aporte de Matriz' ? 'true' : 'false'}
 							disabled={!concept.enabled}
-							selected={concept.enabled}
+							selected={concept.id === concepts.find((item) => item.enabled)?.id}
 						>
 							{concept.label}{concept.enabled ? '' : ' — no disponible'}
 						</option>
 					))}
 				</select>
+			</label>
+			<label class="p2p-field" data-matrix-recipient hidden>
+				<span>Usuario de nivel 2 que recibirá el aporte</span>
+				<select name="recipient" data-recipient-select>
+					<option value="">Selecciona un usuario de nivel 2</option>
+					{matrixRecipients.map((recipient) => <option value={recipient.username}>{recipient.label}</option>)}
+				</select>
+				<small class="p2p-hint">Al aprobarse el pago, quedarás en su línea. Cada líder tiene cinco puestos.</small>
 			</label>
 
 			<p class="p2p-amount">
@@ -113,7 +123,8 @@ const toneOf = (status: string) =>
 				<thead>
 					<tr>
 						<th scope="col">Fecha</th>
-						<th scope="col">Concepto</th>
+							<th scope="col">Concepto</th>
+							<th scope="col">Usuario elegido</th>
 						<th scope="col">Monto</th>
 						<th scope="col">Referencia</th>
 						<th scope="col">Comprobante</th>
@@ -128,6 +139,7 @@ const toneOf = (status: string) =>
 								{P2P_CONCEPT_INFO[payment.concept as keyof typeof P2P_CONCEPT_INFO]
 									?.label ?? payment.concept}
 							</td>
+							<td>{payment.recipientUsername || '—'}</td>
 							<td class="p2p-amount-cell">{fmt(payment.amount)}</td>
 							<td>{payment.reference || '—'}</td>
 							<td>
@@ -349,6 +361,8 @@ const toneOf = (status: string) =>
 <script>
 	const modal = document.querySelector<HTMLDialogElement>('[data-receipt-modal]');
 	const openBtn = document.querySelector<HTMLButtonElement>('[data-open-receipt]');
+	const openMatrixBtn = document.querySelector<HTMLButtonElement>('[data-open-matrix]');
+	const matrixTargetSelect = document.querySelector<HTMLSelectElement>('[data-matrix-target]');
 	const form = document.querySelector<HTMLFormElement>('[data-receipt-form]');
 	const feedback = document.querySelector<HTMLElement>('[data-receipt-feedback]');
 	const submitBtn = document.querySelector<HTMLButtonElement>('[data-receipt-submit]');
@@ -356,6 +370,8 @@ const toneOf = (status: string) =>
 	const submitLabel = document.querySelector<HTMLElement>('[data-receipt-submit-label]');
 	const conceptSelect = document.querySelector<HTMLSelectElement>('[data-receipt-concept]');
 	const amountOut = document.querySelector<HTMLElement>('[data-receipt-amount]');
+	const matrixRecipient = document.querySelector<HTMLElement>('[data-matrix-recipient]');
+	const recipientSelect = document.querySelector<HTMLSelectElement>('[data-recipient-select]');
 
 	/** Tipos y tamaño que acepta el endpoint, para no subir un archivo inútil. */
 	const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -460,12 +476,30 @@ const toneOf = (status: string) =>
 	fileInput?.addEventListener('change', previewCompression);
 
 	openBtn?.addEventListener('click', () => modal?.showModal());
+	openMatrixBtn?.addEventListener('click', () => {
+		const target = matrixTargetSelect?.value || '';
+		if (!target) {
+			matrixTargetSelect?.focus();
+			return;
+		}
+		const matrixOption = conceptSelect?.querySelector<HTMLOptionElement>('option[data-matrix="true"]');
+		if (!matrixOption || matrixOption.disabled) return;
+		if (conceptSelect) {
+			conceptSelect.value = matrixOption.value;
+			conceptSelect.dispatchEvent(new Event('change', { bubbles: true }));
+		}
+		if (recipientSelect) recipientSelect.value = target;
+		modal?.showModal();
+	});
 
 	/** El monto sale del propio option: el servidor lo recalcula igual. */
 	const syncAmount = () => {
 		const option = conceptSelect?.selectedOptions?.[0];
 		const amount = Number(option?.dataset.amount ?? 0);
 		if (amountOut) amountOut.textContent = fmt(amount);
+		const requiresRecipient = option?.dataset.matrix === 'true';
+		if (matrixRecipient) matrixRecipient.hidden = !requiresRecipient;
+		if (recipientSelect) recipientSelect.required = !!requiresRecipient;
 	};
 
 	conceptSelect?.addEventListener('change', syncAmount);

@@ -1,4 +1,4 @@
-import { getSheetsClient, SPREADSHEET_ID } from './sheets';
+import { ensureUserLocationColumn, getSheetsClient, SPREADSHEET_ID, updateSheetUserLocationUrl } from './sheets';
 import { toZonedIso } from './datetime';
 
 /** Nombre de la pestaña donde se guarda la ubicación de los usuarios. */
@@ -168,16 +168,17 @@ export async function ensureLocationSheet(): Promise<number> {
 
 export interface VisitorAccess {
 	ip: string;
-	latitude: number;
-	longitude: number;
+	latitude?: number;
+	longitude?: number;
 	accuracy?: number;
+	source?: string;
 	city?: string;
 	region?: string;
 	country?: string;
 	visitorId: string;
 }
 
-/** Registra la autorización y la ubicación aproximada derivada de la IP. */
+/** Registra la autorización; agrega coordenadas y enlace de Maps cuando existen. */
 export async function saveVisitorAccess(
 	access: VisitorAccess,
 	user?: { username: string; email: string }
@@ -187,33 +188,47 @@ export async function saveVisitorAccess(
 	const rows = await readRows();
 	const username = user?.username?.trim() || `Visitante ${access.visitorId.slice(-8)}`;
 	const key = user?.username?.trim().toLowerCase() || username.toLowerCase();
-	const existing = rows.findIndex((row) => String(row?.[2] ?? '').trim().toLowerCase() === key);
+	const visitorUsername = `Visitante ${access.visitorId.slice(-8)}`.toLowerCase();
+	const existing = rows.findIndex((row) => {
+		const recordedUsername = String(row?.[2] ?? '').trim().toLowerCase();
+		return recordedUsername === key || (Boolean(user?.username) && recordedUsername === visitorUsername);
+	});
 	const ids = rows.slice(1).map((row) => Number(row?.[0]) || 0);
 	const id = existing >= 0 ? Number(rows[existing]?.[0]) || existing : Math.max(0, ...ids) + 1;
-	const mapUrl = getMapUrl(access.latitude, access.longitude);
+	const hasCoordinates = access.latitude !== undefined && access.longitude !== undefined;
+	const mapUrl = hasCoordinates ? getMapUrl(access.latitude!, access.longitude!) : '';
 	const row = [
 		String(id), toZonedIso(), username, user?.email || '',
-		String(access.latitude), String(access.longitude),
-		access.accuracy !== undefined ? String(Math.round(access.accuracy)) : '', 'gps',
-		`=HYPERLINK("${mapUrl}";"Ver en Google Maps")`,
+		hasCoordinates ? String(access.latitude) : '', hasCoordinates ? String(access.longitude) : '',
+		access.accuracy !== undefined ? String(Math.round(access.accuracy)) : '', access.source || (hasCoordinates ? 'GPS' : 'IP'),
+		hasCoordinates ? `=HYPERLINK("${mapUrl}";"Ver en Google Maps")` : '',
 		access.ip, access.city || '', access.region || '', access.country || '', 'Aceptado',
 	];
-	if (existing >= 0) {
-		await sheets.spreadsheets.values.update({
-			spreadsheetId: SPREADSHEET_ID,
-			range: `${LOCATION_TAB}!A${existing + 1}:N${existing + 1}`,
-			valueInputOption: 'USER_ENTERED',
-			requestBody: { values: [row] },
-		});
-		return;
-	}
-	const targetRow = rows.length + 1;
+	const targetRow = existing >= 0 ? existing + 1 : rows.length + 1;
+	// Guarda la fecha ISO literalmente. USER_ENTERED interpreta la zona horaria
+	// del sufijo en la configuración de Sheets y puede cambiar la hora visible.
 	await sheets.spreadsheets.values.update({
 		spreadsheetId: SPREADSHEET_ID,
-		range: `${LOCATION_TAB}!A${targetRow}:N${targetRow}`,
-		valueInputOption: 'USER_ENTERED',
-		requestBody: { values: [row] },
+		range: `${LOCATION_TAB}!A${targetRow}:H${targetRow}`,
+		valueInputOption: 'RAW',
+		requestBody: { values: [row.slice(0, 8)] },
 	});
+	await sheets.spreadsheets.values.update({
+		spreadsheetId: SPREADSHEET_ID,
+		range: `${LOCATION_TAB}!J${targetRow}:N${targetRow}`,
+		valueInputOption: 'RAW',
+		requestBody: { values: [row.slice(9)] },
+	});
+	await sheets.spreadsheets.values.update({
+		spreadsheetId: SPREADSHEET_ID,
+		range: `${LOCATION_TAB}!I${targetRow}`,
+		valueInputOption: hasCoordinates ? 'USER_ENTERED' : 'RAW',
+		requestBody: { values: [[row[8]]] },
+	});
+	if (user) {
+		await ensureUserLocationColumn();
+		if (hasCoordinates) await updateSheetUserLocationUrl(user.username, mapUrl);
+	}
 }
 
 /** Escribe los encabezados de la fila 1. */
@@ -328,6 +343,7 @@ export async function saveUserLocation(
 			// sin enlace y sin texto: la fila conserva la coordenada, que es lo esencial.
 		}
 	}
+	await updateSheetUserLocationUrl(username, mapUrl);
 }
 
 /** Última ubicación registrada de un usuario, o `null` si aún no ha compartido. */

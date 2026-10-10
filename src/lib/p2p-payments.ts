@@ -27,9 +27,11 @@ const HEADERS = [
 	'REFERENCIA',
 	'ESTADO',
 	'ADMIN_NOTAS',
+	'RECEPTOR',
+	'NIVEL_ORIGEN',
 ] as const;
 
-const RANGE = `${P2P_TAB}!A1:K1000`;
+const RANGE = `${P2P_TAB}!A1:M1000`;
 
 export interface P2PPayment {
 	id: string;
@@ -44,6 +46,8 @@ export interface P2PPayment {
 	reference: string;
 	status: string;
 	adminNotes: string;
+	recipientUsername?: string;
+	senderLevel?: number;
 }
 
 function normalizeHeader(value: unknown): string {
@@ -97,7 +101,7 @@ async function ensureTab(): Promise<string[]> {
 		});
 		await sheets.spreadsheets.values.update({
 			spreadsheetId: SPREADSHEET_ID,
-			range: `${P2P_TAB}!A1:K1`,
+			range: `${P2P_TAB}!A1:M1`,
 			valueInputOption: 'RAW',
 			requestBody: { values: [[...HEADERS]] },
 		});
@@ -120,7 +124,7 @@ async function ensureTab(): Promise<string[]> {
 	if (needsHeaders || mismatched) {
 		await sheets.spreadsheets.values.update({
 			spreadsheetId: SPREADSHEET_ID,
-			range: `${P2P_TAB}!A1:K1`,
+			range: `${P2P_TAB}!A1:M1`,
 			valueInputOption: 'RAW',
 			requestBody: { values: [[...HEADERS]] },
 		});
@@ -163,6 +167,8 @@ export async function listP2PPayments(username?: string): Promise<P2PPayment[]> 
 			reference: row[at(headers, 'referencia')] ?? '',
 			status: row[at(headers, 'estado')] ?? P2P_STATUS.pendiente,
 			adminNotes: row[at(headers, 'admin_notas')] ?? '',
+			recipientUsername: row[at(headers, 'receptor')] ?? '',
+			senderLevel: Number(row[at(headers, 'nivel_origen')] || 0) || undefined,
 		};
 
 		if (!item.username) continue;
@@ -225,6 +231,10 @@ export async function createP2PPayment(
 				return request.status;
 			case 'ADMIN_NOTAS':
 				return request.adminNotes;
+			case 'RECEPTOR':
+				return request.recipientUsername;
+			case 'NIVEL_ORIGEN':
+				return request.senderLevel ? String(request.senderLevel) : '';
 			default:
 				return '';
 		}
@@ -232,7 +242,7 @@ export async function createP2PPayment(
 
 	await sheets.spreadsheets.values.append({
 		spreadsheetId: SPREADSHEET_ID,
-		range: `${P2P_TAB}!A:K`,
+		range: `${P2P_TAB}!A:M`,
 		valueInputOption: 'RAW',
 		insertDataOption: 'INSERT_ROWS',
 		requestBody: { values: [HEADERS.map(pick)] },

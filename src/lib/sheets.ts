@@ -280,7 +280,7 @@ export function userColumnIndexes(headers: string[]): UserColumnIndexes {
 		paymentMethod: headers.findIndex((h) => h.includes('pago')),
 		walletNumber: headers.findIndex((h) => h.includes('billetera')),
 		balance: headers.findIndex((h) => h.includes('saldo')),
-		level: headers.indexOf('level'),
+		level: headers.findIndex((h) => h === 'level' || h === 'nivel'),
 		referralCode: headers.findIndex((h) => h.includes('referido')),
 		ownCode: headers.findIndex((h) => h.includes('propio')),
 		documentStatus: headers.findIndex((h) => h.includes('estado') && h.includes('doc')),
@@ -337,6 +337,8 @@ export function registrationContactColumnIndexes(headers: string[]): Registratio
  */
 export async function getGoogleSheetUsers(): Promise<User[]> {
 	try {
+		await ensureUserLocationColumn();
+		await ensureUserMatrixParentColumn();
 		const sheets = getSheetsClient();
 		const response = await sheets.spreadsheets.values.get({
 			spreadsheetId: SHEET_ID,
@@ -375,6 +377,8 @@ export async function getGoogleSheetUsers(): Promise<User[]> {
 
 		const headers = rows[headerRowIndex].map((h: any) => normalizeHeader(String(h)));
 		const idx = userColumnIndexes(headers);
+		const matrixParentIdx = headers.findIndex((h) => h === 'lider de matriz');
+		const locationUrlIdx = headers.findIndex((h) => h === 'ubicacion' || (h.includes('url') && h.includes('google maps')));
 
 		const cell = (row: unknown[], index: number): string =>
 			index === -1 ? '' : String(row[index] ?? '').trim();
@@ -408,6 +412,7 @@ export async function getGoogleSheetUsers(): Promise<User[]> {
 				walletNumber: cell(row, idx.walletNumber),
 				balance: cell(row, idx.balance) || '$0',
 				level: cell(row, idx.level) || '1',
+				matrixParent: cell(row, matrixParentIdx),
 				referralCode: cell(row, idx.referralCode),
 				ownCode: cell(row, idx.ownCode),
 				documentStatus: cell(row, idx.documentStatus),
@@ -416,6 +421,7 @@ export async function getGoogleSheetUsers(): Promise<User[]> {
 				nit: cell(row, idx.nit),
 				scannedRut: cell(row, idx.scannedRut),
 				rutLink: cell(row, idx.rutLink),
+				locationUrl: cell(row, locationUrlIdx),
 			});
 		}
 		return users;
@@ -706,6 +712,20 @@ export const USER_PROFILE_COLUMNS: { header: string; match: (normalized: string)
 	{ header: 'Whatsapp', match: (h) => h.includes('whatsapp') },
 ];
 
+/** Columna que guarda la URL de Google Maps de la última ubicación compartida. */
+export const USER_LOCATION_COLUMNS: { header: string; match: (normalized: string) => boolean }[] = [
+	{ header: 'Ubicacion', match: (h) => h === 'ubicacion' || (h.includes('url') && h.includes('google maps')) },
+];
+
+const USER_MATRIX_PARENT_COLUMNS = [
+	{ header: 'Lider de Matriz', match: (h: string) => h === 'lider de matriz' },
+];
+const USER_LEVEL_COLUMNS = [
+	{ header: 'Level', match: (h: string) => h === 'level' || h === 'nivel' },
+];
+
+let userLocationColumnReady: Promise<boolean> | undefined;
+
 /** Mínimo de columnas que se garantizan en la pestaña de usuarios. */
 const MIN_USER_COLUMNS = 26;
 
@@ -803,6 +823,74 @@ export function ensureUserDocumentColumns(): Promise<boolean> {
  */
 export function ensureUserProfileColumns(): Promise<boolean> {
 	return ensureUserColumns(USER_PROFILE_COLUMNS);
+}
+
+export function ensureUserLocationColumn(): Promise<boolean> {
+	if (!userLocationColumnReady) {
+		userLocationColumnReady = ensureUserColumns(USER_LOCATION_COLUMNS).catch((error: unknown) => {
+			userLocationColumnReady = undefined;
+			throw error;
+		});
+	}
+	return userLocationColumnReady;
+}
+
+let userMatrixParentColumnReady: Promise<boolean> | undefined;
+export function ensureUserMatrixParentColumn(): Promise<boolean> {
+	if (!userMatrixParentColumnReady) {
+		userMatrixParentColumnReady = ensureUserColumns(USER_MATRIX_PARENT_COLUMNS).catch((error: unknown) => {
+			userMatrixParentColumnReady = undefined;
+			throw error;
+		});
+	}
+	return userMatrixParentColumnReady;
+}
+
+export async function setSheetUserLevel(username: string, level: number): Promise<boolean> {
+	await ensureUserColumns(USER_LEVEL_COLUMNS);
+	const found = await findUserRow(username);
+	if (!found || found.idx.level === -1) return false;
+	await writeUserCell(found.sheets, found.rowIndex, found.idx.level, String(level));
+	return true;
+}
+
+export async function setSheetUserMatrixParent(username: string, parentUsername: string): Promise<boolean> {
+	await ensureUserMatrixParentColumn();
+	const found = await findUserRow(username);
+	if (!found) return false;
+	const headerRow = findHeaderRowIndex(found.rows);
+	if (headerRow === -1) return false;
+	const headers = found.rows[headerRow].map((value: unknown) => normalizeHeader(String(value ?? '')));
+	const matrixParentIdx = headers.findIndex((h) => h === 'lider de matriz');
+	if (matrixParentIdx === -1) return false;
+	await writeUserCell(found.sheets, found.rowIndex, matrixParentIdx, parentUsername);
+	return true;
+}
+
+/** Actualiza en Usuarios el enlace a Google Maps de la última ubicación. */
+export async function updateSheetUserLocationUrl(username: string, mapUrl: string): Promise<boolean> {
+	await ensureUserLocationColumn();
+	const found = await findUserRow(username);
+	if (!found) return false;
+	const headerRow = findHeaderRowIndex(found.rows);
+	if (headerRow === -1) return false;
+	const headers = found.rows[headerRow].map((value) => normalizeHeader(String(value ?? '')));
+	const locationUrlColumn = headers.findIndex((h) => h === 'ubicacion' || (h.includes('url') && h.includes('google maps')));
+	if (locationUrlColumn === -1) return false;
+
+	const cellRange = `${SHEET_TAB}!${columnLetter(locationUrlColumn)}${found.rowIndex + 1}`;
+	const formula = `=HYPERLINK("${mapUrl.replace(/"/g, '""')}";"${mapUrl.replace(/"/g, '""')}")`;
+	try {
+		await found.sheets.spreadsheets.values.update({
+			spreadsheetId: SHEET_ID,
+			range: cellRange,
+			valueInputOption: 'USER_ENTERED',
+			requestBody: { values: [[formula]] },
+		});
+	} catch {
+		await writeUserCell(found.sheets, found.rowIndex, locationUrlColumn, mapUrl);
+	}
+	return true;
 }
 
 /** Datos de contacto, residencia y billetera que se pueden actualizar de un usuario. */

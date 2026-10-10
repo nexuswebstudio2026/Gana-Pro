@@ -8,7 +8,7 @@ const { subject = '' } = Astro.props;
 		<span class="confidential-icon" aria-hidden="true">⌖</span>
 		<p class="confidential-eyebrow">GANA PRO · PRIVACIDAD</p>
 		<h2 id="confidential-title">Acceso confidencial</h2>
-		<p id="confidential-copy">Al aceptar, autorizas que el navegador comparta tu ubicación precisa mientras uses el sitio. Guardaremos las coordenadas y un enlace de Google Maps en Google Sheets, actualizando tu registro.</p>
+		<p id="confidential-copy">Al aceptar, compartiremos tu ubicación disponible e IP mientras uses el sitio. Guardaremos las coordenadas y el enlace de Google Maps cuando el dispositivo las proporcione, actualizando tu registro.</p>
 		<p class="confidential-status" aria-live="polite"></p>
 		<div class="confidential-actions">
 			<button type="button" class="confidential-decline">Ahora no</button>
@@ -39,14 +39,18 @@ const { subject = '' } = Astro.props;
 	const decline = dialog?.querySelector<HTMLButtonElement>('.confidential-decline');
 	const status = dialog?.querySelector<HTMLElement>('.confidential-status');
 	const subject = dialog?.dataset.subject?.trim().toLowerCase() || '';
-	const getVisitorId = () => {
+	const visitorId = (() => {
 		try {
 			let id = localStorage.getItem('gana_confidential_visitor');
 			if (!id) { id = crypto.randomUUID(); localStorage.setItem('gana_confidential_visitor', id); }
 			return id;
 		} catch { return crypto.randomUUID(); }
+	})();
+	const getVisitorId = () => {
+		return visitorId;
 	};
-	const decisionKey = `gana_confidential_access_${subject || getVisitorId()}`;
+	const visitorDecisionKey = `gana_confidential_access_${visitorId}`;
+	const decisionKey = `gana_confidential_access_${subject || visitorId}`;
 	const getCurrentLocation = () => new Promise<GeolocationPosition>((resolve, reject) => {
 		if (!navigator.geolocation) {
 			reject(new Error('Este navegador no permite obtener la ubicación.'));
@@ -58,20 +62,21 @@ const { subject = '' } = Astro.props;
 				: error.code === error.TIMEOUT
 					? 'El dispositivo no entregó una ubicación. Activa Ubicación en Windows y permite el acceso a este sitio en Chrome; luego vuelve a intentarlo.'
 					: 'No se pudo obtener la ubicación. Revisa el GPS o la conexión e inténtalo de nuevo.';
-			reject(new Error(message));
+			const failure = new Error(message) as Error & { geoCode?: number };
+			failure.geoCode = error.code;
+			reject(failure);
 		}, { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 });
 	});
-	const recordAccess = async (position: GeolocationPosition) => {
+	const recordAccess = async (position?: GeolocationPosition) => {
+		const coordinates = position ? {
+			latitude: position.coords.latitude,
+			longitude: position.coords.longitude,
+			accuracy: position.coords.accuracy,
+		} : {};
 		const response = await fetch('/api/location-consent', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				consent: true,
-				visitorId: getVisitorId(),
-				latitude: position.coords.latitude,
-				longitude: position.coords.longitude,
-				accuracy: position.coords.accuracy,
-			}),
+			body: JSON.stringify({ consent: true, visitorId: getVisitorId(), ...coordinates }),
 		});
 		const result = await response.json() as { ok?: boolean; error?: string };
 		if (!response.ok || !result.ok) throw new Error(result.error || 'No se pudo guardar el acceso.');
@@ -116,7 +121,16 @@ const { subject = '' } = Astro.props;
 	});
 	const close = () => dialog?.close();
 	let accepted = false;
-	try { accepted = localStorage.getItem(decisionKey) === 'accepted'; } catch { /* Se solicita en esta carga. */ }
+	try {
+		accepted = localStorage.getItem(decisionKey) === 'accepted';
+		// La persona aceptó en la página pública y acaba de entrar a su cuenta.
+		// Trasladamos la misma autorización a su sesión para no volver a preguntar.
+		if (!accepted && subject && localStorage.getItem(visitorDecisionKey) === 'accepted') {
+			localStorage.setItem(decisionKey, 'accepted');
+			localStorage.removeItem(visitorDecisionKey);
+			accepted = true;
+		}
+	} catch { /* Se solicita en esta carga. */ }
 	if (accepted) {
 		startTracking();
 	} else {
@@ -130,8 +144,14 @@ const { subject = '' } = Astro.props;
 		if (accept) { accept.disabled = true; accept.textContent = 'Buscando ubicación…'; }
 		if (decline) decline.disabled = true;
 		try {
-			const position = await getCurrentLocation();
-			if (accept) accept.textContent = 'Guardando ubicación…';
+			let position: GeolocationPosition | undefined;
+			try {
+				position = await getCurrentLocation();
+			} catch (error) {
+				if ((error as { geoCode?: number })?.geoCode !== 3) throw error;
+				if (status) status.textContent = 'El dispositivo no entregó coordenadas. Guardaremos el acceso y seguiremos intentando obtener la ubicación.';
+			}
+			if (accept) accept.textContent = position ? 'Guardando ubicación…' : 'Guardando acceso…';
 			await recordAccess(position);
 			try { localStorage.setItem(decisionKey, 'accepted'); } catch { /* La autorización queda activa en esta página. */ }
 			startTracking();

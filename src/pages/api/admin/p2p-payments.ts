@@ -13,9 +13,10 @@
 import type { APIRoute } from 'astro';
 import { isAdminRole } from '../../../lib/auth';
 import { listP2PPayments, setP2PPaymentStatus } from '../../../lib/p2p-payments';
-import { P2P_CONCEPT, P2P_STATUS } from '../../../lib/p2p';
-import { getGoogleSheetUsers, moveBalance } from '../../../lib/sheets';
+import { P2P_CONCEPT, P2P_STATUS, RECARGA_INICIAL_AMOUNT } from '../../../lib/p2p';
+import { getGoogleSheetUsers, moveBalance, setSheetUserLevel, setSheetUserMatrixParent } from '../../../lib/sheets';
 import { buildUserHierarchy, findUserParent } from '../../../lib/user-hierarchy';
+import { toLevelNumber } from '../../../lib/users';
 
 export const prerender = false;
 
@@ -79,6 +80,58 @@ export const POST: APIRoute = async (Astro) => {
 		let message = `Pago #${requestId} ${decision === 'aprobar' ? 'aprobado' : 'rechazado'}.`;
 
 		if (decision === 'aprobar') {
+			if (request.concept === P2P_CONCEPT.aporteMatriz) {
+				const recipientUsername = String(request.recipientUsername || '').trim();
+				const senderLevel = Number(request.senderLevel || 0);
+				if (!recipientUsername || request.amount !== RECARGA_INICIAL_AMOUNT || senderLevel < 1 || senderLevel >= 5) {
+					return json({ ok: false, message: 'El aporte no tiene un destinatario o monto válido.' }, 400);
+				}
+				const users = await getGoogleSheetUsers();
+				const payer = users.find((user) => user.username.trim().toLowerCase() === request.username.trim().toLowerCase());
+				const recipient = users.find((user) => user.username.trim().toLowerCase() === recipientUsername.toLowerCase());
+				if (!payer || !recipient || toLevelNumber(payer.level || '1') !== senderLevel) {
+					return json({ ok: false, message: 'El usuario que envía ya no es elegible para este aporte.' }, 409);
+				}
+				const recipientIsRoot = isAdminRole(recipient.role);
+				const existing = await listP2PPayments();
+				const rootLevelOneCount = existing.filter((payment) =>
+					payment.concept === P2P_CONCEPT.aporteMatriz &&
+					payment.recipientUsername?.trim().toLowerCase() === recipientUsername.toLowerCase() &&
+					payment.senderLevel === 1 && payment.status === P2P_STATUS.aprobado
+				).length;
+				const recipientLevel = recipientIsRoot
+					? rootLevelOneCount < 5 ? 2 : Math.max(3, toLevelNumber(recipient.level || '3'))
+					: toLevelNumber(recipient.level || '1');
+				const inbound = existing.filter((payment) =>
+					payment.id !== request.id && payment.concept === P2P_CONCEPT.aporteMatriz &&
+					payment.recipientUsername?.trim().toLowerCase() === recipientUsername.toLowerCase() &&
+					payment.senderLevel === senderLevel &&
+					payment.status !== P2P_STATUS.rechazado
+				);
+				const approvedInbound = inbound.filter((payment) => payment.status === P2P_STATUS.aprobado).length;
+				if (recipientLevel !== senderLevel + 1 || inbound.length >= 5) {
+					return json({ ok: false, message: 'El destinatario ya no tiene puestos disponibles para tu nivel.' }, 409);
+				}
+
+				const moved = await moveBalance(request.username, request.amount, recipient.username);
+				if (!moved) return json({ ok: false, message: 'No se pudo transferir el aporte. Verifica el saldo del usuario.' }, 400);
+				await setP2PPaymentStatus(requestId, P2P_STATUS.aprobado, adminNotes);
+				await setSheetUserMatrixParent(request.username, recipientIsRoot ? 'gana-pro' : recipient.username);
+
+				const approvedToRecipient = [...inbound, { ...request, status: P2P_STATUS.aprobado }]
+					.filter((payment) => payment.status === P2P_STATUS.aprobado);
+				if (approvedToRecipient.length >= 5) {
+					await setSheetUserLevel(recipient.username, senderLevel + 2);
+					for (const contribution of approvedToRecipient.slice(0, 5)) {
+						await setSheetUserLevel(contribution.username, senderLevel + 1);
+					}
+					message += ` El usuario ${recipient.username} y sus cinco aportantes ascendieron de nivel.`;
+				} else {
+					message += ` Se enviaron ${fmt(request.amount)} a ${recipient.username}; puesto ${approvedInbound + 1} de 5.`;
+				}
+				return json({ ok: true, message });
+			}
+
 			if (request.concept === P2P_CONCEPT.recargaInicial) {
 				// La recarga inicial no mueve saldo aquí: se acredita en el flujo
 				// de recargas, que además paga la comisión del referido.

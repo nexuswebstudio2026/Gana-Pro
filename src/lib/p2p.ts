@@ -36,9 +36,10 @@ export const P2P_RATE = {
 	sostenimiento: 0.3,
 } as const;
 
-/** Los tres conceptos que se pueden reportar con un comprobante. */
+/** Conceptos que se pueden reportar con un comprobante. */
 export const P2P_CONCEPT = {
 	recargaInicial: 'Recarga Inicial',
+	aporteMatriz: 'Aporte de Matriz',
 	ascensoPatrocinador: 'Ascenso a Patrocinador',
 	sostenimientoGanaPro: 'Sostenimiento GanaPro',
 } as const;
@@ -48,6 +49,7 @@ export type P2PConcept = (typeof P2P_CONCEPT)[keyof typeof P2P_CONCEPT];
 /** Lista ordenada de conceptos, tal y como se muestran en el selector. */
 export const P2P_CONCEPTS: readonly P2PConcept[] = [
 	P2P_CONCEPT.recargaInicial,
+	P2P_CONCEPT.aporteMatriz,
 	P2P_CONCEPT.ascensoPatrocinador,
 	P2P_CONCEPT.sostenimientoGanaPro,
 ];
@@ -93,6 +95,14 @@ export const P2P_CONCEPT_INFO: Record<P2PConcept, P2PConceptInfo> = {
 		id: P2P_CONCEPT.recargaInicial,
 		label: `Recarga Inicial ($${RECARGA_INICIAL_AMOUNT.toLocaleString('es-CO')})`,
 		detail: 'Activa tu puesto en la matriz.',
+		rate: null,
+		fixedAmount: RECARGA_INICIAL_AMOUNT,
+		minLevel: 1,
+	},
+	[P2P_CONCEPT.aporteMatriz]: {
+		id: P2P_CONCEPT.aporteMatriz,
+		label: `Aporte de Matriz ($${RECARGA_INICIAL_AMOUNT.toLocaleString('es-CO')})`,
+		detail: 'Aporte de $15.000 al miembro de nivel 2 que elijas.',
 		rate: null,
 		fixedAmount: RECARGA_INICIAL_AMOUNT,
 		minLevel: 1,
