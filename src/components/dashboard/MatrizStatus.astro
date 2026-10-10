@@ -18,9 +18,12 @@ interface Props {
 	leaderUsername?: string;
 	selectedPath?: { id: string; name: string }[];
 	viewerName?: string;
+	matrixRecipients?: { username: string; label: string }[];
+	matrixChoiceEnabled?: boolean;
+	matrixRecipientLevel?: number;
 }
 
-const { view, loadFailed = false, leaderUsername = '', selectedPath = [], viewerName = 'usuario' } = Astro.props;
+const { view, loadFailed = false, leaderUsername = '', selectedPath = [], viewerName = 'usuario', matrixRecipients = [], matrixChoiceEnabled = false, matrixRecipientLevel = 2 } = Astro.props;
 
 const { upline, self, downline, progress } = view;
 const nextLevel = Math.min(5, progress.level + 1);
@@ -97,7 +100,15 @@ const levelLabel = (person: MatrixPerson) => {
 				<!-- Nivel superior: la persona que trajo al usuario. -->
 				<div class="matrix-tier">
 					<span class="matrix-tier-cap">Nivel superior</span>
-					{upline ? (
+					{matrixChoiceEnabled ? (
+						<div class="matrix-person is-vacant">
+							<span class="matrix-person-avatar" aria-hidden="true">◇</span>
+							<div class="matrix-person-copy">
+								<strong>Elige tu nivel superior</strong>
+								<span>Selecciona a quién enviarás tu aporte de matriz.</span>
+							</div>
+						</div>
+					) : upline ? (
 						<div class="matrix-person">
 							<span class="matrix-person-avatar" aria-hidden="true">
 								{initials(upline)}
@@ -118,6 +129,21 @@ const levelLabel = (person: MatrixPerson) => {
 							</div>
 						</div>
 					)}
+					{matrixChoiceEnabled && matrixRecipients.length > 0 && (
+						<div class="matrix-choice">
+							<strong>Elige a quién aportar</strong>
+							<p>Selecciona un usuario de nivel {matrixRecipientLevel}. Al aprobarse el comprobante, quedarás en su línea inferior.</p>
+							<label>
+								<span class="sr-only">Usuario de nivel {matrixRecipientLevel}</span>
+								<select data-matrix-leader aria-label={`Elige un usuario de nivel ${matrixRecipientLevel}`}>
+									<option value="">Selecciona un usuario</option>
+									{matrixRecipients.map((recipient) => <option value={recipient.username}>{recipient.label}</option>)}
+								</select>
+							</label>
+							<button type="button" class="matrix-action" data-matrix-continue>Enviar aporte de $15.000</button>
+						</div>
+					)}
+					{matrixChoiceEnabled && matrixRecipients.length === 0 && <p class="matrix-choice-empty">No hay puestos disponibles de nivel {matrixRecipientLevel} en este momento. Vuelve a consultar más tarde.</p>}
 				</div>
 
 				<span class="matrix-link" aria-hidden="true"></span>
@@ -364,6 +390,12 @@ const levelLabel = (person: MatrixPerson) => {
 	.matrix-breadcrumb { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin:-8px 0 22px; color:var(--text-secondary); font-size:12px; }
 	.matrix-breadcrumb a { color:var(--gold-primary); text-decoration:none; }
 	.matrix-breadcrumb a:hover { text-decoration:underline; }
+	.matrix-choice { width:min(100%, 460px); padding:16px; border:1px solid var(--gold-border); border-radius:14px; background:rgba(212,175,55,.06); }
+	.matrix-choice strong { color:var(--text-primary); font-size:13px; }
+	.matrix-choice p { margin:6px 0 10px; color:var(--text-secondary); font-size:12px; line-height:1.5; }
+	.matrix-choice label { display:block; }
+	.matrix-choice select { width:100%; min-height:42px; padding:9px 11px; border:1px solid var(--gold-border); border-radius:9px; background:var(--bg-primary); color:var(--text-primary); font:inherit; }
+	.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 	.matrix-open-branch { margin-top:8px; }
 
 	/* Conector vertical entre niveles */
@@ -517,6 +549,13 @@ const levelLabel = (person: MatrixPerson) => {
 </section>
 
 <script>
+	document.querySelector<HTMLButtonElement>('[data-matrix-continue]')?.addEventListener('click', () => {
+		const select = document.querySelector<HTMLSelectElement>('[data-matrix-leader]');
+		const target = select?.value;
+		if (!target) { select?.focus(); return; }
+		window.location.href = `/dashboard/billetera?aporteMatriz=${encodeURIComponent(target)}#comprobantes`;
+	});
+
 	document.querySelectorAll<HTMLButtonElement>('.matrix-request').forEach((button) => {
 		button.addEventListener('click', () => {
 			const member = button.dataset.member || 'tu usuario';

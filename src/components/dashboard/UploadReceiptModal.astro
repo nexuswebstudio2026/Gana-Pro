@@ -492,6 +492,19 @@ const toneOf = (status: string) =>
 		modal?.showModal();
 	});
 
+	// Permite iniciar el comprobante desde el selector de la tarjeta superior
+	// de "Mi red", conservando el mismo formulario y validaciones de Billetera.
+	const requestedMatrixRecipient = new URLSearchParams(window.location.search).get('aporteMatriz');
+	if (requestedMatrixRecipient && matrixTargetSelect && openMatrixBtn) {
+		const matchingOption = Array.from(matrixTargetSelect.options).find(
+			(option) => option.value.trim().toLowerCase() === requestedMatrixRecipient.trim().toLowerCase()
+		);
+		if (matchingOption) {
+			matrixTargetSelect.value = matchingOption.value;
+			openMatrixBtn.click();
+		}
+	}
+
 	/** El monto sale del propio option: el servidor lo recalcula igual. */
 	const syncAmount = () => {
 		const option = conceptSelect?.selectedOptions?.[0];
