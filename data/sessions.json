@@ -1,9 +1,9 @@
 [
   {
-    "token": "eyJ1c2VybmFtZSI6IkdhbmFQcm8iLCJlbWFpbCI6Im5leHVzd2Vic3R1ZGlvMjAyNkBnbWFpbC5jb20iLCJyb2xlIjoiQWRtaW4iLCJleHBpcmVzQXQiOjE3OTIyMDMxMDUyNjh9.1d4beebc7cf11dd9d5b4f7e122afc09bd854ed932763fc91d92c71247eef636c",
-    "username": "GanaPro",
-    "email": "nexuswebstudio2026@gmail.com",
-    "role": "Admin",
-    "expiresAt": 1792203105268
+    "token": "eyJ1c2VybmFtZSI6IkFua2FtbyIsImVtYWlsIjoiY2FtaWxvdmlkYWwuMTcwNEBnbWFpbC5jb20iLCJyb2xlIjoiVXNlciIsImV4cGlyZXNBdCI6MTc5MjIwNDI4MjE5OH0.a0379e2f9586f8e31fc0e6bb190e32f4fa63c3c38a4f9d39793bae9635c5b79e",
+    "username": "Ankamo",
+    "email": "camilovidal.1704@gmail.com",
+    "role": "User",
+    "expiresAt": 1792204282198
   }
 ]

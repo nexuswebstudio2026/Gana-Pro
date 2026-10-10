@@ -3,6 +3,7 @@ import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers, getPublicSiteUrl } from '../../lib/sheets';
 import { referralShortUrl, COMMISSION_PER_REFERRAL, formatCOP } from '../../lib/referrals';
 import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
+import AccessConfidential from '../../components/AccessConfidential.astro';
 import type { User } from '../../lib/types';
 
 export const prerender = false;
@@ -120,5 +121,6 @@ const referralUrl = referralShortUrl(siteUrl, referralCode);
 				<span class="foot-code">Código: {referralCode}</span>
 			</footer>
 		</article>
+		<AccessConfidential subject={session.username} />
 	</body>
 </html>

@@ -53,7 +53,7 @@ export const POST: APIRoute = async (Astro) => {
 		setSessionCookie(Astro, token);
 
 		// Redirect to dashboard
-		return Astro.redirect('/dashboard?solicitarUbicacion=1', 303);
+		return Astro.redirect('/dashboard', 303);
 	} catch (err) {
 		// El detalle va al log del servidor; al usuario solo se le muestra un
 		// mensaje generico. Volcar `err.message` en el cuerpo filtraba nombres de

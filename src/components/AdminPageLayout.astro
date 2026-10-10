@@ -5,7 +5,7 @@ import BalanceChip from './BalanceChip.astro';
 import DashboardNotifications from './DashboardNotifications.astro';
 import DashboardSidebar from './DashboardSidebarV2.astro';
 import Footer from './Footer.astro';
-import DashboardLocationCapture from './dashboard/DashboardLocationCapture.astro';
+import AccessConfidential from './AccessConfidential.astro';
 import { getUserBalance, getSheetUserLevel, getUserWallet, getAdminWallet } from '../lib/users';
 import type { Session } from '../lib/session';
 
@@ -18,7 +18,6 @@ interface Props {
 }
 
 const { session, title, eyebrow, description, isAdmin = true } = Astro.props;
-const shouldRequestLocation = Astro.url.searchParams.get('solicitarUbicacion') === '1';
 const roleLabel = session.role || 'Admin';
 
 // Saldo acumulado del administrador, verificado contra Google Sheets.
@@ -104,7 +103,7 @@ try {
 			</div>
 		</div>
 		<Footer />
-		{shouldRequestLocation && <DashboardLocationCapture />}
+		<AccessConfidential subject={session.username} />
 	</body>
 </html>
 

@@ -23,6 +23,7 @@ const PUBLIC_PATHS: readonly string[] = [
 	'/api/register',
 	'/api/check-referrer',
 	'/api/forgot-password',
+	'/api/location-consent',
 ];
 
 /** Normaliza la ruta: sin barra final, para comparar contra la lista pública. */

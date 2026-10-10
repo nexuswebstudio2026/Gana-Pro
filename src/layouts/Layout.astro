@@ -1,5 +1,6 @@
 ---
 import Footer from '../components/Footer.astro';
+import AccessConfidential from '../components/AccessConfidential.astro';
 import { getPublicSiteUrl } from '../lib/sheets';
 
 interface Props {
@@ -94,6 +95,7 @@ const ogType = Astro.url.pathname === '/' ? 'website' : 'article';
 	<body>
 		<slot />
 		<Footer />
+		<AccessConfidential subject={Astro.locals.user?.username} />
 	</body>
 </html>
 

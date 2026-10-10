@@ -6,6 +6,7 @@ import PanelHeader from '../components/PanelHeader.astro';
 import DashboardSidebar from '../components/DashboardSidebarV2.astro';
 import Footer from '../components/Footer.astro';
 import OnboardingTour from '../components/OnboardingTour.astro';
+import AccessConfidential from '../components/AccessConfidential.astro';
 import type { User } from '../lib/types';
 
 // SSR: this page must check cookies at request time
@@ -201,6 +202,7 @@ const isAdmin = isAdminRole(userDetail?.role || session.role);
 			</div>
 		</div>
 		<Footer />
+		<AccessConfidential subject={session.username} />
 
 	</body>
 </html>

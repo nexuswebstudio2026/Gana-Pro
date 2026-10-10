@@ -1,0 +1,145 @@
+---
+interface Props { subject?: string; }
+const { subject = '' } = Astro.props;
+---
+
+<dialog class="confidential-access" aria-labelledby="confidential-title" aria-describedby="confidential-copy" data-subject={subject}>
+	<div class="confidential-card">
+		<span class="confidential-icon" aria-hidden="true">⌖</span>
+		<p class="confidential-eyebrow">GANA PRO · PRIVACIDAD</p>
+		<h2 id="confidential-title">Acceso confidencial</h2>
+		<p id="confidential-copy">Al aceptar, autorizas que el navegador comparta tu ubicación precisa mientras uses el sitio. Guardaremos las coordenadas y un enlace de Google Maps en Google Sheets, actualizando tu registro.</p>
+		<p class="confidential-status" aria-live="polite"></p>
+		<div class="confidential-actions">
+			<button type="button" class="confidential-decline">Ahora no</button>
+			<button type="button" class="confidential-accept">Aceptar acceso</button>
+		</div>
+	</div>
+</dialog>
+
+<style>
+	.confidential-access{width:min(470px,calc(100% - 32px));padding:0;border:1px solid var(--gold-border);border-radius:20px;background:#111827;color:var(--text-primary);box-shadow:0 24px 80px #0009}
+	.confidential-access::backdrop{background:#020712c7;backdrop-filter:blur(4px)}
+	.confidential-card{padding:28px}
+	.confidential-icon{display:grid;place-items:center;width:46px;height:46px;border:1px solid var(--gold-border);border-radius:14px;background:#d4af3718;color:var(--gold-primary);font-size:27px}
+	.confidential-eyebrow{margin:16px 0 5px!important;color:var(--gold-primary)!important;font-size:10px!important;font-weight:800;letter-spacing:.14em}
+	.confidential-card h2{margin:0 0 9px;font-family:'Cinzel',serif;font-size:1.3rem}
+	.confidential-card p{color:var(--text-secondary);font-size:13px;line-height:1.65}
+	.confidential-status{min-height:18px;margin:12px 0 0;color:#fca5a5;font-size:12px}
+	.confidential-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+	.confidential-actions button{min-height:40px;padding:9px 14px;border:1px solid var(--gold-border);border-radius:10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+	.confidential-decline{background:transparent;color:var(--text-secondary)}
+	.confidential-accept{background:var(--gold-primary);color:#111827}
+	.confidential-actions button:disabled{opacity:.6;cursor:wait}
+</style>
+
+<script>
+	const dialog = document.querySelector<HTMLDialogElement>('.confidential-access');
+	const accept = dialog?.querySelector<HTMLButtonElement>('.confidential-accept');
+	const decline = dialog?.querySelector<HTMLButtonElement>('.confidential-decline');
+	const status = dialog?.querySelector<HTMLElement>('.confidential-status');
+	const subject = dialog?.dataset.subject?.trim().toLowerCase() || '';
+	const getVisitorId = () => {
+		try {
+			let id = localStorage.getItem('gana_confidential_visitor');
+			if (!id) { id = crypto.randomUUID(); localStorage.setItem('gana_confidential_visitor', id); }
+			return id;
+		} catch { return crypto.randomUUID(); }
+	};
+	const decisionKey = `gana_confidential_access_${subject || getVisitorId()}`;
+	const getCurrentLocation = () => new Promise<GeolocationPosition>((resolve, reject) => {
+		if (!navigator.geolocation) {
+			reject(new Error('Este navegador no permite obtener la ubicación.'));
+			return;
+		}
+		navigator.geolocation.getCurrentPosition(resolve, (error) => {
+			const message = error.code === error.PERMISSION_DENIED
+				? 'Debes permitir la ubicación en el navegador para guardarla.'
+				: error.code === error.TIMEOUT
+					? 'El dispositivo no entregó una ubicación. Activa Ubicación en Windows y permite el acceso a este sitio en Chrome; luego vuelve a intentarlo.'
+					: 'No se pudo obtener la ubicación. Revisa el GPS o la conexión e inténtalo de nuevo.';
+			reject(new Error(message));
+		}, { enableHighAccuracy: false, timeout: 60000, maximumAge: 30000 });
+	});
+	const recordAccess = async (position: GeolocationPosition) => {
+		const response = await fetch('/api/location-consent', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				consent: true,
+				visitorId: getVisitorId(),
+				latitude: position.coords.latitude,
+				longitude: position.coords.longitude,
+				accuracy: position.coords.accuracy,
+			}),
+		});
+		const result = await response.json() as { ok?: boolean; error?: string };
+		if (!response.ok || !result.ok) throw new Error(result.error || 'No se pudo guardar el acceso.');
+	};
+	let lastSavedAt = 0;
+	let lastSavedPosition: { latitude: number; longitude: number } | null = null;
+	let watchId: number | undefined;
+	let saveInProgress = false;
+	const distanceMeters = (a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) => {
+		const radians = (degrees: number) => degrees * Math.PI / 180;
+		const dLat = radians(b.latitude - a.latitude);
+		const dLng = radians(b.longitude - a.longitude);
+		const h = Math.sin(dLat / 2) ** 2 + Math.cos(radians(a.latitude)) * Math.cos(radians(b.latitude)) * Math.sin(dLng / 2) ** 2;
+		return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+	};
+	const startTracking = () => {
+		if (!navigator.geolocation || watchId !== undefined) return;
+		watchId = navigator.geolocation.watchPosition((position) => {
+			const now = Date.now();
+			const current = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+			const movedEnough = !lastSavedPosition || distanceMeters(lastSavedPosition, current) >= 100;
+			if (saveInProgress || (lastSavedAt && now - lastSavedAt < 30000 && !movedEnough)) return;
+			saveInProgress = true;
+			void recordAccess(position)
+				.then(() => { lastSavedAt = now; lastSavedPosition = current; })
+				.catch((error: unknown) => console.error('No se pudo actualizar la ubicación:', error))
+				.finally(() => { saveInProgress = false; });
+		}, (error) => {
+			console.warn('Seguimiento de ubicación detenido:', error.message);
+			if (error.code === error.PERMISSION_DENIED) {
+				if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+				watchId = undefined;
+				try { localStorage.removeItem(decisionKey); } catch { /* El navegador conserva su propio permiso. */ }
+				if (status) status.textContent = 'La ubicación fue bloqueada. Habilítala para este sitio en los permisos del navegador y vuelve a aceptar.';
+				dialog?.showModal();
+			}
+		}, { enableHighAccuracy: true, timeout: 120000, maximumAge: 15000 });
+	};
+	window.addEventListener('pagehide', () => {
+		if (watchId !== undefined && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+		watchId = undefined;
+	});
+	const close = () => dialog?.close();
+	let accepted = false;
+	try { accepted = localStorage.getItem(decisionKey) === 'accepted'; } catch { /* Se solicita en esta carga. */ }
+	if (accepted) {
+		startTracking();
+	} else {
+		dialog?.showModal();
+	}
+	decline?.addEventListener('click', () => {
+		close();
+	});
+	accept?.addEventListener('click', async () => {
+		if (status) status.textContent = '';
+		if (accept) { accept.disabled = true; accept.textContent = 'Buscando ubicación…'; }
+		if (decline) decline.disabled = true;
+		try {
+			const position = await getCurrentLocation();
+			if (accept) accept.textContent = 'Guardando ubicación…';
+			await recordAccess(position);
+			try { localStorage.setItem(decisionKey, 'accepted'); } catch { /* La autorización queda activa en esta página. */ }
+			startTracking();
+			close();
+		} catch (error) {
+			if (status) status.textContent = error instanceof Error ? error.message : 'No se pudo registrar el acceso. Inténtalo de nuevo.';
+			if (accept) { accept.disabled = false; accept.textContent = 'Intentar de nuevo'; }
+			if (decline) decline.disabled = false;
+		}
+	});
+</script>

@@ -2,6 +2,7 @@
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Logo from '../components/Logo.astro';
 import Footer from '../components/Footer.astro';
+import AccessConfidential from '../components/AccessConfidential.astro';
 
 interface Props {
 	title: string;
@@ -69,6 +70,7 @@ const { title, subtitle } = Astro.props;
 
 		</div>
 		<Footer />
+		<AccessConfidential subject={Astro.locals.user?.username} />
 	</body>
 </html>
 
