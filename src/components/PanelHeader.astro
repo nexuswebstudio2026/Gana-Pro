@@ -14,6 +14,7 @@
  * mostrar un saldo inventado.
  */
 import ThemeToggle from './ThemeToggle.astro';
+import DashboardNotifications from './DashboardNotifications.astro';
 import BalanceChip from './BalanceChip.astro';
 import Logo from './Logo.astro';
 import { getGoogleSheetUsers } from '../lib/sheets';
@@ -98,6 +99,7 @@ if (session) {
 
 	<div class="header-actions">
 		<ThemeToggle />
+		{session && hasSidebar && <DashboardNotifications username={session.username} />}
 
 		<BalanceChip
 			balance={balance}

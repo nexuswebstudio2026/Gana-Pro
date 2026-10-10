@@ -24,10 +24,11 @@ const items: NavItem[] = [
 		{ href: '/dashboard/retiros', label: 'Solicitudes de retiro' },
 	] },
 	{ href: '/dashboard/negocio', label: 'Negocio', icon: '◆', adminOnly: true, children: [{ href: '/dashboard/negocio', label: 'Configuración del negocio' }] },
-	{ href: '/dashboard/mi-organigrama', label: 'Mi cuenta', icon: '◇', children: [
-		{ href: '/dashboard/mi-organigrama', label: 'Mi red · Matriz 5x1' },
-		{ href: '/dashboard/billetera', label: 'Billetera y comprobantes' },
-		{ href: '/dashboard/informacion-cuenta#profile-tools-title', label: 'Información de perfil' },
+	{ href: '/dashboard/mi-red', label: 'Mi red', icon: '◎' },
+	{ href: '/dashboard/informacion-cuenta#referral-title', label: 'Referidos', icon: '♧' },
+	{ href: '/dashboard/billetera', label: 'Billetera y comprobantes', icon: '＄' },
+	{ href: '/dashboard/informacion-cuenta', label: 'Mi cuenta', icon: '◇', children: [
+		{ href: '/dashboard/informacion-cuenta#profile-tools-title', label: 'Información del perfil' },
 	] },
 ];
 const visibleItems = items.filter((item) => !item.adminOnly || isAdmin);

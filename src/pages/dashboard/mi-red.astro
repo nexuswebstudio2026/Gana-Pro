@@ -1,0 +1,62 @@
+---
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
+import { toLevelNumber } from '../../lib/users';
+import { listTopups, TOPUP_STATUS } from '../../lib/topups';
+import { buildMatrixView } from '../../lib/matrix';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import MatrizStatus from '../../components/dashboard/MatrizStatus.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = Astro.locals.user!;
+let sheetUsers: User[] = [];
+let loadFailed = false;
+let level = '1';
+
+try {
+	sheetUsers = await getGoogleSheetUsers();
+	const own = sheetUsers.find((user) =>
+		user.username?.trim().toLowerCase() === session.username.trim().toLowerCase() ||
+		user.email?.trim().toLowerCase() === session.email.trim().toLowerCase()
+	);
+	level = own?.level?.trim() || '1';
+} catch (error) {
+	loadFailed = true;
+	console.error('Error al cargar Mi red:', error);
+}
+
+const personal = buildPersonalHierarchy(sheetUsers, { username: session.username, email: session.email });
+const topupsByUser: Record<string, string> = {};
+if (!loadFailed) {
+	try {
+		for (const topup of await listTopups()) {
+			const key = String(topup.username ?? '').trim().toLowerCase();
+			if (key && !topupsByUser[key]) topupsByUser[key] = topup.status === TOPUP_STATUS.aprobado ? 'Aprobado' : String(topup.status || '');
+		}
+	} catch (error) {
+		console.error('No se pudieron leer las recargas de Mi red:', error);
+	}
+}
+
+const view = buildMatrixView({
+	self: { name: personal.root.name, level },
+	upline: personal.upline ? { name: personal.upline.name, level: personal.upline.level } : null,
+	downline: personal.team,
+	topupsByUser,
+	level: toLevelNumber(level),
+});
+const isAdmin = isAdminRole(session.role);
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Mi red y Matriz 5x1"
+	eyebrow="Mi red"
+	description="Consulta en una sola vista a tu líder, tu posición y los cinco usuarios directos de tu red."
+>
+	<MatrizStatus view={view} loadFailed={loadFailed} leaderUsername={personal.upline?.name ?? ''} />
+</AdminPageLayout>
