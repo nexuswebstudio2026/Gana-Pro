@@ -48,6 +48,8 @@ export const POST: APIRoute = async (Astro) => {
 		const password = params.get('password') ?? '';
 		const passwordConfirm = params.get('passwordConfirm') ?? '';
 		const referralInput = params.get('ref')?.trim() ?? '';
+		const acceptTerms = params.get('acceptTerms') === '1';
+		const acceptPrivacy = params.get('acceptPrivacy') === '1';
 		// El formulario marca con `refFromLink` los códigos que ya pasaron la
 		// verificación para conservarlos si ocurre un error temporal al registrar.
 		const refFromLink = params.get('refFromLink') === '1';
@@ -63,6 +65,9 @@ export const POST: APIRoute = async (Astro) => {
 		}
 		if (!username || !email || !password) {
 			return errorParam('Todos los campos son obligatorios.');
+		}
+		if (!acceptTerms || !acceptPrivacy) {
+			return errorParam('Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.');
 		}
 		if (password !== passwordConfirm) {
 			return errorParam('Las contraseñas no coinciden.');
@@ -161,6 +166,7 @@ export const POST: APIRoute = async (Astro) => {
 
 		// --- Hash password and save ---
 		const passwordHash = hashPassword(password);
+		const acceptedAt = new Date().toISOString();
 
 		// 1. Guardar en Google Sheets
 		try {
@@ -180,6 +186,8 @@ export const POST: APIRoute = async (Astro) => {
 				documentType: tipoDocumento,
 				documentNumber: numeroDocumento,
 				contact,
+				termsAcceptedAt: acceptedAt,
+				privacyAcceptedAt: acceptedAt,
 			});
 		} catch (sheetSaveErr) {
 			console.error('Error al guardar usuario en Google Sheet:', sheetSaveErr);
@@ -201,6 +209,8 @@ export const POST: APIRoute = async (Astro) => {
 				city: contact.city,
 				phone: contact.phone,
 				whatsapp: contact.whatsapp,
+				termsAcceptedAt: acceptedAt,
+				privacyAcceptedAt: acceptedAt,
 			};
 			localUsers.push(newUser);
 			writeJSON('users.json', localUsers);

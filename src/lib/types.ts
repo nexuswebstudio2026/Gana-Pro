@@ -45,6 +45,10 @@ export interface User {
 	/** Enlace al archivo del RUT. */
 	rutLink?: string;
 	registeredAt?: string;
+	/** Fecha ISO en que aceptó los términos al registrarse. */
+	termsAcceptedAt?: string;
+	/** Fecha ISO en que autorizó el tratamiento de datos al registrarse. */
+	privacyAcceptedAt?: string;
 	/** Dirección de residencia. */
 	address?: string;
 	/** Barrio de residencia. */

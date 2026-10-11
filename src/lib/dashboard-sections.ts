@@ -37,19 +37,19 @@ export const DASHBOARD_PAGES = {
 	ingresos: {
 		title: 'Ingresos',
 		eyebrow: 'Contabilidad',
-		description: 'Centraliza el seguimiento de los ingresos del negocio.',
+		description: 'El resumen contable de ingresos aún no está conectado a un registro consolidado.',
 		cards: [
-			{ title: 'Resumen de ingresos', text: 'Consulta los ingresos registrados por período.' },
-			{ title: 'Historial', text: 'Revisa el detalle de los movimientos de ingresos.' },
+			{ title: 'Resumen de ingresos', text: 'Esta sección todavía no calcula totales por período. Revisa los módulos de recargas, retiros, comisiones y pagos P2P para consultar sus operaciones.' },
+			{ title: 'Historial consolidado', text: 'Aún no hay un historial contable unificado en esta vista.' },
 		],
 	},
 	gastos: {
 		title: 'Gastos',
 		eyebrow: 'Contabilidad',
-		description: 'Centraliza el seguimiento de los gastos del negocio.',
+		description: 'El registro contable de gastos todavía no está disponible en el panel.',
 		cards: [
-			{ title: 'Resumen de gastos', text: 'Consulta los gastos registrados por período.' },
-			{ title: 'Historial', text: 'Revisa el detalle de los movimientos de gastos.' },
+			{ title: 'Resumen de gastos', text: 'Esta sección aún no captura ni agrupa gastos por período.' },
+			{ title: 'Historial de gastos', text: 'Todavía no hay un registro de gastos conectado a esta vista.' },
 		],
 	},
 	negocio: {
@@ -60,10 +60,10 @@ export const DASHBOARD_PAGES = {
 	usuario: {
 		title: 'Usuario',
 		eyebrow: 'Configuración',
-		description: 'Administra tu cuenta y la información de acceso al panel.',
+		description: 'Esta vista aún no incluye herramientas de administración de cuentas.',
 		cards: [
-			{ title: 'Perfil de usuario', text: 'Consulta la información asociada a tu cuenta.' },
-			{ title: 'Acceso y seguridad', text: 'Gestiona las preferencias de acceso al panel.' },
+			{ title: 'Perfil de usuario', text: 'Consulta la información del perfil desde Información de cuenta.' },
+			{ title: 'Acceso y seguridad', text: 'La gestión de credenciales y preferencias aún no está disponible en esta sección.' },
 		],
 	},
 } as const;

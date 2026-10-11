@@ -468,7 +468,10 @@ export async function appendGoogleSheetUser(user: {
 	 * guarda su propio dato. Si se omite, esas celdas quedan vacías.
 	 */
 	contact?: RegistrationContact;
+	termsAcceptedAt?: string;
+	privacyAcceptedAt?: string;
 }): Promise<void> {
+	await ensureUserColumns(USER_REGISTRATION_CONSENT_COLUMNS);
 	const sheets = getSheetsClient();
 
 	const res = await sheets.spreadsheets.values.get({
@@ -482,6 +485,8 @@ export async function appendGoogleSheetUser(user: {
 	}
 
 	const headers = rows[headerRow].map((h: unknown) => normalizeHeader(String(h)));
+	const termsAcceptedAtIdx = headers.findIndex((h) => h.includes('aceptacion terminos'));
+	const privacyAcceptedAtIdx = headers.findIndex((h) => h.includes('consentimiento privacidad'));
 	const idx = userColumnIndexes(headers);
 	const contactIdx = registrationContactColumnIndexes(headers);
 	if (idx.username === -1 || idx.email === -1) {
@@ -507,7 +512,9 @@ export async function appendGoogleSheetUser(user: {
 	const lastColumn = Math.max(
 		headers.length - 1,
 		...Object.values(idx).filter((i) => i !== -1),
-		...Object.values(contactIdx).filter((i) => i !== -1)
+		...Object.values(contactIdx).filter((i) => i !== -1),
+		termsAcceptedAtIdx,
+		privacyAcceptedAtIdx
 	);
 	const newRow: string[] = new Array(lastColumn + 1).fill('');
 	const set = (column: number, value: string) => {
@@ -528,6 +535,8 @@ export async function appendGoogleSheetUser(user: {
 	set(idx.documentStatus, 'Pendiente');
 	if (user.documentType) set(idx.documentType, user.documentType);
 	if (user.documentNumber) set(idx.documentNumber, user.documentNumber);
+	set(termsAcceptedAtIdx, user.termsAcceptedAt || '');
+	set(privacyAcceptedAtIdx, user.privacyAcceptedAt || '');
 
 	// Contacto del registro, en las columnas cortas. Van aparte de las largas
 	// del panel a propósito: cada juego guarda lo que su propio formulario
@@ -710,6 +719,11 @@ export const USER_PROFILE_COLUMNS: { header: string; match: (normalized: string)
 	// "Telefonico" no contiene "telefono": se busca el prefijo "telefon".
 	{ header: 'Telefono', match: (h) => h.includes('telefon') || h.includes('movil') },
 	{ header: 'Whatsapp', match: (h) => h.includes('whatsapp') },
+];
+
+const USER_REGISTRATION_CONSENT_COLUMNS = [
+	{ header: 'Aceptacion Terminos', match: (h: string) => h.includes('aceptacion terminos') },
+	{ header: 'Consentimiento Privacidad', match: (h: string) => h.includes('consentimiento privacidad') },
 ];
 
 /** Columna que guarda la URL de Google Maps de la última ubicación compartida. */

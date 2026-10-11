@@ -94,6 +94,10 @@ describe('isAdminDashboardSection', () => {
 		expect(isAdminDashboardSection('gastos')).toBe(true);
 		expect(isAdminDashboardSection('niveles-ascenso')).toBe(true);
 		expect(isAdminDashboardSection('usuario')).toBe(true);
+		expect(isAdminDashboardSection('comisiones')).toBe(true);
+		expect(isAdminDashboardSection('pagos-p2p')).toBe(true);
+		expect(isAdminDashboardSection('recargas')).toBe(true);
+		expect(isAdminDashboardSection('retiros')).toBe(true);
 	});
 
 	it('deja fuera las páginas personales de cada miembro', () => {
@@ -103,8 +107,6 @@ describe('isAdminDashboardSection', () => {
 		expect(isAdminDashboardSection('ubicacion')).toBe(false);
 		expect(isAdminDashboardSection('informacion-cuenta')).toBe(false);
 		expect(isAdminDashboardSection('mi-organigrama')).toBe(false);
-		expect(isAdminDashboardSection('recargas')).toBe(false);
-		expect(isAdminDashboardSection('retiros')).toBe(false);
 	});
 });
 

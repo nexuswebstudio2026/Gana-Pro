@@ -111,7 +111,7 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		</div>
 
 		<div class="field">
-			<label for="password">Contraseña Cifrada (Mínimo 6 caracteres)</label>
+			<label for="password">Contraseña (mínimo 6 caracteres)</label>
 			<input
 				type="password"
 				id="password"
@@ -240,6 +240,17 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			<span class="field-hint">Solo números y los signos + ( ) - (de 7 a 15 dígitos).</span>
 		</div>
 
+		<div class="consent-group">
+			<label class="consent-option" for="acceptTerms">
+				<input type="checkbox" id="acceptTerms" name="acceptTerms" value="1" required />
+				<span>He leído y acepto los <a href="/terminos-y-condiciones" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a>.</span>
+			</label>
+			<label class="consent-option" for="acceptPrivacy">
+				<input type="checkbox" id="acceptPrivacy" name="acceptPrivacy" value="1" required />
+				<span>He leído la <a href="/politicas-de-privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a> y autorizo el tratamiento de mis datos para gestionar mi cuenta, verificar operaciones y atender solicitudes.</span>
+			</label>
+		</div>
+
 		<button type="submit" class="gold-button btn-full">
 			<span>Registrar y Activar Membresía</span>
 			<span>→</span>
@@ -298,10 +309,9 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			try {
 				const response = await fetch(`/api/check-referrer?ref=${encodeURIComponent(code)}`);
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
-				const result: { valid: boolean; username?: string; reason?: string } = await response.json();
+				const result: { valid: boolean; reason?: string } = await response.json();
 
-				if (result.valid && result.username) {
-					refInput.value = result.username;
+				if (result.valid) {
 					refInput.readOnly = true;
 					refInput.setAttribute('aria-readonly', 'true');
 					refInput.removeAttribute('aria-busy');
@@ -501,6 +511,39 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		font-size: 11.5px;
 		color: var(--text-muted);
 		line-height: 1.45;
+	}
+
+	.consent-group {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 14px;
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		background: rgba(212, 175, 55, 0.04);
+	}
+
+	.consent-option {
+		display: grid;
+		grid-template-columns: 18px minmax(0, 1fr);
+		align-items: start;
+		gap: 10px;
+		font-size: 12px;
+		line-height: 1.55;
+		color: var(--text-secondary);
+	}
+
+	.consent-option input {
+		width: 16px;
+		height: 16px;
+		margin: 2px 0 0;
+		accent-color: var(--gold-primary);
+	}
+
+	.consent-option a {
+		color: var(--gold-primary);
+		font-weight: 700;
+		text-underline-offset: 3px;
 	}
 
 	/* Separador del bloque de contacto: agrupa los cinco campos nuevos

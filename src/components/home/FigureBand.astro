@@ -65,6 +65,10 @@ function pctOf(value: number): string {
 			</li>
 		))}
 	</ul>
+	<p class="figure-disclaimer">
+		Cifras calculadas según las reglas actuales y una base completa con operaciones aprobadas.
+		Son escenarios ilustrativos, no una garantía de ingresos.
+	</p>
 </div>
 
 <style>
@@ -94,6 +98,13 @@ function pctOf(value: number): string {
 	}
 
 	.figure-item:hover { background: rgba(212, 175, 55, 0.08); }
+
+	.figure-disclaimer {
+		margin: 12px 4px 0;
+		font-size: 0.76rem;
+		line-height: 1.55;
+		color: var(--text-muted);
+	}
 
 	.figure-value {
 		font-size: clamp(1.5rem, 3vw, 2rem);
