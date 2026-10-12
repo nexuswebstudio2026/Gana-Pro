@@ -17,6 +17,7 @@ import { P2P_CONCEPT, P2P_STATUS, RECARGA_INICIAL_AMOUNT } from '../../../lib/p2
 import { getGoogleSheetUsers, moveBalance, setSheetUserLevel, setSheetUserMatrixParent } from '../../../lib/sheets';
 import { buildUserHierarchy, findUserParent } from '../../../lib/user-hierarchy';
 import { toLevelNumber } from '../../../lib/users';
+import { safeRecordAdminAudit } from '../../../lib/admin-records';
 
 export const prerender = false;
 
@@ -76,7 +77,6 @@ export const POST: APIRoute = async (Astro) => {
 		if (request.status !== P2P_STATUS.pendiente) {
 			return json({ ok: false, message: 'Ese pago ya fue revisado.' }, 400);
 		}
-
 		let message = `Pago #${requestId} ${decision === 'aprobar' ? 'aprobado' : 'rechazado'}.`;
 
 		if (decision === 'aprobar') {
@@ -116,6 +116,7 @@ export const POST: APIRoute = async (Astro) => {
 				const moved = await moveBalance(request.username, request.amount, recipient.username);
 				if (!moved) return json({ ok: false, message: 'No se pudo transferir el aporte. Verifica el saldo del usuario.' }, 400);
 				await setP2PPaymentStatus(requestId, P2P_STATUS.aprobado, adminNotes);
+				await safeRecordAdminAudit({ admin: session.username, action: 'Aprobación de pago P2P', entity: 'Pago P2P', reference: requestId, detail: `${request.username} · ${request.concept} · $${request.amount}` });
 				await setSheetUserMatrixParent(request.username, recipientIsRoot ? 'gana-pro' : recipient.username);
 
 				const approvedToRecipient = [...inbound, { ...request, status: P2P_STATUS.aprobado }]
@@ -136,6 +137,7 @@ export const POST: APIRoute = async (Astro) => {
 				// La recarga inicial no mueve saldo aquí: se acredita en el flujo
 				// de recargas, que además paga la comisión del referido.
 				await setP2PPaymentStatus(requestId, P2P_STATUS.aprobado, adminNotes);
+				await safeRecordAdminAudit({ admin: session.username, action: 'Aprobación de pago P2P', entity: 'Pago P2P', reference: requestId, detail: `${request.username} · ${request.concept} · $${request.amount}` });
 				return json({
 					ok: true,
 					message:
@@ -208,6 +210,7 @@ export const POST: APIRoute = async (Astro) => {
 			decision === 'aprobar' ? P2P_STATUS.aprobado : P2P_STATUS.rechazado,
 			adminNotes
 		);
+		await safeRecordAdminAudit({ admin: session.username, action: decision === 'aprobar' ? 'Aprobación de pago P2P' : 'Rechazo de pago P2P', entity: 'Pago P2P', reference: requestId, detail: `${request.username} · ${request.concept} · $${request.amount}${adminNotes ? ` · ${adminNotes}` : ''}` });
 
 		return json({ ok: true, message });
 	} catch (err) {

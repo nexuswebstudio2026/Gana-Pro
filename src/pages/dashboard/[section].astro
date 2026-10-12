@@ -22,6 +22,11 @@ import '../../styles/org-chart.css';
 import '../../styles/org-focus.css';
 import '../../styles/org-tree.css';
 import '../../styles/users-table.css';
+import AdminAccountingPanel from '../../components/dashboard/AdminAccountingPanel.astro';
+import { listTopups, type TopupRequest } from '../../lib/topups';
+import { listWithdrawals, type WithdrawalRequest } from '../../lib/withdrawals';
+import { listP2PPayments, type P2PPayment } from '../../lib/p2p-payments';
+import { listAdminExpenses, type AdminExpense } from '../../lib/admin-records';
 
 export const prerender = false;
 
@@ -80,6 +85,15 @@ const { contact: contactResult, contactMessage } = getContactFeedback(Astro.url.
 
 // --- Tarjetas genéricas (ingresos / gastos / usuario) ---
 const moduleCards = getModuleCards(section);
+let accountingTopups: TopupRequest[] = [];
+let accountingWithdrawals: WithdrawalRequest[] = [];
+let accountingPayments: P2PPayment[] = [];
+let accountingExpenses: AdminExpense[] = [];
+if (section === 'ingresos' || section === 'gastos') {
+	[accountingTopups, accountingWithdrawals, accountingPayments, accountingExpenses] = await Promise.all([
+		listTopups(), listWithdrawals(), listP2PPayments(), listAdminExpenses(),
+	]);
+}
 ---
 
 <AdminPageLayout
@@ -113,6 +127,8 @@ const moduleCards = getModuleCards(section);
 			message={businessMessage}
 			loadFailed={businessSettingsLoadFailed}
 		/>
+	) : section === 'ingresos' || section === 'gastos' ? (
+		<AdminAccountingPanel mode={section} topups={accountingTopups} withdrawals={accountingWithdrawals} payments={accountingPayments} expenses={accountingExpenses} />
 	) : (
 		<ModuleCards cards={moduleCards} />
 	)}

@@ -14,6 +14,7 @@ import {
 import { getUserBalance } from '../../../lib/users';
 import { creditOnFirstTopupApproved } from '../../../lib/referral-commissions';
 import type { User } from '../../../lib/types';
+import { safeRecordAdminAudit } from '../../../lib/admin-records';
 
 export const prerender = false;
 
@@ -111,11 +112,11 @@ export const POST: APIRoute = async (Astro) => {
 				);
 			}
 		}
-
 		const status: TopupStatus =
 			decision === 'aprobar' ? TOPUP_STATUS.aprobado : TOPUP_STATUS.rechazado;
 		const updated = await setTopupStatus(requestId, status, adminNotes);
 		if (!updated) return json({ ok: false, message: 'No se pudo guardar el estado.' }, 500);
+		await safeRecordAdminAudit({ admin: session.username, action: decision === 'aprobar' ? 'Aprobación de recarga' : 'Rechazo de recarga', entity: 'Recarga', reference: requestId, detail: `${request.username} · $${request.amount}${adminNotes ? ` · ${adminNotes}` : ''}` });
 
 		// Comisión única de referido: solo se genera al aprobar la recarga inicial
 		// exacta de $15.000. La función verifica el monto y evita un pago duplicado.

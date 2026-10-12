@@ -232,7 +232,7 @@ export async function createP2PPayment(
 			case 'ADMIN_NOTAS':
 				return request.adminNotes;
 			case 'RECEPTOR':
-				return request.recipientUsername;
+				return request.recipientUsername || '';
 			case 'NIVEL_ORIGEN':
 				return request.senderLevel ? String(request.senderLevel) : '';
 			default:

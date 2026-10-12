@@ -3,6 +3,7 @@ import { isAdminRole } from '../../../lib/auth';
 import { clearSheetUserProfile } from '../../../lib/sheets';
 import { isProfileEmpty, parseProfileForm } from '../../../lib/account-profile';
 import { saveUserProfile, type ProfileAction } from '../../../lib/account-crud';
+import { safeRecordAdminAudit } from '../../../lib/admin-records';
 
 export const prerender = false;
 
@@ -46,6 +47,7 @@ export const POST: APIRoute = async (Astro) => {
 			if (!cleared) {
 				return fail(`No se encontraron los datos de contacto de ${username}.`);
 			}
+			await safeRecordAdminAudit({ admin: session.username, action: 'Eliminación de datos de contacto', entity: 'Usuario', reference: username, detail: 'Se eliminaron los datos de contacto y residencia.' });
 			return done(`Datos de contacto de ${username} eliminados.`);
 		}
 
@@ -69,6 +71,7 @@ export const POST: APIRoute = async (Astro) => {
 		}
 
 		const verb = result === 'created' ? 'registrados' : 'actualizados';
+		await safeRecordAdminAudit({ admin: session.username, action: 'Edición de datos de contacto', entity: 'Usuario', reference: username, detail: `Datos de contacto ${verb}.` });
 		return done(`Datos de contacto de ${username} ${verb}.`);
 	} catch (err) {
 		console.error('Error en el CRUD administrativo de contactos:', err);

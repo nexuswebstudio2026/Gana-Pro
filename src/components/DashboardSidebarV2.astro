@@ -13,7 +13,10 @@ const items: NavItem[] = [
 		{ href: '/dashboard/usuarios-registrados', label: 'Ver usuarios' },
 		{ href: '/dashboard/niveles-ascenso', label: 'Niveles de ascenso' },
 	] },
-	{ href: '/dashboard/pagos-p2p', label: 'Pagos', icon: '↔', adminOnly: true },
+	{ href: '/dashboard/pagos-p2p', label: 'Pagos', icon: '↔', adminOnly: true, children: [
+		{ href: '/dashboard/operaciones-pendientes', label: 'Cola de operaciones' },
+		{ href: '/dashboard/pagos-p2p', label: 'Pagos entre usuarios' },
+	] },
 	{ href: '/dashboard/ingresos', label: 'Ingresos', icon: '↗', adminOnly: true, children: [
 		{ href: '/dashboard/ingresos', label: 'Resumen de ingresos' },
 		{ href: '/dashboard/recargas', label: 'Solicitudes de recarga' },
@@ -24,6 +27,7 @@ const items: NavItem[] = [
 		{ href: '/dashboard/retiros', label: 'Solicitudes de retiro' },
 	] },
 	{ href: '/dashboard/negocio', label: 'Negocio', icon: '◆', adminOnly: true, children: [{ href: '/dashboard/negocio', label: 'Configuración del negocio' }] },
+	{ href: '/dashboard/auditoria', label: 'Auditoría', icon: '▤', adminOnly: true },
 	{ href: '/dashboard/mi-red', label: 'Mi red', icon: '◎' },
 	{ href: '/dashboard/referidos', label: 'Referidos', icon: '♧' },
 	{ href: '/dashboard/billetera', label: 'Billetera y comprobantes', icon: '＄' },
