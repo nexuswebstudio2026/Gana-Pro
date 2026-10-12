@@ -21,6 +21,7 @@ const PUBLIC_PATHS: readonly string[] = [
 	'/api/login',
 	'/api/logout',
 	'/api/register',
+	'/api/register-email-verification',
 	'/api/check-referrer',
 	'/api/forgot-password',
 	'/api/location-consent',

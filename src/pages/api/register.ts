@@ -15,6 +15,10 @@ import { lookupReferrer } from '../../lib/referrals';
 import { normalizeDocumentType, esNitValido } from '../../lib/testimonials';
 import type { RegistrationContact } from '../../lib/sheets';
 import type { User } from '../../lib/types';
+import {
+	consumeRegistrationEmailChallenge,
+	getRegistrationEmailChallenge,
+} from '../../lib/registration-email-verification';
 
 /**
  * Lee y normaliza los cinco datos de contacto del formulario de registro.
@@ -65,6 +69,18 @@ export const POST: APIRoute = async (Astro) => {
 		}
 		if (!username || !email || !password) {
 			return errorParam('Todos los campos son obligatorios.');
+		}
+		const emailChallengeId = Astro.cookies.get('registration_email_challenge')?.value || '';
+		const emailChallenge = emailChallengeId
+			? await getRegistrationEmailChallenge(emailChallengeId)
+			: null;
+		if (
+			!emailChallenge ||
+			emailChallenge.status !== 'Verificado' ||
+			emailChallenge.expiresAt < Date.now() ||
+			emailChallenge.email !== email
+		) {
+			return errorParam('Verifica tu correo electrónico antes de crear la cuenta.');
 		}
 		if (!acceptTerms || !acceptPrivacy) {
 			return errorParam('Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.');
@@ -192,6 +208,14 @@ export const POST: APIRoute = async (Astro) => {
 		} catch (sheetSaveErr) {
 			console.error('Error al guardar usuario en Google Sheet:', sheetSaveErr);
 			return errorParam('No se pudo guardar el registro en Google Sheets. Intente de nuevo más tarde.');
+		}
+		try {
+			await consumeRegistrationEmailChallenge(emailChallenge);
+			Astro.cookies.delete('registration_email_challenge', { path: '/' });
+		} catch (error) {
+			// El usuario ya se guardó; registrar el fallo para seguimiento sin
+			// devolver un error que pudiera provocar un segundo alta.
+			console.error('[register] No se pudo consumir el código de correo:', error);
 		}
 
 		// 2. Backup opcional en JSON local
