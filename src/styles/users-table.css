@@ -49,6 +49,7 @@
 
 	.users-table td:nth-child(2) { overflow-wrap: anywhere; }
 	.users-table td.actions { display: table-cell; }
+	.users-table td.doc-actions { min-width: 0; }
 
 	.users-table td small {
 		display: block;
@@ -104,6 +105,11 @@
 
 	.actions { display: flex; gap: 8px; flex-wrap: wrap; }
 	.actions form { margin: 0; }
+	.doc-review-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+	.doc-review-actions form { width: 100%; }
+	.doc-review-actions .doc-link { max-width: 100%; overflow-wrap: anywhere; }
+	.doc-review-actions .btn-approve,
+	.doc-review-actions .btn-reject { width: 100%; padding: 7px 8px; }
 
 	.btn-approve,
 	.btn-reject {

@@ -1,4 +1,5 @@
 ---
+import { DOCUMENT_STATUS } from '../../lib/testimonials';
 import {
 	displayValue,
 	filledProfileCount,
@@ -47,7 +48,7 @@ function contactView(user: UserRowView['user']) {
 		<label for="user-directory-search">Buscar por usuario, correo, ciudad, teléfono o documento</label>
 		<input id="user-directory-search" type="search" placeholder="Escribe para filtrar…" autocomplete="off" />
 		<label for="user-document-filter">Estado del documento</label>
-		<select id="user-document-filter"><option value="todos">Todos</option><option value="pendiente">Pendiente</option><option value="aprobado">Aprobado</option><option value="sin-documento">Sin documento</option></select>
+		<select id="user-document-filter"><option value="todos">Todos</option><option value="pendiente">Pendiente</option><option value="rechazado">Rechazado</option><option value="aprobado">Aprobado</option><option value="sin-documento">Sin documento</option></select>
 		<span data-user-results aria-live="polite">{users.length} usuarios</span>
 	</div>
 
@@ -85,8 +86,17 @@ function contactView(user: UserRowView['user']) {
 				<tbody>
 					{users.map(({ user: u, nit, documentPdf, approvedDocumentLink, hasDocument, isApproved }) => {
 						const contact = contactView(u);
+						const documentLink = (u.rutLink || u.documentLink || '').trim();
+						const isRejected = u.documentStatus?.trim().toLowerCase() === DOCUMENT_STATUS.rechazado.toLowerCase();
+						const documentState = isApproved
+							? 'aprobado'
+							: isRejected
+								? 'rechazado'
+								: hasDocument
+									? 'pendiente'
+									: 'sin-documento';
 						return (
-							<tr data-user-row data-document-state={isApproved ? 'aprobado' : hasDocument ? 'pendiente' : 'sin-documento'} data-user-search={`${u.username} ${u.email} ${contact.profile.address} ${contact.profile.city} ${contact.profile.phone} ${contact.profile.whatsapp} ${nit}`.toLowerCase()}>
+							<tr data-user-row data-document-state={documentState} data-user-search={`${u.username} ${u.email} ${contact.profile.address} ${contact.profile.city} ${contact.profile.phone} ${contact.profile.whatsapp} ${nit}`.toLowerCase()}>
 								<td><strong>{u.username}</strong></td>
 								<td>{u.email}</td>
 								<td>
@@ -159,14 +169,38 @@ function contactView(user: UserRowView['user']) {
 									</span>
 								</div>
 							</td>
-							<td class="actions">
+							<td class="actions doc-actions">
 								{isApproved ? (
 									<span class="status-pill ok" aria-label={`Estado del documento de ${u.username}`}>
 										Aprobado
 									</span>
+								) : hasDocument ? (
+									<div class="doc-review-actions">
+										<span class:list={['status-pill', isRejected ? 'ko' : 'wait']} aria-label={`Estado del documento de ${u.username}`}>
+											{isRejected ? 'Rechazado' : 'Pendiente'}
+										</span>
+										<a
+											class="doc-link rut-link"
+											href={documentLink}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											{documentPdf ? 'Ver documento (PDF)' : 'Ver documento'}
+										</a>
+										<form method="POST" action="/api/admin/documents">
+											<input type="hidden" name="username" value={u.username} />
+											<input type="hidden" name="status" value={DOCUMENT_STATUS.aprobado} />
+											<button type="submit" class="btn-approve">Aprobar</button>
+										</form>
+										<form method="POST" action="/api/admin/documents">
+											<input type="hidden" name="username" value={u.username} />
+											<input type="hidden" name="status" value={DOCUMENT_STATUS.rechazado} />
+											<button type="submit" class="btn-reject">No aprobar</button>
+										</form>
+									</div>
 								) : (
 									<span class="status-pill wait" aria-label={`Estado del documento de ${u.username}`}>
-										No aprobado
+										Sin documento
 									</span>
 								)}
 							</td>
