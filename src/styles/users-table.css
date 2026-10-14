@@ -1,26 +1,40 @@
 /* Estilos de la tabla de Usuarios registrados y formularios NIT/RUT. Global porque se usa en UsersTable.astro y BusinessSettingsPanel.astro. */
 /* TABLA DE USUARIOS Y REVISION DE DOCUMENTOS */
 .users-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 14px;
-		min-width: 900px;
-	}
+	width: 100%;
+	min-width: 0;
+	table-layout: fixed;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+.users-table-wrap {
+	width: 100%;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.users-table th:nth-child(1) { width: 13%; }
+.users-table th:nth-child(2) { width: 24%; }
+.users-table th:nth-child(3) { width: 26%; }
+.users-table th:nth-child(4) { width: 22%; }
+.users-table th:nth-child(5) { width: 15%; }
 
 	.users-table th {
 		text-align: left;
-		padding: 12px 14px;
+		padding: 10px 9px;
 		font-size: 11.5px;
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--gold-primary);
 		border-bottom: 1px solid var(--gold-border);
-		white-space: nowrap;
+		white-space: normal;
+		line-height: 1.4;
 	}
 
 	.users-table td {
-		padding: 14px;
+		padding: 12px 9px;
 		border-bottom: 1px solid rgba(212, 175, 55, 0.1);
 		vertical-align: middle;
 		color: var(--text-secondary);
@@ -30,7 +44,11 @@
 		display: block;
 		color: var(--text-primary);
 		font-size: 14px;
+		overflow-wrap: anywhere;
 	}
+
+	.users-table td:nth-child(2) { overflow-wrap: anywhere; }
+	.users-table td.actions { display: table-cell; }
 
 	.users-table td small {
 		display: block;
@@ -117,6 +135,7 @@
 	.doc-cell { display: flex; flex-direction: column; gap: 7px; }
 	.doc-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.doc-kind { min-width: 64px; color: var(--gold-primary); font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+	.doc-cell, .doc-line { min-width: 0; overflow-wrap: anywhere; }
 	.users-table .doc-ref { margin-top: 0; }
 
 	.doc-admin-form { display: flex; flex-direction: column; gap: 7px; min-width: 210px; padding: 10px; border: 1px dashed var(--gold-border); border-radius: 10px; background: rgba(212, 175, 55, 0.05); }
@@ -148,4 +167,3 @@
 		.org-focus-head { flex-direction: column; }
 		.org-focus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	}
-

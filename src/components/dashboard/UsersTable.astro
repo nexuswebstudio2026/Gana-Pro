@@ -217,8 +217,7 @@ function contactView(user: UserRowView['user']) {
 	.org-panel-heading h2 { margin: 0 0 8px; font-size: 1.25rem; }
 	.org-panel-heading p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
 	.org-total { flex: none; padding: 8px 12px; border: 1px solid var(--gold-border); border-radius: 9999px; background: rgba(212, 175, 55, 0.1); color: var(--gold-primary); font-size: 12px; font-weight: 700; }
-	/* CRUD de datos de contacto */
-	.contact-cell { display: flex; flex-direction: column; gap: 8px; min-width: 230px; }
+	.contact-cell { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
 	.contact-cell .doc-admin-form input { margin-top: 0; }
 	.contact-delete-form { margin: 0; }
 	.btn-delete-contact { padding: 7px 12px; border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 8px; background: rgba(239, 68, 68, 0.1); color: #f87171; font-size: 12px; font-weight: 700; cursor: pointer; }
