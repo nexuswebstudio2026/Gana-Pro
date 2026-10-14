@@ -37,7 +37,7 @@ export const DASHBOARD_PAGES = {
 	ingresos: {
 		title: 'Ingresos',
 		eyebrow: 'Contabilidad',
-		description: 'El resumen contable de ingresos aún no está conectado a un registro consolidado.',
+		description: 'Consulta comprobantes de recargas y movimientos de ingreso registrados en la plataforma.',
 		cards: [
 			{ title: 'Resumen de ingresos', text: 'Esta sección todavía no calcula totales por período. Revisa los módulos de recargas, retiros, comisiones y pagos P2P para consultar sus operaciones.' },
 			{ title: 'Historial consolidado', text: 'Aún no hay un historial contable unificado en esta vista.' },
