@@ -1,2 +1,52 @@
+---
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import {
+	buildUserHierarchy,
+	buildMemberOrganizationHierarchy,
+} from '../../lib/user-hierarchy';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import OrgChartPanel from '../../components/dashboard/OrgChartPanel.astro';
+import type { User } from '../../lib/types';
+import '../../styles/org-chart.css';
+import '../../styles/org-focus.css';
+import '../../styles/org-tree.css';
+
 export const prerender = false;
-return Astro.redirect('/dashboard/mi-red', 308);
+
+const session = Astro.locals.user!;
+const isAdmin = isAdminRole(session.role);
+let users: User[] = [];
+let loadFailed = false;
+
+try {
+	users = await getGoogleSheetUsers();
+} catch (error) {
+	loadFailed = true;
+	console.error('Error al cargar el organigrama personal:', error);
+}
+
+const memberView = isAdmin
+	? null
+	: buildMemberOrganizationHierarchy(users, { username: session.username, email: session.email });
+const hierarchy = isAdmin ? buildUserHierarchy(users) : memberView!.root;
+const focusNodeId = isAdmin ? hierarchy.id : memberView?.memberNodeId || hierarchy.id;
+const emptyMessage = !isAdmin && !memberView?.memberNodeId
+	? 'Tu cuenta todavía no aparece en la estructura de usuarios.'
+	: undefined;
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Organigrama"
+	eyebrow="Mi organización"
+	description="Consulta tu equipo directo y explora las ramas de usuarios que dependen de cada persona."
+>
+	<OrgChartPanel
+		hierarchy={hierarchy}
+		loadFailed={loadFailed}
+		focusNodeId={focusNodeId}
+		emptyMessage={emptyMessage}
+	/>
+</AdminPageLayout>

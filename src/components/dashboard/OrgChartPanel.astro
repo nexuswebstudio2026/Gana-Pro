@@ -9,21 +9,46 @@ interface OrgLevel {
 
 interface Props {
 	hierarchy: OrganizationNode;
-	total: number;
-	depth: number;
-	levels: OrgLevel[];
 	loadFailed: boolean;
+	focusNodeId?: string;
+	emptyMessage?: string;
 }
 
-const { hierarchy, total, depth, levels, loadFailed } = Astro.props;
-const direct = hierarchy.children.length;
+const { hierarchy, loadFailed, focusNodeId, emptyMessage } = Astro.props;
+const findNode = (node: OrganizationNode, id: string): OrganizationNode | null => {
+	if (node.id === id) return node;
+	for (const child of node.children) {
+		const found = findNode(child, id);
+		if (found) return found;
+	}
+	return null;
+};
+const focusRoot = findNode(hierarchy, focusNodeId || hierarchy.id) || hierarchy;
+const countDescendants = (node: OrganizationNode): number =>
+	node.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+const maxDepth = (node: OrganizationNode): number =>
+	node.children.length === 0 ? 0 : 1 + Math.max(...node.children.map(maxDepth));
+const counts = new Map<number, number>([[0, 1]]);
+const visitLevels = (node: OrganizationNode, level: number) => {
+	for (const child of node.children) {
+		counts.set(level, (counts.get(level) || 0) + 1);
+		visitLevels(child, level + 1);
+	}
+};
+visitLevels(focusRoot, 1);
+const levels: OrgLevel[] = [...counts.entries()]
+	.map(([level, count]) => ({ level, count }))
+	.sort((a, b) => a.level - b.level);
+const total = countDescendants(focusRoot);
+const depth = maxDepth(focusRoot);
+const direct = focusRoot.children.length;
 ---
 
-<section class="org-panel luxury-card" aria-label="Organigrama global de usuarios">
+<section class="org-panel luxury-card" aria-label={`Organigrama de ${hierarchy.name}`}>
 	<div class="org-panel-heading">
 		<div>
 			<h2>Estructura de usuarios</h2>
-			<p>Cada usuario principal recibe hasta cinco usuarios siguientes según el orden de registro.</p>
+			<p>Cada usuario puede tener hasta cinco usuarios directos. Selecciona un usuario para explorar su equipo.</p>
 		</div>
 		<span class="org-total">{total} usuarios distribuidos</span>
 	</div>
@@ -35,7 +60,7 @@ const direct = hierarchy.children.length;
 		</div>
 		<div class="org-stat" role="listitem">
 			<span class="org-stat-value">{direct}<small>/5</small></span>
-			<span class="org-stat-label">Directos de GANA PRO</span>
+			<span class="org-stat-label">Directos de {focusRoot.name}</span>
 		</div>
 		<div class="org-stat" role="listitem">
 			<span class="org-stat-value">{depth}</span>
@@ -51,7 +76,7 @@ const direct = hierarchy.children.length;
 		<ol class="org-levels" aria-label="Usuarios por nivel">
 			{levels.map(({ level, count }) => (
 				<li class="org-level">
-					<span class="org-level-name">{level === 0 ? 'Raíz' : `Nivel ${level}`}</span>
+					<span class="org-level-name">{level === 0 ? focusRoot.name : `Nivel ${level}`}</span>
 					<span class="org-level-bar" aria-hidden="true">
 						<span style={`width: ${(count / Math.max(total + 1, 1)) * 100}%`}></span>
 					</span>
@@ -84,11 +109,11 @@ const direct = hierarchy.children.length;
 
 	<p class="org-result" data-org-result role="status" hidden></p>
 
-	<div class="org-focus" data-org-focus aria-live="polite">
+	<div class="org-focus" data-org-focus data-org-focus-initial={focusNodeId || hierarchy.id} aria-live="polite">
 		<div class="org-focus-head">
 			<div>
 				<span class="org-focus-eyebrow">Viendo equipo de</span>
-				<strong class="org-focus-name" data-org-focus-name>GANA PRO</strong>
+				<strong class="org-focus-name" data-org-focus-name>{hierarchy.name}</strong>
 				<span class="org-focus-sub" data-org-focus-sub></span>
 			</div>
 			<div class="org-focus-actions">
@@ -112,6 +137,6 @@ const direct = hierarchy.children.length;
 	{loadFailed ? (
 		<p class="org-empty" role="alert">No se pudo consultar la información de usuarios en Google Sheets.</p>
 	) : total === 0 ? (
-		<p class="org-empty">Todavía no hay usuarios registrados en Google Sheets para construir el organigrama.</p>
+		<p class="org-empty">{emptyMessage || `${hierarchy.name} todavía no tiene usuarios descendientes asignados.`}</p>
 	) : null}
 </section>

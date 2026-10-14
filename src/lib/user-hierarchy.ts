@@ -313,4 +313,30 @@ export function buildPersonalHierarchy(
 	};
 }
 
+/**
+ * Organigrama visible para un miembro: conserva GANA PRO como raíz y muestra
+ * solo la ruta de patrocinadores que llega hasta el miembro, más toda su rama.
+ * Así mantiene el contexto de la organización sin exponer ramas ajenas.
+ */
+export function buildMemberOrganizationHierarchy(
+	users: User[],
+	identity: UserIdentity
+): { root: OrganizationNode; memberNodeId: string | null } {
+	const globalRoot = buildUserHierarchy(users);
+	const member = findUserNode(globalRoot, identity);
+	if (!member) return { root: { ...globalRoot, children: [] }, memberNodeId: null };
 
+	const includePath = (node: OrganizationNode): OrganizationNode | null => {
+		if (node.id === member.id) return node;
+		for (const child of node.children) {
+			const pathChild = includePath(child);
+			if (pathChild) return { ...node, children: [pathChild] };
+		}
+		return null;
+	};
+
+	return {
+		root: includePath(globalRoot) ?? globalRoot,
+		memberNodeId: member.id,
+	};
+}

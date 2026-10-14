@@ -37,7 +37,8 @@ interface OrgNodeData { id: string; name: string; email?: string; position: numb
 					const search = (panel as unknown as ParentNode).querySelector<HTMLInputElement>('[data-org-search]');
 					const result = (panel as unknown as ParentNode).querySelector<HTMLElement>('[data-org-result]');
 					const label = (panel as unknown as ParentNode).querySelector<HTMLElement>('[data-org-zoom-label]');
-					let currentId = root.id;
+					const requestedFocus = focusBox?.dataset.orgFocusInitial || root.id;
+					let currentId = byId.has(requestedFocus) ? requestedFocus : root.id;
 					let zoom = 1;
 
 					const initialsOf = (name: string) =>

@@ -1,6 +1,6 @@
 ---
 import { getGoogleSheetUsers } from '../../lib/sheets';
-import { buildUserHierarchy, countOrganizationUsers, countByLevel, maxOrganizationDepth } from '../../lib/user-hierarchy';
+import { buildUserHierarchy } from '../../lib/user-hierarchy';
 import { getBusinessSettings } from '../../lib/business-settings';
 import {
 	DASHBOARD_PAGES,
@@ -71,10 +71,6 @@ try {
 
 // --- Vista organigrama (derivados puros) ---
 const hierarchy = buildUserHierarchy(sheetUsers);
-const orgTotal = countOrganizationUsers(hierarchy);
-const orgDepth = maxOrganizationDepth(hierarchy);
-const orgLevels = countByLevel(hierarchy);
-
 // --- Vista usuarios (filas enriquecidas) ---
 const userRows = toUserRowViews(sheetUsers, businessSettings);
 
@@ -106,9 +102,6 @@ if (section === 'ingresos' || section === 'gastos') {
 	{section === 'organigrama-global' ? (
 		<OrgChartPanel
 			hierarchy={hierarchy}
-			total={orgTotal}
-			depth={orgDepth}
-			levels={orgLevels}
 			loadFailed={organizationLoadFailed}
 		/>
 	) : section === 'usuarios-registrados' ? (

@@ -8,7 +8,7 @@ const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/dashboard';
 const isActive = (path: string) => currentPath === path;
 const items: NavItem[] = [
 	{ href: '/dashboard', label: 'Inicio', icon: '⌂' },
-	{ href: '/dashboard/organigrama-global', label: 'Organigrama global', icon: '◎', adminOnly: true },
+	{ href: '/dashboard/mi-organigrama', label: 'Organigrama', icon: '◎' },
 	{ href: '/dashboard/usuarios-registrados', label: 'Usuarios registrados', icon: '♙', adminOnly: true, children: [
 		{ href: '/dashboard/usuarios-registrados', label: 'Ver usuarios' },
 	] },
