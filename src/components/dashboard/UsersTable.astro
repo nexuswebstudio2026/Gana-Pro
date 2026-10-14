@@ -1,5 +1,4 @@
 ---
-import { DOCUMENT_STATUS } from '../../lib/testimonials';
 import {
 	displayValue,
 	filledProfileCount,
@@ -129,10 +128,6 @@ function contactView(user: UserRowView['user']) {
 											</>
 										)}
 
-										<div class="doc-admin-form" aria-live="polite">
-											<span class="doc-admin-title">Vista de contacto</span>
-											<span class="muted">El administrador solo puede consultar esta información.</span>
-										</div>
 									</div>
 								</td>
 								<td>
@@ -170,51 +165,9 @@ function contactView(user: UserRowView['user']) {
 										Aprobado
 									</span>
 								) : (
-									<>
-										<span class="status-pill wait" aria-label={`Estado del documento de ${u.username}`}>
-											No aprobado
-										</span>
-										{hasDocument && (
-											<>
-												<form method="POST" action="/api/admin/documents">
-													<input type="hidden" name="username" value={u.username} />
-													<input type="hidden" name="status" value={DOCUMENT_STATUS.aprobado} />
-													<button type="submit" class="btn-approve">Aprobar</button>
-												</form>
-												<form method="POST" action="/api/admin/documents">
-													<input type="hidden" name="username" value={u.username} />
-													<input type="hidden" name="status" value={DOCUMENT_STATUS.rechazado} />
-													<button type="submit" class="btn-reject">Rechazar</button>
-												</form>
-											</>
-										)}
-										<form
-											method="POST"
-											action="/api/admin/documents"
-											enctype="multipart/form-data"
-											class="doc-admin-form"
-										>
-											<input type="hidden" name="username" value={u.username} />
-											<span class="doc-admin-title">Documento de Identidad</span>
-											<input
-												type="text"
-												name="nit"
-												class="nit-input"
-												placeholder="NIT (solo números, 6 a 20 dígitos)"
-												value={nit}
-												pattern="[0-9]{6,20}"
-												title="Solo números, entre 6 y 20 dígitos"
-											/>
-											<input
-												type="file"
-												name="rut"
-												class="rut-input"
-												accept="image/jpeg,image/png,image/webp,application/pdf"
-											/>
-											<button type="submit" class="btn-save">Guardar documento</button>
-											<p class="doc-hint">JPG, PNG, WEBP o PDF de hasta 5 MB.</p>
-										</form>
-									</>
+									<span class="status-pill wait" aria-label={`Estado del documento de ${u.username}`}>
+										No aprobado
+									</span>
 								)}
 							</td>
 						</tr>
