@@ -1,6 +1,8 @@
 ---
 import Logo from './Logo.astro';
 import WhatsAppButton from './WhatsAppButton.astro';
+
+const appVersion = import.meta.env.APP_VERSION;
 ---
 
 <!--
@@ -41,7 +43,7 @@ import WhatsAppButton from './WhatsAppButton.astro';
 
 		<div class="footer-bottom">
 			<p class="copyright">
-				© 2026 <a href="/" class="site-link">Gana Pro</a> v. 1.0.9.1 - <a
+				© 2026 <a href="/" class="site-link">Gana Pro</a> V. {appVersion} - <a
 					href="https://nexuswebstudio.vercel.app/"
 					target="_blank"
 					rel="noopener noreferrer"
