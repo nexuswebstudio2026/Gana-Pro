@@ -14,15 +14,11 @@ import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import CalculadoraMatriz from '../components/CalculadoraMatriz.astro';
 import FaqSection from '../components/FaqSection.astro';
-import MobileBottomBar from '../components/MobileBottomBar.astro';
-import { validateSession } from '../lib/session';
 import { RECARGA_INICIAL_AMOUNT } from '../lib/p2p';
 import { MAX_DIRECT_TEAM } from '../lib/user-hierarchy';
 
 export const prerender = false;
 
-const session = validateSession(Astro.cookies.get('auth_session')?.value);
-const showBottomBar = !session;
 const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 ---
 
@@ -77,7 +73,6 @@ const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 		</section>
 	</main>
 
-	{showBottomBar && <MobileBottomBar />}
 </Layout>
 <style>
 	.main-content {
@@ -160,4 +155,3 @@ const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 		.cta-btns { flex-direction: column; align-items: stretch; }
 	}
 </style>
-

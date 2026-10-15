@@ -31,7 +31,6 @@ import HeroSection from '../components/HeroSection.astro';
 import ActivityFeed from '../components/ActivityFeed.astro';
 import TestimonialsSection from '../components/TestimonialsSection.astro';
 import FaqSection from '../components/FaqSection.astro';
-import MobileBottomBar from '../components/MobileBottomBar.astro';
 
 import FigureBand from '../components/home/FigureBand.astro';
 import WaysSection from '../components/home/WaysSection.astro';
@@ -49,7 +48,6 @@ export const prerender = false;
 // La barra inferior solo sirve a quien todavía no tiene cuenta: si ya está
 // conectado, un "crear cuenta" lo mandaría a un formulario que no necesita.
 const session = validateSession(Astro.cookies.get('auth_session')?.value);
-const showBottomBar = !session;
 ---
 
 <Layout
@@ -94,7 +92,6 @@ const showBottomBar = !session;
 		<CtaSection />
 	</main>
 
-	{showBottomBar && <MobileBottomBar />}
 </Layout>
 <style>
 	.main-content {

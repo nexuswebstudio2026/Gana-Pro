@@ -2,6 +2,7 @@
 import ThemeToggle from './ThemeToggle.astro';
 import Logo from './Logo.astro';
 import BalanceChip from './BalanceChip.astro';
+import MobileBottomBar from './MobileBottomBar.astro';
 import { validateSession } from '../lib/session';
 import { getUserBalance, getSheetUserLevel, getUserWallet, getAdminWallet } from '../lib/users';
 
@@ -42,9 +43,9 @@ if (username) {
 // Enlaces del menú. "Valoración" lleva a la sección de testimonios y
 // valoraciones de la portada, de ahí el ancla al final de la ruta.
 const navLinks = [
-	{ href: '/', label: 'Gana Dinero' },
-	{ href: '/valoraciones', label: 'Valoración' },
-	{ href: '/sobre-nosotros', label: 'Sobre Nosotros' },
+	{ href: '/', label: 'Gana Dinero', icon: 'money' as const },
+	{ href: '/valoraciones', label: 'Valoración', icon: 'rating' as const },
+	{ href: '/sobre-nosotros', label: 'Sobre Nosotros', icon: 'about' as const },
 ];
 
 // Marca como actual el enlace cuya página (o ancla) se está viendo. Antes el
@@ -101,49 +102,9 @@ const isCurrent = (href: string) => {
 			)}
 		</div>
 
-		<button
-			class="nav-toggle"
-			type="button"
-			data-nav-toggle
-			aria-controls="primary-nav"
-			aria-expanded="false"
-			aria-label="Abrir menú de navegación"
-		>
-			<span class="nav-toggle-bar" aria-hidden="true"></span>
-			<span class="nav-toggle-bar" aria-hidden="true"></span>
-			<span class="nav-toggle-bar" aria-hidden="true"></span>
-		</button>
 	</div>
-	<div class="nav-backdrop" data-nav-backdrop hidden></div>
 </header>
-
-<script>
-	const navToggle = document.querySelector<HTMLElement>('[data-nav-toggle]');
-	const navPanel = document.getElementById('primary-nav');
-	const navBackdrop = document.querySelector<HTMLElement>('[data-nav-backdrop]');
-
-	const setMenu = (open: boolean) => {
-		navToggle?.classList.toggle('is-open', open);
-		navPanel?.classList.toggle('is-open', open);
-		navToggle?.setAttribute('aria-expanded', String(open));
-		navToggle?.setAttribute('aria-label', open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
-		if (navBackdrop) navBackdrop.hidden = !open;
-		document.documentElement.classList.toggle('nav-open', open);
-	};
-
-	navToggle?.addEventListener('click', () => {
-		setMenu(!navPanel?.classList.contains('is-open'));
-	});
-	navBackdrop?.addEventListener('click', () => setMenu(false));
-	navPanel?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setMenu(false)));
-	document.addEventListener('keydown', (event) => {
-		if (event.key === 'Escape') setMenu(false);
-	});
-	// Al volver a escritorio, asegurar que el panel quede cerrado
-	window.matchMedia('(min-width: 901px)').addEventListener('change', (event) => {
-		if (event.matches) setMenu(false);
-	});
-</script>
+<MobileBottomBar links={navLinks} />
 
 <style>
 	.navbar {
@@ -257,11 +218,6 @@ const isCurrent = (href: string) => {
 		gap: 20px;
 	}
 
-	.nav-toggle,
-	.nav-backdrop {
-		display: none;
-	}
-
 	.btn-sm {
 		padding: 10px 22px;
 		font-size: 0.85rem;
@@ -307,130 +263,13 @@ const isCurrent = (href: string) => {
 			gap: 12px;
 		}
 
-		/* El panel de navegación se convierte en un desplegable */
-		.nav-links {
-			position: absolute;
-			top: 100%;
-			left: 0;
-			right: 0;
-			display: flex;
-			flex-direction: column;
-			align-items: stretch;
-			gap: 0;
-			padding: 8px 18px 18px;
-			background: var(--bg-header);
-			backdrop-filter: blur(20px);
-			-webkit-backdrop-filter: blur(20px);
-			border-bottom: 1px solid var(--gold-border);
-			box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
-			/* Oculto por defecto; se despliega con .is-open */
-			opacity: 0;
-			visibility: hidden;
-			transform: translateY(-8px);
-			transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-		}
-
-		.nav-links.is-open {
-			opacity: 1;
-			visibility: visible;
-			transform: translateY(0);
-		}
-
-		.nav-link {
-			padding: 14px 4px;
-			font-size: 1rem;
-			font-weight: 600;
-			border-bottom: 1px solid rgba(212, 175, 55, 0.12);
-		}
-
-		/* En móvil la subrayado inferior estorba: usar indicator a la izquierda */
-		.nav-link::after {
-			display: none;
-		}
-
-		.nav-link[aria-current='page'] {
-			color: var(--gold-primary);
-		}
-
-		.nav-link[aria-current='page']::before {
-			content: '';
-			position: absolute;
-			left: -10px;
-			top: 50%;
-			transform: translateY(-50%);
-			width: 3px;
-			height: 20px;
-			border-radius: 3px;
-			background: var(--gold-primary);
-		}
+		.nav-links { display: none; }
 
 		.nav-actions {
 			margin-left: auto;
 			gap: 12px;
 		}
 
-		/* Botón hamburguesa */
-		.nav-toggle {
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-			gap: 5px;
-			width: 44px;
-			height: 44px;
-			flex: 0 0 44px;
-			padding: 0;
-			background: rgba(212, 175, 55, 0.1);
-			border: 1px solid var(--gold-border);
-			border-radius: 12px;
-			cursor: pointer;
-			transition: background 0.25s ease, border-color 0.25s ease;
-		}
-
-		.nav-toggle:hover,
-		.nav-toggle.is-open {
-			background: rgba(212, 175, 55, 0.22);
-			border-color: var(--gold-primary);
-		}
-
-		.nav-toggle-bar {
-			display: block;
-			width: 20px;
-			height: 2px;
-			border-radius: 2px;
-			background: var(--gold-primary);
-			transition: transform 0.28s ease, opacity 0.2s ease;
-		}
-
-		/* Animación a "X" */
-		.nav-toggle.is-open .nav-toggle-bar:nth-child(1) {
-			transform: translateY(7px) rotate(45deg);
-		}
-		.nav-toggle.is-open .nav-toggle-bar:nth-child(2) {
-			opacity: 0;
-		}
-		.nav-toggle.is-open .nav-toggle-bar:nth-child(3) {
-			transform: translateY(-7px) rotate(-45deg);
-		}
-
-		.nav-backdrop {
-			display: block;
-			position: fixed;
-			inset: 0;
-			z-index: 90;
-			background: rgba(2, 7, 18, 0.55);
-			opacity: 0;
-			transition: opacity 0.25s ease;
-		}
-
-		.nav-backdrop[hidden] {
-			display: none;
-		}
-
-		/* Evita scroll del fondo mientras el menú está abierto */
-		:global(html.nav-open) {
-			overflow: hidden;
-		}
 	}
 
 	/* ============ MÓVILES PEQUEÑOS ============ */
@@ -486,11 +325,6 @@ const isCurrent = (href: string) => {
 			font-size: 0.78rem;
 		}
 
-		.nav-toggle {
-			width: 40px;
-			height: 40px;
-			flex-basis: 40px;
-		}
 	}
 
 	/* ============ PANTALLAS MUY PEQUEÑAS (320px) ============ */
