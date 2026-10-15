@@ -104,15 +104,18 @@ const isCurrent = (href: string) => {
 
 	</div>
 </header>
+<div class="navbar-spacer" aria-hidden="true"></div>
 <MobileBottomBar links={navLinks} />
 
 <style>
 	.navbar {
-		position: sticky;
+		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		z-index: 100;
+		width: 100%;
+		min-height: 76px;
 		background: var(--bg-header);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
@@ -122,13 +125,19 @@ const isCurrent = (href: string) => {
 	}
 
 	.nav-container {
-		max-width: 1280px;
-		margin: 0 auto;
-		padding: 16px 28px;
+		width: 100%;
+		min-height: 76px;
+		margin: 0;
+		padding: 16px clamp(16px, 2vw, 36px);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 20px;
+	}
+
+	.navbar-spacer {
+		flex: 0 0 76px;
+		height: 76px;
 	}
 
 	.brand {
@@ -258,12 +267,22 @@ const isCurrent = (href: string) => {
 
 	/* ============ TABLET Y MÓVIL ============ */
 	@media (max-width: 900px) {
+		.navbar,
+		.nav-container {
+			min-height: 68px;
+		}
+
 		.nav-container {
 			padding: 12px 18px;
 			gap: 12px;
 		}
 
 		.nav-links { display: none; }
+
+		.navbar-spacer {
+			flex-basis: 68px;
+			height: 68px;
+		}
 
 		.nav-actions {
 			margin-left: auto;
@@ -274,9 +293,19 @@ const isCurrent = (href: string) => {
 
 	/* ============ MÓVILES PEQUEÑOS ============ */
 	@media (max-width: 480px) {
+		.navbar,
+		.nav-container {
+			min-height: 58px;
+		}
+
 		.nav-container {
 			padding: 10px 14px;
 			gap: 8px;
+		}
+
+		.navbar-spacer {
+			flex-basis: 58px;
+			height: 58px;
 		}
 
 		/* La marca compite por espacio con los botones: reducir */
