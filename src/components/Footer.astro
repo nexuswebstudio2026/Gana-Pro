@@ -30,6 +30,7 @@ const appVersion = import.meta.env.APP_VERSION;
 					<a href="/gana-dinero">Gana Dinero</a>
 					<a href="/sobre-nosotros">Sobre Nosotros</a>
 					<a href="/valoraciones">Testimonios</a>
+					<a href="/publicidad">Publicidad y Anúnciate</a>
 					<a href="/dashboard">Mi Portal</a>
 				</div>
 				<div class="nav-col">
@@ -87,7 +88,9 @@ const appVersion = import.meta.env.APP_VERSION;
 	.footer-brand {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 		gap: 16px;
+		text-align: center;
 	}
 
 	.logo-shield {
@@ -113,15 +116,16 @@ const appVersion = import.meta.env.APP_VERSION;
 		font-size: 0.95rem;
 		line-height: 1.7;
 		max-width: 420px;
+		text-align: center;
 	}
 
 	/* Una sola columna de enlaces: ocupa menos espacio y mantiene la jerarquía */
 	.footer-nav {
 		display: grid;
 		/* Dos columnas: enlaces de la plataforma y enlaces legales */
-		grid-template-columns: repeat(2, minmax(0, auto));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 30px 60px;
-		justify-items: start;
+		justify-items: center;
 	}
 
 	.col-title {
@@ -136,7 +140,9 @@ const appVersion = import.meta.env.APP_VERSION;
 	.nav-col {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 		gap: 12px;
+		text-align: center;
 	}
 
 	.nav-col a {
