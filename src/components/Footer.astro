@@ -43,11 +43,19 @@ const appVersion = import.meta.env.APP_VERSION;
 
 		<div class="footer-bottom">
 			<p class="copyright">
-				© 2026 <a href="/" class="site-link">Gana Pro</a> V. {appVersion} - <a
-					href="https://nexuswebstudio.vercel.app/"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="studio-link">Nexus Web Studio</a> &nbsp;Todos los derechos reservados.
+				<span class="copyright-line">
+					© 2026
+					<a
+						href="https://nexuswebstudio.vercel.app/"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="studio-link">Nexus Web Studio</a>
+					Todos los derechos reservados.
+				</span>
+				<span class="copyright-line">
+					<a href="/" class="site-link">Gana Pro</a>
+					V. {appVersion}
+				</span>
 			</p>
 		</div>
 	</div>
@@ -145,13 +153,29 @@ const appVersion = import.meta.env.APP_VERSION;
 
 	.footer-bottom {
 		display: flex;
-		justify-content: space-between;
+		justify-content: center;
 		align-items: center;
 		padding-top: 30px;
 		font-size: 0.85rem;
 		color: var(--text-muted, var(--text-secondary, #94a3b8));
 		flex-wrap: wrap;
 		gap: 16px;
+	}
+
+	.copyright {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		text-align: center;
+	}
+
+	.copyright-line {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		column-gap: 0.3em;
 	}
 
 	.copyright a {
