@@ -146,9 +146,6 @@ if (session) {
 		z-index: 50;
 	}
 
-	/* La barra lateral del dashboard se dibuja sobre esta zona: se le deja hueco. */
-	.header.has-sidebar { padding-left: 72px; }
-
 	.brand { display: flex; align-items: center; gap: 12px; }
 
 	.logo-shield {
@@ -223,9 +220,13 @@ if (session) {
 
 	.btn-logout:hover { color: #ef4444; border-color: #ef4444; }
 
+	@media (max-width: 1024px) {
+		/* En este breakpoint el menú lateral se superpone al contenido. */
+		.header.has-sidebar { padding-left: 72px; }
+	}
+
 	@media (max-width: 768px) {
 		.header { padding: 12px 16px; gap: 12px; }
-		.header.has-sidebar { padding-left: 72px; }
 		.header-actions { gap: 10px; }
 		.user-meta { display: none; }
 		.user-chip { padding: 5px; }
