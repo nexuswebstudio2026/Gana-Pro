@@ -31,6 +31,7 @@ import HeroSection from '../components/HeroSection.astro';
 import ActivityFeed from '../components/ActivityFeed.astro';
 import TestimonialsSection from '../components/TestimonialsSection.astro';
 import FaqSection from '../components/FaqSection.astro';
+import AdvertisingSpace from '../components/home/AdvertisingSpace.astro';
 
 import FigureBand from '../components/home/FigureBand.astro';
 import WaysSection from '../components/home/WaysSection.astro';
@@ -41,6 +42,7 @@ import ServicesSection from '../components/home/ServicesSection.astro';
 import CtaSection from '../components/home/CtaSection.astro';
 
 import { validateSession } from '../lib/session';
+import { listPublishedAds, type SponsoredAd } from '../lib/advertising';
 
 // SSR: la página usa el Navbar, que lee la cookie de sesión
 export const prerender = false;
@@ -48,6 +50,14 @@ export const prerender = false;
 // La barra inferior solo sirve a quien todavía no tiene cuenta: si ya está
 // conectado, un "crear cuenta" lo mandaría a un formulario que no necesita.
 const session = validateSession(Astro.cookies.get('auth_session')?.value);
+let sponsoredAds: SponsoredAd[] = [];
+let adsUnavailable = false;
+try {
+	sponsoredAds = await listPublishedAds();
+} catch (error) {
+	console.error('No se pudo cargar la publicidad patrocinada en la portada:', error);
+	adsUnavailable = true;
+}
 ---
 
 <Layout
@@ -58,6 +68,7 @@ const session = validateSession(Astro.cookies.get('auth_session')?.value);
 
 	<main class="main-content">
 		<HeroSection />
+		<AdvertisingSpace ads={sponsoredAds} unavailable={adsUnavailable} />
 
 		{/*
 			Las cifras clave van nada más pasar el hero: son la respuesta corta a

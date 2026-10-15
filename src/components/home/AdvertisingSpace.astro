@@ -32,7 +32,7 @@ const { ads, unavailable = false } = Astro.props;
 							)}
 							<div>
 								<span class="advertising-badge">
-									{ad.category ? `Patrocinado · ${ad.category}` : 'Contenido patrocinado'}
+									{ad.category ? `Anuncio · ${ad.category}` : 'Contenido patrocinado'}
 								</span>
 								{ad.advertiser && <p class="advertising-advertiser">{ad.advertiser}</p>}
 							</div>
