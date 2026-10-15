@@ -1,7 +1,9 @@
 ---
 import Footer from '../components/Footer.astro';
 import AccessConfidential from '../components/AccessConfidential.astro';
+import AdvertisingSpace from '../components/home/AdvertisingSpace.astro';
 import { getPublicSiteUrl } from '../lib/sheets';
+import { listPublishedAds, type SponsoredAd } from '../lib/advertising';
 
 interface Props {
 	title?: string;
@@ -26,6 +28,14 @@ const pageTitle = title ? `${title} — GANA PRO` : 'GANA PRO — Plataforma de 
 const pageUrl = new URL(Astro.url.pathname, siteUrl).href;
 const pageImage = new URL(image, siteUrl).href;
 const ogType = Astro.url.pathname === '/' ? 'website' : 'article';
+let sponsoredAds: SponsoredAd[] = [];
+let adsUnavailable = false;
+try {
+	sponsoredAds = await listPublishedAds();
+} catch (error) {
+	console.error('No se pudo cargar la publicidad lateral:', error);
+	adsUnavailable = true;
+}
 ---
 
 <!doctype html>
@@ -93,7 +103,9 @@ const ogType = Astro.url.pathname === '/' ? 'website' : 'article';
 		</script>
 	</head>
 	<body>
-		<slot />
+		<AdvertisingSpace ads={sponsoredAds} unavailable={adsUnavailable}>
+			<slot />
+		</AdvertisingSpace>
 		<Footer />
 		<AccessConfidential subject={Astro.locals.user?.username} />
 	</body>
@@ -322,4 +334,3 @@ const ogType = Astro.url.pathname === '/' ? 'website' : 'article';
 		color: #030712;
 	}
 </style>
-

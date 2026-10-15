@@ -14,23 +14,12 @@ import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import CalculadoraMatriz from '../components/CalculadoraMatriz.astro';
 import FaqSection from '../components/FaqSection.astro';
-import AdvertisingSpace from '../components/home/AdvertisingSpace.astro';
 import { RECARGA_INICIAL_AMOUNT } from '../lib/p2p';
 import { MAX_DIRECT_TEAM } from '../lib/user-hierarchy';
-import { listPublishedAds } from '../lib/advertising';
-import type { SponsoredAd } from '../lib/advertising';
 
 export const prerender = false;
 
 const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
-let sponsoredAds: SponsoredAd[] = [];
-let adsUnavailable = false;
-try {
-	sponsoredAds = await listPublishedAds();
-} catch (error) {
-	console.error('No se pudo cargar la publicidad patrocinada:', error);
-	adsUnavailable = true;
-}
 ---
 
 <Layout
@@ -63,8 +52,6 @@ try {
 				<CalculadoraMatriz />
 			</div>
 		</section>
-
-		<AdvertisingSpace ads={sponsoredAds} unavailable={adsUnavailable} />
 
 		<FaqSection />
 

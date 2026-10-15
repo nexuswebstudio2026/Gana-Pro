@@ -9,113 +9,88 @@ interface Props {
 const { ads, unavailable = false } = Astro.props;
 ---
 
-<section class="section" id="publicidad" aria-labelledby="advertising-title">
-	<div class="section-container">
-		<header class="advertising-header">
-			<span class="advertising-label">Publicidad y contenido patrocinado</span>
-			<h2 class="advertising-title font-cinzel" id="advertising-title">
-				Ideas y oportunidades <span class="gold-gradient-text">para descubrir</span>
-			</h2>
-		</header>
-
-		{unavailable ? (
-			<p class="advertising-empty" role="status">
-				No se pudo cargar la publicidad en este momento. Inténtalo más tarde.
-			</p>
-		) : ads.length > 0 ? (
-			<div class="advertising-carousel" data-ad-carousel aria-label="Anuncios patrocinados">
-				<div class="advertising-track" data-ad-track>
-					{ads.map((ad, index) => (
-						<article
-							class="advertising-slide"
-							data-ad-slide
-							aria-label={`Anuncio ${index + 1} de ${ads.length}`}
-						>
-							<div class="advertising-card">
-								{ad.imageUrl ? (
-									<img
-										class="advertising-image"
-										src={ad.imageUrl}
-										alt={ad.title}
-										loading={index === 0 ? 'eager' : 'lazy'}
-									/>
-								) : (
-									<div class="advertising-image advertising-image-fallback" aria-label={`Imagen no disponible: ${ad.title}`}>
-										<span>{ad.advertiser || 'GANA PRO'}</span>
-									</div>
-								)}
-								<div class="advertising-card-body">
-									<div class="advertising-card-heading">
+<div class="advertising-layout">
+	{['left', 'right'].map((side, sideIndex) => (
+		<aside class:list={['advertising-rail', `advertising-rail--${side}`]} aria-label={`Publicidad ${side === 'left' ? 'izquierda' : 'derecha'}`}>
+			{ads.length > 0 ? (
+				<div class="advertising-rail-carousel" data-ad-carousel data-start-index={sideIndex}>
+					<div class="advertising-track" data-ad-track>
+						{ads.map((ad, index) => (
+							<article class="advertising-slide" data-ad-slide aria-label={`Anuncio ${index + 1} de ${ads.length}`}>
+								<div class="advertising-card">
+									{ad.imageUrl ? (
+										<img class="advertising-image" src={ad.imageUrl} alt={ad.title} loading="lazy" />
+									) : (
+										<div class="advertising-image advertising-image-fallback" aria-label={`Imagen no disponible: ${ad.title}`}>
+											<span>{ad.advertiser || 'GANA PRO'}</span>
+										</div>
+									)}
+									<div class="advertising-card-body">
 										<span class="advertising-badge">
-											{ad.category ? `Anuncio · ${ad.category}` : 'Contenido patrocinado'}
+											{ad.category ? `Patrocinado · ${ad.category}` : 'Contenido patrocinado'}
 										</span>
 										{ad.advertiser && <p class="advertising-advertiser">{ad.advertiser}</p>}
+										<h2 class="advertising-ad-title">{ad.title}</h2>
+										<p class="advertising-copy">{ad.description}</p>
+										{ad.url && (
+											<a
+												class="advertising-link"
+												href={ad.url}
+												target={ad.url.startsWith('/') ? undefined : '_blank'}
+												rel={ad.url.startsWith('/') ? 'sponsored' : 'noopener noreferrer sponsored'}
+											>
+												Ver más
+											</a>
+										)}
 									</div>
-									<h3 class="advertising-ad-title">{ad.title}</h3>
-									<p class="advertising-copy">{ad.description}</p>
-									{ad.url && (
-										<a
-											class="advertising-link"
-											href={ad.url}
-											target={ad.url.startsWith('/') ? undefined : '_blank'}
-											rel={ad.url.startsWith('/') ? 'sponsored' : 'noopener noreferrer sponsored'}
-										>
-											Ver más
-										</a>
-									)}
 								</div>
-							</div>
-						</article>
-					))}
-				</div>
-
-				{ads.length > 1 && (
-					<div class="advertising-controls" aria-label="Controles del carrusel">
-						<button type="button" data-ad-previous aria-label="Ver anuncio anterior">‹</button>
-						<div class="advertising-dots" aria-label="Seleccionar anuncio">
-							{ads.map((ad, index) => (
-								<button
-									type="button"
-									data-ad-dot={index}
-									aria-label={`Mostrar anuncio ${index + 1}: ${ad.title}`}
-								></button>
-							))}
-						</div>
-						<button type="button" data-ad-next aria-label="Ver anuncio siguiente">›</button>
+							</article>
+						))}
 					</div>
-				)}
-			</div>
-		) : (
-			<p class="advertising-empty">
-				En este momento no hay contenido patrocinado disponible.
-				<a href="/publicidad">Información para anunciantes</a>
-			</p>
-		)}
+					{ads.length > 1 && (
+						<div class="advertising-controls" aria-label="Controles del carrusel">
+							<button type="button" data-ad-previous aria-label="Ver anuncio anterior">‹</button>
+							<span class="advertising-position" data-ad-position aria-live="polite"></span>
+							<button type="button" data-ad-next aria-label="Ver anuncio siguiente">›</button>
+						</div>
+					)}
+				</div>
+			) : (
+				<div class="advertising-card advertising-empty">
+					<p>{unavailable ? 'Publicidad no disponible temporalmente.' : 'Anúnciate aquí.'}</p>
+					<a class="advertising-link" href="/publicidad">
+						{unavailable ? 'Reintentar más tarde' : 'Más información'}
+					</a>
+				</div>
+			)}
+		</aside>
+	))}
+	<div class="advertising-page-content">
+		<slot />
 	</div>
-</section>
+</div>
 
 <script>
 	document.querySelectorAll<HTMLElement>('[data-ad-carousel]').forEach((carousel) => {
 		const track = carousel.querySelector<HTMLElement>('[data-ad-track]');
 		const slides = Array.from(carousel.querySelectorAll<HTMLElement>('[data-ad-slide]'));
-		const dots = Array.from(carousel.querySelectorAll<HTMLButtonElement>('[data-ad-dot]'));
 		const previous = carousel.querySelector<HTMLButtonElement>('[data-ad-previous]');
 		const next = carousel.querySelector<HTMLButtonElement>('[data-ad-next]');
-		if (!track || slides.length < 2) return;
+		const position = carousel.querySelector<HTMLElement>('[data-ad-position]');
+		if (!track || slides.length === 0) return;
 
-		let activeIndex = 0;
+		let activeIndex = Number(carousel.dataset.startIndex) % slides.length;
+		const updatePosition = () => {
+			if (position) position.textContent = `${activeIndex + 1} / ${slides.length}`;
+		};
 		const showSlide = (index: number) => {
 			activeIndex = (index + slides.length) % slides.length;
 			track.scrollTo({ left: slides[activeIndex].offsetLeft, behavior: 'smooth' });
-			dots.forEach((dot, dotIndex) => {
-				if (dotIndex === activeIndex) dot.setAttribute('aria-current', 'true');
-				else dot.removeAttribute('aria-current');
-			});
+			updatePosition();
 		};
 
 		previous?.addEventListener('click', () => showSlide(activeIndex - 1));
 		next?.addEventListener('click', () => showSlide(activeIndex + 1));
-		dots.forEach((dot, index) => dot.addEventListener('click', () => showSlide(index)));
 		track.addEventListener(
 			'scroll',
 			() => {
@@ -127,35 +102,63 @@ const { ads, unavailable = false } = Astro.props;
 							: best,
 					0
 				);
-				if (nearest !== activeIndex) {
-					activeIndex = nearest;
-					dots.forEach((dot, index) => {
-						if (index === activeIndex) dot.setAttribute('aria-current', 'true');
-						else dot.removeAttribute('aria-current');
-					});
-				}
+				activeIndex = nearest;
+				updatePosition();
 			},
 			{ passive: true }
 		);
-		showSlide(0);
+		updatePosition();
+		if (slides.length > 1) showSlide(activeIndex);
 	});
 </script>
 
 <style>
-	.advertising-header {
-		margin: 0 auto 30px;
-		text-align: center;
+	.advertising-layout {
+		display: grid;
+		grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(120px, 180px);
+		gap: clamp(12px, 2vw, 28px);
+		width: 100%;
+		max-width: 1720px;
+		min-width: 0;
+		flex: 1 0 auto;
+		margin: 0 auto;
+		padding: 0 16px;
 	}
 
-	.advertising-carousel {
-		max-width: 760px;
-		margin: 0 auto;
+	.advertising-page-content {
+		grid-column: 2;
+		grid-row: 1;
+		min-width: 0;
+	}
+
+	.advertising-rail {
+		position: sticky;
+		top: 112px;
+		align-self: start;
+		grid-row: 1;
+		width: 100%;
+		max-height: calc(100vh - 136px);
+		max-height: calc(100dvh - 136px);
+		overflow-y: auto;
+		scrollbar-width: thin;
+	}
+
+	.advertising-rail--left {
+		grid-column: 1;
+	}
+
+	.advertising-rail--right {
+		grid-column: 3;
+	}
+
+	.advertising-rail-carousel {
+		width: 100%;
 	}
 
 	.advertising-card {
 		overflow: hidden;
-		border: 1px solid var(--gold-border);
-		border-radius: 20px;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
+		border-radius: 14px;
 		background: var(--bg-card);
 		box-shadow: var(--card-shadow);
 	}
@@ -179,7 +182,7 @@ const { ads, unavailable = false } = Astro.props;
 	.advertising-image {
 		display: block;
 		width: 100%;
-		height: clamp(140px, 25vw, 280px);
+		height: 120px;
 		object-fit: contain;
 		background: var(--bg-secondary);
 	}
@@ -190,77 +193,54 @@ const { ads, unavailable = false } = Astro.props;
 		padding: 24px;
 		color: var(--gold-primary);
 		font-family: var(--font-serif);
-		font-size: clamp(1.5rem, 4vw, 2.5rem);
+		font-size: 1.1rem;
 		text-align: center;
 	}
 
 	.advertising-card-body {
-		padding: clamp(20px, 4vw, 32px);
-	}
-
-	.advertising-card-heading {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		margin-bottom: 18px;
-	}
-
-	.advertising-logo {
-		width: 52px;
-		height: 52px;
-		flex: 0 0 52px;
-		object-fit: contain;
-		border-radius: 10px;
-	}
-
-	.advertising-label {
-		display: inline-block;
-		margin-bottom: 12px;
-		color: var(--gold-primary);
-		font-size: 0.75rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.advertising-title {
-		font-size: clamp(1.5rem, 4vw, 2.2rem);
+		padding: 12px;
 	}
 
 	.advertising-badge {
-		color: var(--gold-primary);
-		font-size: 0.72rem;
+		display: block;
+		color: var(--gold-primary, #d4af37);
+		font-size: 0.62rem;
 		font-weight: 700;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.04em;
 	}
 
 	.advertising-advertiser {
-		margin-top: 4px;
-		color: var(--text-muted);
-		font-size: 0.8rem;
+		margin-top: 3px;
+		color: var(--text-muted, #94a3b8);
+		font-size: 0.68rem;
 	}
 
 	.advertising-ad-title {
-		margin-bottom: 10px;
-		font-size: 1.15rem;
+		margin: 8px 0;
+		font-size: 0.9rem;
+		line-height: 1.35;
 	}
 
 	.advertising-copy {
-		margin-bottom: 18px;
-		color: var(--text-secondary);
-		line-height: 1.7;
+		margin-bottom: 10px;
+		color: var(--text-secondary, #cbd5e1);
+		font-size: 0.75rem;
+		line-height: 1.5;
 	}
 
 	.advertising-link {
 		display: inline-flex;
-		min-height: 44px;
+		min-height: 36px;
 		align-items: center;
-		padding: 0 20px;
-		border: 1px solid var(--gold-border);
+		justify-content: center;
+		padding: 0 12px;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
 		border-radius: 999px;
 		background: linear-gradient(135deg, #d4af37, #f3e5ab);
 		color: #030712;
+		font-size: 0.75rem;
+		font-weight: 700;
 		text-decoration: none;
 		transition: transform 0.2s ease, box-shadow 0.2s ease;
 	}
@@ -274,55 +254,43 @@ const { ads, unavailable = false } = Astro.props;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 18px;
-		margin-top: 18px;
+		gap: 12px;
+		margin-top: 10px;
 	}
 
 	.advertising-controls > button {
-		width: 42px;
-		height: 42px;
-		border: 1px solid var(--gold-border);
+		width: 32px;
+		height: 32px;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
 		border-radius: 50%;
 		background: var(--bg-card);
-		color: var(--gold-primary);
-		font-size: 1.8rem;
+		color: var(--gold-primary, #d4af37);
+		font-size: 1.4rem;
 		line-height: 1;
 		cursor: pointer;
 	}
 
-	.advertising-dots {
-		display: flex;
-		align-items: center;
-		gap: 9px;
-	}
-
-	.advertising-dots button {
-		width: 10px;
-		height: 10px;
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: var(--text-muted);
-		cursor: pointer;
-	}
-
-	.advertising-dots button[aria-current='true'] {
-		background: var(--gold-primary);
-		transform: scale(1.25);
+	.advertising-position {
+		color: var(--text-muted, #94a3b8);
+		font-size: 0.7rem;
 	}
 
 	.advertising-empty {
-		padding: 24px;
-		border: 1px dashed var(--gold-border);
-		border-radius: 14px;
-		color: var(--text-secondary);
+		padding: 14px;
+		color: var(--text-secondary, #cbd5e1);
 		text-align: center;
 	}
 
-	.advertising-empty a {
-		margin-left: 0.3em;
-		color: var(--gold-primary);
-		font-weight: 700;
-		text-underline-offset: 4px;
+	.advertising-empty p {
+		margin-bottom: 10px;
+	}
+
+	@media (max-width: 1279px) {
+		.advertising-layout {
+			display: block;
+			padding: 0;
+		}
+
+		.advertising-rail { display: none; }
 	}
 </style>
