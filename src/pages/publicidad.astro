@@ -26,14 +26,18 @@ const inquiryMessage = encodeURIComponent(
 		El contenido se gestiona en la pestaña <strong>Publicidad</strong> de la hoja de
 		cálculo conectada al sitio. Al abrir por primera vez esta sección después del
 		despliegue, el sistema crea la pestaña con estos encabezados:
-		<strong>TÍTULO, LOGO URL, DESCRIPCIÓN, URL, CATEGORÍA, ANUNCIANTE, ESTADO y ORDEN</strong>.
+		<strong>TÍTULO, IMAGEN URL, DESCRIPCIÓN, URL, CATEGORÍA, ANUNCIANTE, ESTADO y ORDEN</strong>.
 	</p>
 	<ul>
-		<li>Escribe una fila por anuncio y pega enlaces públicos HTTPS para el logo y el destino.</li>
-		<li>Completa título y descripción; los campos de estado aceptan anuncios solo cuando dicen <strong>PUBLICAR</strong>.</li>
+		<li>Escribe una fila por anuncio y pega enlaces públicos HTTPS para la imagen y el destino.</li>
+		<li>Completa título, descripción e imagen; los anuncios con estado <strong>PUBLICAR</strong> aparecerán en el carrusel.</li>
 		<li>Usa ORDEN para controlar la posición; el valor más bajo aparece primero.</li>
 		<li>Para retirar un anuncio, cambia ESTADO a <strong>PAUSADO</strong> o borra ese valor.</li>
 	</ul>
+	<p>
+		Si la hoja aún conserva el encabezado anterior <strong>LOGO URL</strong>, el sistema
+		lo cambia a <strong>IMAGEN URL</strong> sin alterar las imágenes guardadas.
+	</p>
 
 	<h2>Transparencia</h2>
 	<ul>

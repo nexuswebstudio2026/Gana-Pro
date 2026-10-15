@@ -23,29 +23,67 @@ const { ads, unavailable = false } = Astro.props;
 				No se pudo cargar la publicidad en este momento. Inténtalo más tarde.
 			</p>
 		) : ads.length > 0 ? (
-			<div class="advertising-grid">
-				{ads.map((ad) => (
-					<article class="advertising-card">
-						<div class="advertising-card-heading">
-							{ad.logoUrl && (
-								<img class="advertising-logo" src={ad.logoUrl} alt="" loading="lazy" />
-							)}
-							<div>
-								<span class="advertising-badge">
-									{ad.category ? `Anuncio · ${ad.category}` : 'Contenido patrocinado'}
-								</span>
-								{ad.advertiser && <p class="advertising-advertiser">{ad.advertiser}</p>}
+			<div class="advertising-carousel" data-ad-carousel aria-label="Anuncios patrocinados">
+				<div class="advertising-track" data-ad-track>
+					{ads.map((ad, index) => (
+						<article
+							class="advertising-slide"
+							data-ad-slide
+							aria-label={`Anuncio ${index + 1} de ${ads.length}`}
+						>
+							<div class="advertising-card">
+								{ad.imageUrl ? (
+									<img
+										class="advertising-image"
+										src={ad.imageUrl}
+										alt={ad.title}
+										loading={index === 0 ? 'eager' : 'lazy'}
+									/>
+								) : (
+									<div class="advertising-image advertising-image-fallback" aria-label={`Imagen no disponible: ${ad.title}`}>
+										<span>{ad.advertiser || 'GANA PRO'}</span>
+									</div>
+								)}
+								<div class="advertising-card-body">
+									<div class="advertising-card-heading">
+										<span class="advertising-badge">
+											{ad.category ? `Anuncio · ${ad.category}` : 'Contenido patrocinado'}
+										</span>
+										{ad.advertiser && <p class="advertising-advertiser">{ad.advertiser}</p>}
+									</div>
+									<h3 class="advertising-ad-title">{ad.title}</h3>
+									<p class="advertising-copy">{ad.description}</p>
+									{ad.url && (
+										<a
+											class="advertising-link"
+											href={ad.url}
+											target={ad.url.startsWith('/') ? undefined : '_blank'}
+											rel={ad.url.startsWith('/') ? 'sponsored' : 'noopener noreferrer sponsored'}
+										>
+											Ver más
+										</a>
+									)}
+								</div>
 							</div>
+						</article>
+					))}
+				</div>
+
+				{ads.length > 1 && (
+					<div class="advertising-controls" aria-label="Controles del carrusel">
+						<button type="button" data-ad-previous aria-label="Ver anuncio anterior">‹</button>
+						<div class="advertising-dots" aria-label="Seleccionar anuncio">
+							{ads.map((ad, index) => (
+								<button
+									type="button"
+									data-ad-dot={index}
+									aria-label={`Mostrar anuncio ${index + 1}: ${ad.title}`}
+								></button>
+							))}
 						</div>
-						<h3 class="advertising-ad-title">{ad.title}</h3>
-						<p class="advertising-copy">{ad.description}</p>
-						{ad.url && (
-							<a class="advertising-link" href={ad.url} target="_blank" rel="noopener noreferrer sponsored">
-								Conocer más
-							</a>
-						)}
-					</article>
-				))}
+						<button type="button" data-ad-next aria-label="Ver anuncio siguiente">›</button>
+					</div>
+				)}
 			</div>
 		) : (
 			<p class="advertising-empty">
@@ -56,24 +94,108 @@ const { ads, unavailable = false } = Astro.props;
 	</div>
 </section>
 
+<script>
+	document.querySelectorAll<HTMLElement>('[data-ad-carousel]').forEach((carousel) => {
+		const track = carousel.querySelector<HTMLElement>('[data-ad-track]');
+		const slides = Array.from(carousel.querySelectorAll<HTMLElement>('[data-ad-slide]'));
+		const dots = Array.from(carousel.querySelectorAll<HTMLButtonElement>('[data-ad-dot]'));
+		const previous = carousel.querySelector<HTMLButtonElement>('[data-ad-previous]');
+		const next = carousel.querySelector<HTMLButtonElement>('[data-ad-next]');
+		if (!track || slides.length < 2) return;
+
+		let activeIndex = 0;
+		const showSlide = (index: number) => {
+			activeIndex = (index + slides.length) % slides.length;
+			track.scrollTo({ left: slides[activeIndex].offsetLeft, behavior: 'smooth' });
+			dots.forEach((dot, dotIndex) => {
+				if (dotIndex === activeIndex) dot.setAttribute('aria-current', 'true');
+				else dot.removeAttribute('aria-current');
+			});
+		};
+
+		previous?.addEventListener('click', () => showSlide(activeIndex - 1));
+		next?.addEventListener('click', () => showSlide(activeIndex + 1));
+		dots.forEach((dot, index) => dot.addEventListener('click', () => showSlide(index)));
+		track.addEventListener(
+			'scroll',
+			() => {
+				const nearest = slides.reduce(
+					(best, slide, index) =>
+						Math.abs(slide.offsetLeft - track.scrollLeft) <
+						Math.abs(slides[best].offsetLeft - track.scrollLeft)
+							? index
+							: best,
+					0
+				);
+				if (nearest !== activeIndex) {
+					activeIndex = nearest;
+					dots.forEach((dot, index) => {
+						if (index === activeIndex) dot.setAttribute('aria-current', 'true');
+						else dot.removeAttribute('aria-current');
+					});
+				}
+			},
+			{ passive: true }
+		);
+		showSlide(0);
+	});
+</script>
+
 <style>
 	.advertising-header {
 		margin: 0 auto 30px;
 		text-align: center;
 	}
 
-	.advertising-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-		gap: 20px;
+	.advertising-carousel {
+		max-width: 960px;
+		margin: 0 auto;
 	}
 
 	.advertising-card {
-		padding: clamp(20px, 4vw, 32px);
+		overflow: hidden;
 		border: 1px solid var(--gold-border);
 		border-radius: 20px;
 		background: var(--bg-card);
 		box-shadow: var(--card-shadow);
+	}
+
+	.advertising-track {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scroll-behavior: smooth;
+		scrollbar-width: none;
+	}
+
+	.advertising-track::-webkit-scrollbar { display: none; }
+
+	.advertising-slide {
+		flex: 0 0 100%;
+		min-width: 0;
+		scroll-snap-align: start;
+	}
+
+	.advertising-image {
+		display: block;
+		width: 100%;
+		height: clamp(200px, 38vw, 420px);
+		object-fit: cover;
+		background: var(--bg-secondary);
+	}
+
+	.advertising-image-fallback {
+		display: grid;
+		place-items: center;
+		padding: 24px;
+		color: var(--gold-primary);
+		font-family: var(--font-serif);
+		font-size: clamp(1.5rem, 4vw, 2.5rem);
+		text-align: center;
+	}
+
+	.advertising-card-body {
+		padding: clamp(20px, 4vw, 32px);
 	}
 
 	.advertising-card-heading {
@@ -131,9 +253,62 @@ const { ads, unavailable = false } = Astro.props;
 	}
 
 	.advertising-link {
+		display: inline-flex;
+		min-height: 44px;
+		align-items: center;
+		padding: 0 20px;
+		border: 1px solid var(--gold-border);
+		border-radius: 999px;
+		background: linear-gradient(135deg, #d4af37, #f3e5ab);
+		color: #030712;
+		text-decoration: none;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.advertising-link:hover {
+		transform: translateY(-1px);
+		box-shadow: var(--gold-glow);
+	}
+
+	.advertising-controls {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 18px;
+		margin-top: 18px;
+	}
+
+	.advertising-controls > button {
+		width: 42px;
+		height: 42px;
+		border: 1px solid var(--gold-border);
+		border-radius: 50%;
+		background: var(--bg-card);
 		color: var(--gold-primary);
-		font-weight: 700;
-		text-underline-offset: 4px;
+		font-size: 1.8rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.advertising-dots {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+	}
+
+	.advertising-dots button {
+		width: 10px;
+		height: 10px;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: var(--text-muted);
+		cursor: pointer;
+	}
+
+	.advertising-dots button[aria-current='true'] {
+		background: var(--gold-primary);
+		transform: scale(1.25);
 	}
 
 	.advertising-empty {

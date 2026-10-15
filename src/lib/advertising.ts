@@ -4,7 +4,7 @@ export const ADVERTISING_TAB = 'Publicidad';
 
 const HEADERS = [
 	'TÍTULO',
-	'LOGO URL',
+	'IMAGEN URL',
 	'DESCRIPCIÓN',
 	'URL',
 	'CATEGORÍA',
@@ -15,7 +15,7 @@ const HEADERS = [
 
 export interface SponsoredAd {
 	title: string;
-	logoUrl: string | null;
+	imageUrl: string | null;
 	description: string;
 	url: string | null;
 	category: string;
@@ -84,7 +84,19 @@ async function ensureAdvertisingTab(): Promise<void> {
 	}
 
 	const expectedHeaders = HEADERS.map((header) => header.toLocaleUpperCase());
-	if (!expectedHeaders.every((header, index) => currentHeaders[index] === header)) {
+	const legacyHeaders = [...expectedHeaders];
+	legacyHeaders[1] = 'LOGO URL';
+	const isCurrentSchema = expectedHeaders.every((header, index) => currentHeaders[index] === header);
+	const isLegacySchema = legacyHeaders.every((header, index) => currentHeaders[index] === header);
+
+	if (isLegacySchema) {
+		await sheets.spreadsheets.values.update({
+			spreadsheetId: SPREADSHEET_ID,
+			range: `${ADVERTISING_TAB}!B1`,
+			valueInputOption: 'RAW',
+			requestBody: { values: [[HEADERS[1]]] },
+		});
+	} else if (!isCurrentSchema) {
 		throw new Error(
 			`La pestaña "${ADVERTISING_TAB}" no tiene los encabezados esperados: ${HEADERS.join(', ')}.`
 		);
@@ -118,7 +130,7 @@ export async function listPublishedAds(): Promise<SponsoredAd[]> {
 		.filter((row) => cell(row, 0) && cell(row, 2) && cell(row, 6).toLocaleUpperCase() === 'PUBLICAR')
 		.map((row) => ({
 			title: cell(row, 0),
-			logoUrl: safeHttpUrl(cell(row, 1)),
+			imageUrl: safeHttpUrl(cell(row, 1)),
 			description: cell(row, 2),
 			url: safeHttpUrl(cell(row, 3)),
 			category: cell(row, 4),
