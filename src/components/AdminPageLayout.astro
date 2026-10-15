@@ -116,11 +116,11 @@ try {
 	.font-cinzel { font-family: 'Cinzel', serif; }
 	.gold-gradient-text { background: linear-gradient(135deg, #d4af37, #f3e5ab 50%, #aa7c11); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 	.luxury-card { background: var(--bg-surface); border: 1px solid var(--gold-border); border-radius: 16px; backdrop-filter: blur(16px); }
-	.dashboard-wrapper { min-height: 100vh; }
+	.dashboard-wrapper { width: 100%; min-width: 0; min-height: 100vh; }
 	.dashboard-wrapper.has-sidebar { display: grid; grid-template-columns: 260px minmax(0, 1fr); align-items: start; }
 	.dashboard-wrapper.admin-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); align-items: start; }
-	.dashboard-content { min-width: 0; }
-	.header { display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; background: var(--bg-surface); border-bottom: 1px solid var(--gold-border); position: sticky; top: 0; z-index: 50; }
+	.dashboard-content { width: 100%; min-width: 0; }
+	.header { display: flex; align-items: center; justify-content: space-between; width: 100%; min-width: 0; box-sizing: border-box; padding: 16px 36px; background: var(--bg-surface); border-bottom: 1px solid var(--gold-border); position: sticky; top: 0; z-index: 50; }
 	.brand { display: flex; align-items: center; gap: 12px; }
 	.logo-shield { width: 36px; height: 36px; border-radius: 8px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-border); display: flex; align-items: center; justify-content: center; color: var(--gold-primary); }
 	.brand-name { color: var(--text-primary); font-size: 1.3rem; font-weight: 800; letter-spacing: 0.1em; text-decoration: none; }
@@ -145,4 +145,3 @@ try {
 	@media (max-width: 1024px) { .dashboard-wrapper.has-sidebar, .dashboard-wrapper.admin-layout { display: block; } .header { padding-left: 72px; } }
 	@media (max-width: 768px) { .header { padding: 14px 20px 14px 72px; } .main-content { padding: 20px; } .module-hero { padding: 24px 20px; } }
 </style>
-
