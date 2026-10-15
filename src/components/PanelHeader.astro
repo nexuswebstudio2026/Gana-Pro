@@ -149,7 +149,9 @@ if (session) {
 	}
 
 	.header.has-sidebar {
-		margin-right: max(clamp(22px, 3vw, 44px), calc((100% - 1480px) / 2 + clamp(22px, 3vw, 44px)));
+		width: calc(100% - max(clamp(22px, 3vw, 44px), calc((100% - 1480px) / 2 + clamp(22px, 3vw, 44px))));
+		min-width: 0;
+		box-sizing: border-box;
 	}
 
 	.brand { display: flex; align-items: center; gap: 12px; }
@@ -233,7 +235,7 @@ if (session) {
 
 	@media (max-width: 768px) {
 		.header { padding: 12px 16px; gap: 12px; }
-		.header.has-sidebar { margin-right: 20px; }
+		.header.has-sidebar { width: calc(100% - 20px); }
 		.header-actions { gap: 10px; }
 		.user-meta { display: none; }
 		.user-chip { padding: 5px; }
@@ -243,9 +245,12 @@ if (session) {
 		.btn-logout span { display: none; }
 	}
 
+	@media (max-width: 520px) {
+		.header.has-sidebar { width: calc(100% - 16px); }
+	}
+
 	@media (max-width: 380px) {
 		.header { padding: 10px 12px; }
-		.header.has-sidebar { margin-right: 16px; }
 		.header.has-sidebar { padding-left: 68px; }
 		.brand-name { font-size: 1rem; }
 	}
