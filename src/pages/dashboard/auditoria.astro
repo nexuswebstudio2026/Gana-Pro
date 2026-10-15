@@ -1,0 +1,17 @@
+---
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { listAdminAudit } from '../../lib/admin-records';
+import { formatAppDateTime } from '../../lib/datetime';
+export const prerender = false;
+const session = Astro.locals.user!;
+const users = await getGoogleSheetUsers();
+if (!isAdminRole(users.find(u => u.username.toLowerCase() === session.username.toLowerCase())?.role || session.role)) return Astro.redirect('/dashboard',303);
+const records = await listAdminAudit();
+---
+<AdminPageLayout session={session} isAdmin={true} title="Auditoría" eyebrow="CONTROL ADMINISTRATIVO" description="Registro cronológico de acciones administrativas y cambios relevantes.">
+ <section class="luxury-card panel"><div class="head"><div><h2>Actividad administrativa</h2><p>Se muestran los registros más recientes primero.</p></div><span>{records.length} registro(s)</span></div>
+ {records.length ? <div class="wrap"><table><thead><tr><th>Fecha</th><th>Administrador</th><th>Acción</th><th>Entidad</th><th>Referencia</th><th>Detalle</th></tr></thead><tbody>{records.map(r=><tr><td>{formatAppDateTime(r.date)}</td><td>{r.admin}</td><td>{r.action}</td><td>{r.entity}</td><td>{r.reference}</td><td>{r.detail}</td></tr>)}</tbody></table></div> : <p class="empty">Aún no hay acciones registradas. Las nuevas revisiones y cambios se guardarán aquí.</p>}</section>
+</AdminPageLayout>
+<style>.panel{padding:24px}.head{display:flex;justify-content:space-between;gap:12px;margin-bottom:20px}.head h2{margin:0 0 6px}.head p,.empty{margin:0;color:var(--text-secondary)}.head span{color:var(--gold-primary)}.wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:780px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--gold-border);font-size:13px}th{font-size:11px;color:var(--text-secondary);text-transform:uppercase}.empty{padding:28px;text-align:center}@media(max-width:600px){.panel{padding:15px}.head{flex-direction:column}}</style>

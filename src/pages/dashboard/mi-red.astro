@@ -1,0 +1,124 @@
+---
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
+import { toLevelNumber } from '../../lib/users';
+import { listTopups, TOPUP_STATUS } from '../../lib/topups';
+import { listP2PPayments } from '../../lib/p2p-payments';
+import { P2P_CONCEPT } from '../../lib/p2p';
+import { buildMatrixView } from '../../lib/matrix';
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import MatrizStatus from '../../components/dashboard/MatrizStatus.astro';
+import type { User } from '../../lib/types';
+
+export const prerender = false;
+
+const session = Astro.locals.user!;
+let sheetUsers: User[] = [];
+let loadFailed = false;
+let level = '1';
+
+try {
+	sheetUsers = await getGoogleSheetUsers();
+	const own = sheetUsers.find((user) =>
+		user.username?.trim().toLowerCase() === session.username.trim().toLowerCase() ||
+		user.email?.trim().toLowerCase() === session.email.trim().toLowerCase()
+	);
+	level = own?.level?.trim() || '1';
+} catch (error) {
+	loadFailed = true;
+	console.error('Error al cargar Mi red:', error);
+}
+
+const personal = buildPersonalHierarchy(sheetUsers, { username: session.username, email: session.email });
+const requestedNodeId = Astro.url.searchParams.get('usuario');
+const findPath = (node: typeof personal.root, id: string, path: typeof personal.root[] = []): typeof personal.root[] | null => {
+	const next = [...path, node];
+	if (node.id === id) return next;
+	for (const child of node.children) {
+		const found = findPath(child, id, next);
+		if (found) return found;
+	}
+	return null;
+};
+// A member can only navigate inside the subtree rooted at their own account.
+// The admin's personal root is GANA PRO, so it can browse the full organization.
+const selectedPath = requestedNodeId ? findPath(personal.root, requestedNodeId) : null;
+const activePath = selectedPath ?? [personal.root];
+const selected = activePath[activePath.length - 1] ?? personal.root;
+const selectedUpline = activePath.length > 1 ? activePath[activePath.length - 2] : personal.upline;
+const topupsByUser: Record<string, string> = {};
+if (!loadFailed) {
+	try {
+		for (const topup of await listTopups()) {
+			const key = String(topup.username ?? '').trim().toLowerCase();
+			if (key && !topupsByUser[key]) topupsByUser[key] = topup.status === TOPUP_STATUS.aprobado ? 'Aprobado' : String(topup.status || '');
+		}
+	} catch (error) {
+		console.error('No se pudieron leer las recargas de Mi red:', error);
+	}
+}
+
+const selectedLevel = selected.level?.trim() || level;
+const view = buildMatrixView({
+	self: { id: selected.id, name: selected.name, level: selectedLevel },
+	upline: selectedUpline ? { name: selectedUpline.name, level: selectedUpline.level } : null,
+	downline: selected.children,
+	topupsByUser,
+	level: toLevelNumber(selectedLevel),
+});
+const isAdmin = isAdminRole(session.role);
+
+// La tarjeta superior ofrece al miembro el siguiente nivel al que puede aportar.
+// Se cuentan aportes pendientes y aprobados para no ofrecer puestos reservados.
+let matrixRecipients: { username: string; label: string }[] = [];
+const memberMatrixLevel = toLevelNumber(level);
+const recipientMatrixLevel = memberMatrixLevel + 1;
+if (!isAdmin && memberMatrixLevel >= 1 && memberMatrixLevel < 5 && !loadFailed) {
+	try {
+		const payments = await listP2PPayments();
+		const occupied = new Map<string, number>();
+		for (const payment of payments) {
+			if (payment.concept !== P2P_CONCEPT.aporteMatriz || payment.senderLevel !== memberMatrixLevel || payment.status === 'Rechazado' || !payment.recipientUsername) continue;
+			const key = payment.recipientUsername.trim().toLowerCase();
+			occupied.set(key, (occupied.get(key) || 0) + 1);
+		}
+		matrixRecipients = sheetUsers
+			.filter((candidate) => !isAdminRole(candidate.role) && toLevelNumber(candidate.level || '1') === recipientMatrixLevel)
+			.filter((candidate) => candidate.username.trim().toLowerCase() !== session.username.trim().toLowerCase())
+			.filter((candidate) => (occupied.get(candidate.username.trim().toLowerCase()) || 0) < 5)
+			.map((candidate) => ({
+				username: candidate.username,
+				label: `${candidate.username} · Nivel ${recipientMatrixLevel} · ${5 - (occupied.get(candidate.username.trim().toLowerCase()) || 0)} puestos`,
+			}));
+		if (memberMatrixLevel === 1) {
+			const root = sheetUsers.find((candidate) => isAdminRole(candidate.role));
+			if (root) {
+				const rootOccupied = occupied.get(root.username.trim().toLowerCase()) || 0;
+				if (rootOccupied < 5) matrixRecipients.unshift({ username: root.username, label: `GanaPro · Nivel 2 · ${5 - rootOccupied} puestos` });
+			}
+		}
+	} catch (error) {
+		console.error('No se pudieron cargar los destinatarios de matriz:', error);
+	}
+}
+---
+
+<AdminPageLayout
+	session={session}
+	isAdmin={isAdmin}
+	title="Mi red y Matriz 5x1"
+	eyebrow="Mi red"
+	description="Consulta en una sola vista a tu líder, tu posición y los cinco usuarios directos de tu red."
+>
+	<MatrizStatus
+		view={view}
+		loadFailed={loadFailed}
+		leaderUsername={selectedUpline?.name ?? ''}
+		selectedPath={activePath.map(({ id, name }) => ({ id, name }))}
+		viewerName={session.username}
+		matrixRecipients={matrixRecipients}
+		matrixChoiceEnabled={!isAdmin && memberMatrixLevel >= 1 && memberMatrixLevel < 5 && activePath.length <= 1}
+		matrixRecipientLevel={recipientMatrixLevel}
+	/>
+</AdminPageLayout>

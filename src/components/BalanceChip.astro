@@ -79,7 +79,7 @@ const OPERATIONS = [
 
 {
 	label && (
-		<div class="balance" data-balance>
+		<div class="balance" data-balance data-balance-url="/api/balance">
 <button
 type="button"
 class="balance-chip"
@@ -90,7 +90,7 @@ title="Saldo acumulado registrado en Google Sheets"
 aria-label={`Saldo acumulado: ${label}. Opciones de saldo`}
 >
 <span class="balance-label">Saldo</span>
-<span class="balance-value">{label}</span>
+<span class="balance-value" data-balance-value>{label}</span>
 <svg
 class="balance-caret"
 width="12"
@@ -207,6 +207,7 @@ if (!(root instanceof HTMLElement) || root.dataset.ready === '1') return;
 root.dataset.ready = '1';
 
 var toggle = root.querySelector('[data-balance-toggle]');
+var balanceValue = root.querySelector('[data-balance-value]');
 var menu = root.querySelector('[data-balance-menu]');
 var form = root.querySelector('[data-balance-form]');
 var backdrop = root.querySelector('[data-balance-backdrop]');
@@ -231,6 +232,21 @@ if (!(toggle instanceof HTMLButtonElement)) return;
 if (!(menu instanceof HTMLElement)) return;
 if (!(form instanceof HTMLFormElement)) return;
 if (!(amount instanceof HTMLInputElement)) return;
+
+// El saldo se escribe en Google Sheets; consultar el mismo origen mantiene
+// actualizado el panel del usuario y del administrador sin cerrar sesión.
+async function refreshBalance() {
+try {
+var response = await fetch(root.dataset.balanceUrl || '/api/balance', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+if (!response.ok) return;
+var data = await response.json();
+if (!data || !data.ok || !Number.isFinite(Number(data.balance)) || !(balanceValue instanceof HTMLElement)) return;
+var formatted = '$' + Math.round(Number(data.balance)).toLocaleString('es-CO');
+balanceValue.textContent = formatted;
+toggle.setAttribute('aria-label', 'Saldo acumulado: ' + formatted + '. Opciones de saldo');
+} catch { /* se conserva el último saldo visible si Sheets no responde */ }
+}
+window.setInterval(function () { if (document.visibilityState === 'visible') void refreshBalance(); }, 30000);
 
 var currentOp = '';
 

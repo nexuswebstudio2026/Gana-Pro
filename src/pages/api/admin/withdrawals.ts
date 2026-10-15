@@ -7,6 +7,7 @@ import {
 	type WithdrawalStatus,
 } from '../../../lib/withdrawals';
 import { moveBalance } from '../../../lib/sheets';
+import { safeRecordAdminAudit } from '../../../lib/admin-records';
 
 export const prerender = false;
 
@@ -92,6 +93,7 @@ export const POST: APIRoute = async (Astro) => {
 			decision === 'aprobar' ? WITHDRAWAL_STATUS.aprobado : WITHDRAWAL_STATUS.rechazado;
 		const updated = await setWithdrawalStatus(requestId, status, adminNotes);
 		if (!updated) return json({ ok: false, message: 'No se pudo guardar el estado.' }, 500);
+		await safeRecordAdminAudit({ admin: session.username, action: decision === 'aprobar' ? 'Aprobación de retiro' : 'Rechazo de retiro', entity: 'Retiro', reference: requestId, detail: `${request.username} · $${request.amount}${adminNotes ? ` · ${adminNotes}` : ''}` });
 
 		return json({
 			ok: true,

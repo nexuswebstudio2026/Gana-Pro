@@ -19,7 +19,7 @@ import { LEVELS } from './users';
 /** Niveles que ofrece la calculadora: del 2 (el primero al que se aspira). */
 export const CALCULATOR_LEVELS: readonly number[] = [2, 3, 4, 5];
 
-/** Comisión que genera cada referido activo (alta + primera recarga). */
+/** Comisión que genera cada referido activo (solo recarga inicial aprobada). */
 export const COMMISSION_PER_ACTIVE_REFERRAL =
 	COMMISSION_PER_REFERRAL * REFERRAL_COMMISSION_PAYMENTS;
 

@@ -4,7 +4,7 @@
  * La comisión se acredita al SALDO de quien trae el alta, no al del referido:
  * quien capta es quien gana. El alta por sí sola NO paga nada: el código queda
  * guardado en la columna "Código Referido" y la comisión de $1.000 se acredita
- * cuando el referido hace su primera recarga aprobada.
+ * cuando se aprueba una recarga inicial de $15.000 del referido.
  * Cada pago queda anotado en la pestaña `Comisiones`. Esa fila es además la
  * que evita el doble pago: antes de acreditar se comprueba que no exista ya un
  * pago con el mismo (referido, concepto), de modo que repetir la operación sea
@@ -20,6 +20,7 @@ import { getUserBalance } from './users';
 import { toZonedIso } from './datetime';
 import { COMMISSION_PER_REFERRAL, findReferrerByCode, ownCodeOf } from './referrals';
 import { listTopups, TOPUP_STATUS } from './topups';
+import { RECARGA_INICIAL_AMOUNT } from './p2p';
 import type { User } from './types';
 
 /** Pestaña donde queda la trazabilidad de las comisiones pagadas. */
@@ -205,14 +206,14 @@ async function credit(referred: User, concept: CommissionConcept): Promise<Commi
 }
 
 /**
- * Comisión por la primera recarga aprobada del referido.
+ * Comisión por la recarga inicial aprobada de $15.000 del referido.
  *
  * Es el único momento en el que se paga una comisión por referido: el alta no
  * paga nada, se guarda solo el código. Aquí la recarga ya está aprobada, así que
  * el referido es un usuario real de la plataforma.
  *
- * Solo paga la primera: si el referido ya tenía otra recarga aprobada, esta
- * comisión ya se pagó antes y no se acredita nada.
+ * La marca (referido, concepto) en la hoja de comisiones evita pagar más de
+ * una vez, aunque el referido presente otra recarga inicial después.
  */
 export async function creditOnFirstTopupApproved(
 	referred: User,
@@ -222,10 +223,15 @@ export async function creditOnFirstTopupApproved(
 	const approved = (await listTopups(TOPUP_STATUS.aprobado)).filter(
 		(t) => t.username.trim().toLowerCase() === referredName.toLowerCase()
 	);
-	const otherApproved = approved.filter((t) => t.id !== String(currentTopupId).trim());
-	if (otherApproved.length > 0) {
-		return { ...NOTHING, reason: 'El referido ya tenía una recarga aprobada.' };
+	const currentTopup = approved.find((topup) => topup.id === String(currentTopupId).trim());
+	if (!currentTopup) {
+		return { ...NOTHING, reason: 'No se encontró la recarga aprobada del referido.' };
 	}
+	if (currentTopup.amount !== RECARGA_INICIAL_AMOUNT) {
+		return { ...NOTHING, reason: 'La comisión solo aplica a la recarga inicial aprobada de $15.000.' };
+	}
+	// `credit` registra cada par (referido, concepto), así que varias recargas
+	// iniciales aprobadas nunca vuelven a pagar la comisión.
 	return credit(referred, COMMISSION_CONCEPT.primeraRecarga);
 }
 

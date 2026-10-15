@@ -1,0 +1,41 @@
+---
+import type { TopupRequest } from '../../lib/topups';
+import type { WithdrawalRequest } from '../../lib/withdrawals';
+import type { P2PPayment } from '../../lib/p2p-payments';
+import type { AdminExpense } from '../../lib/admin-records';
+import { P2P_CONCEPT, P2P_STATUS } from '../../lib/p2p';
+import { formatAppDateTime } from '../../lib/datetime';
+interface Props { mode:'ingresos'|'gastos'; topups:TopupRequest[]; withdrawals:WithdrawalRequest[]; payments:P2PPayment[]; expenses:AdminExpense[]; }
+const { mode, topups, withdrawals, payments, expenses } = Astro.props;
+const approvedTopups = topups.filter(x=>x.status==='Aprobado');
+const approvedWithdrawals = withdrawals.filter(x=>x.status==='Aprobado');
+const income = approvedWithdrawals.reduce((sum,x)=>sum+x.commission,0);
+const platformPayments = payments.filter(x=>x.status===P2P_STATUS.aprobado && x.concept===P2P_CONCEPT.sostenimientoGanaPro);
+const expenseTotal = expenses.reduce((sum,x)=>sum+x.amount,0);
+const fmt=(n:number)=>`$${Math.round(n).toLocaleString('es-CO')}`;
+---
+<section class="luxury-card accounting">
+ {mode==='ingresos' ? <>
+  <header><div><h2>Ingresos y movimientos recibidos</h2><p>Operaciones aprobadas y comprobantes de las solicitudes de recarga de todos los usuarios.</p></div></header>
+  <div class="stats"><article><small>Comisiones de retiros</small><strong>{fmt(income)}</strong></article><article><small>Fondo de sostenimiento P2P</small><strong>{fmt(platformPayments.reduce((s,x)=>s+x.amount,0))}</strong></article><article><small>Recargas aprobadas recibidas</small><strong>{fmt(approvedTopups.reduce((s,x)=>s+x.amount,0))}</strong></article></div>
+  <h3>Otros movimientos registrados</h3><div class="wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Usuario</th><th>Valor</th></tr></thead><tbody>
+   {approvedWithdrawals.map(x=><tr><td>{formatAppDateTime(x.createdAt)}</td><td>Comisión de retiro</td><td>#{x.id}</td><td>{x.username}</td><td>{fmt(x.commission)}</td></tr>)}
+   {platformPayments.map(x=><tr><td>{formatAppDateTime(x.createdAt)}</td><td>Fondo de sostenimiento</td><td>#{x.id}</td><td>{x.username}</td><td>{fmt(x.amount)}</td></tr>)}
+  </tbody></table></div>
+  <h3>Comprobantes de recarga ({topups.length})</h3><div class="wrap"><table><thead><tr><th>Fecha</th><th>Solicitud</th><th>Usuario</th><th>Valor</th><th>Estado</th><th>Comprobante</th></tr></thead><tbody>
+   {topups.map(x=><tr><td>{formatAppDateTime(x.createdAt)}</td><td>#{x.id}</td><td>{x.username}</td><td>{fmt(x.amount)}</td><td>{x.status}</td><td>{x.receiptUrl ? <a class="receipt-link" href={x.receiptUrl} target="_blank" rel="noopener noreferrer">Ver comprobante{x.receiptName ? ` · ${x.receiptName}` : ''}</a> : 'Sin comprobante'}</td></tr>)}
+  </tbody></table></div>
+  <p class="note">El total de recargas aprobadas corresponde a montos recibidos y acreditados en saldos de usuarios; se muestra por separado de las comisiones y otros ingresos de la plataforma.</p>
+ </> : <>
+  <header><div><h2>Gastos y salidas registradas</h2><p>Registra gastos operativos y consulta retiros aprobados.</p></div></header>
+  <form class="expense-form" data-expense-form><label>Categoría<input name="category" maxlength="60" required placeholder="Operación, soporte…" /></label><label>Descripción<input name="description" maxlength="240" required /></label><label>Monto (COP)<input name="amount" type="number" min="1" step="1" required /></label><button type="submit">Registrar gasto</button></form><p data-expense-feedback role="status" aria-live="polite"></p>
+  <div class="stats"><article><small>Gastos registrados</small><strong>{fmt(expenseTotal)}</strong></article><article><small>Retiros pagados a miembros</small><strong>{fmt(approvedWithdrawals.reduce((s,x)=>s+x.netAmount,0))}</strong></article></div>
+  <h3>Gastos operativos</h3><div class="wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Administrador</th><th>Valor</th></tr></thead><tbody>{expenses.map(x=><tr><td>{formatAppDateTime(x.date)}</td><td>{x.category}</td><td>{x.description}</td><td>{x.admin}</td><td>{fmt(x.amount)}</td></tr>)}</tbody></table></div>
+  <h3>Retiros aprobados</h3><div class="wrap"><table><thead><tr><th>Fecha</th><th>Solicitud</th><th>Usuario</th><th>Neto pagado</th><th>Comisión</th></tr></thead><tbody>{approvedWithdrawals.map(x=><tr><td>{formatAppDateTime(x.createdAt)}</td><td>#{x.id}</td><td>{x.username}</td><td>{fmt(x.netAmount)}</td><td>{fmt(x.commission)}</td></tr>)}</tbody></table></div>
+ </>}
+</section>
+{mode==='gastos' && <script>
+ const form=document.querySelector<HTMLFormElement>('[data-expense-form]'); const feedback=document.querySelector<HTMLElement>('[data-expense-feedback]');
+ form?.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector<HTMLButtonElement>('button');if(button)button.disabled=true;try{const data=Object.fromEntries(new FormData(form));const response=await fetch('/api/admin/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.message||'No se pudo guardar');window.location.reload()}catch(error){if(feedback)feedback.textContent=error instanceof Error?error.message:'No se pudo guardar el gasto.';if(button)button.disabled=false}});
+</script>}
+<style>.accounting{padding:24px}.accounting header{margin-bottom:20px}.accounting h2{margin:0 0 6px}.accounting header p,.note{color:var(--text-secondary);font-size:13px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0 26px}.stats article{padding:16px;border:1px solid var(--gold-border);border-radius:12px;background:rgba(212,175,55,.06)}.stats small,.stats strong{display:block}.stats small{color:var(--text-secondary)}.stats strong{margin-top:8px;color:var(--gold-primary);font-size:22px}.accounting h3{margin:24px 0 12px}.wrap{overflow:auto}table{width:100%;min-width:650px;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--gold-border);font-size:13px}th{font-size:11px;color:var(--text-secondary);text-transform:uppercase}.accounting .receipt-link{color:var(--gold-primary);font-weight:700;text-decoration:none}.accounting .receipt-link:hover{text-decoration:underline}.expense-form{display:grid;grid-template-columns:1fr 2fr 1fr auto;align-items:end;gap:10px}.expense-form label{display:grid;gap:6px;color:var(--text-secondary);font-size:12px}.expense-form input{min-width:0;padding:10px;border:1px solid var(--gold-border);border-radius:8px;background:var(--bg-surface);color:var(--text-primary)}.expense-form button{padding:11px 14px;border:0;border-radius:8px;background:var(--gold-primary);font-weight:700;cursor:pointer}@media(max-width:740px){.accounting{padding:16px}.expense-form{grid-template-columns:1fr}.expense-form button{width:100%}}</style>

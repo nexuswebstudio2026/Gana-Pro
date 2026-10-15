@@ -23,9 +23,9 @@ const ways = [
 		title: 'Sistema Constelación',
 		anchor: '#via-constelacion-detalle',
 		icon: 'constellation',
-		description: 'La vía estructural. Consistes una red de cinco posiciones por persona dentro de una constelación de cinco niveles. Tu posición sube cuando la base que tienes debajo completa los aportes y confirma la estructura.',
+		description: 'La vía estructural. Construyes una red de cinco posiciones por persona dentro de una constelación de cinco niveles. Tu posición puede subir cuando la base que tienes debajo completa los aportes y se confirma la estructura.',
 		points: [
-			{ lead: 'Cómo ganas:', text: `${fmt(RECARGA_INICIAL_AMOUNT)} de cada una de tus cinco posiciones inferiores, una vez confirmada la estructura.` },
+			{ lead: 'Escenario:', text: `podrías recibir ${fmt(RECARGA_INICIAL_AMOUNT)} por cada una de tus cinco posiciones inferiores, una vez confirmada la estructura.` },
 			{ lead: 'Requisito:', text: 'activar tu puesto y tener las cinco posiciones de tu base con la recarga aprobada.' },
 			{ lead: 'Escala:', text: 'profunda y lenta: es la única vía que llega al Nivel 5.' },
 		],
@@ -36,11 +36,11 @@ const ways = [
 		title: 'Red de Referidos',
 		anchor: '#via-referidos-detalle',
 		icon: 'referrals',
-		description: `La vía directa. Captas personas con tu código de referido y ganas ${fmt(COMMISSION_PER_REFERRAL)} por cada alta, sin aportar capital. No dependes de que un grupo se complete: cuenta cada persona que consignes.`,
+		description: `La vía directa. Si una persona usa tu código y se aprueba su recarga inicial de ${fmt(RECARGA_INICIAL_AMOUNT)}, el plan contempla una comisión de ${fmt(COMMISSION_PER_REFERRAL)}. El registro por sí solo no genera comisión.`,
 		points: [
-			{ lead: 'Cómo ganas:', text: `${fmt(COMMISSION_PER_REFERRAL)} de una sola vez por cada persona que se registra con tu código. Sin llenar los cinco espacios.` },
-			{ lead: 'Requisito:', text: 'solo compartir tu enlace. Sin aporte inicial ni grupo que completar.' },
-			{ lead: 'Escala:', text: 'ancha y de entrada rápida: cada referido suma una vez y no hay tope.' },
+			{ lead: 'Escenario:', text: `${fmt(COMMISSION_PER_REFERRAL)} una sola vez, si se aprueba la recarga inicial de ${fmt(RECARGA_INICIAL_AMOUNT)} del referido.` },
+			{ lead: 'Requisito:', text: 'la persona invitada completa y obtiene la aprobación de su recarga inicial.' },
+			{ lead: 'Escala:', text: 'cada referido puede generar una sola comisión al activar su cuenta.' },
 		],
 	},
 ];
@@ -51,12 +51,12 @@ const ways = [
 		<header class="section-header">
 			<span class="section-eyebrow font-cinzel">Elige tu camino</span>
 			<h2 class="section-title font-cinzel" id="vias-title">
-				Dos formas de <span class="gold-gradient-text">ganar dinero</span>
+				Dos vías con <span class="gold-gradient-text">resultados variables</span>
 			</h2>
 			<p class="section-subtitle">
-				GANA PRO abre dos vías independientes. No son pasos de un mismo recorrido: puedes usar
-				una, las dos o quedarte solo con la primera. Cada una tiene reglas propias, requisitos
-				distintos y riesgos distintos.
+				GANA PRO presenta dos vías independientes. Los pagos dependen de cumplir sus requisitos,
+				completar las posiciones necesarias y obtener la aprobación de las operaciones; no se
+				garantizan ingresos.
 			</p>
 		</header>
 

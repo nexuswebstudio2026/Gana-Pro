@@ -81,6 +81,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	buildUserHierarchy,
 	buildPersonalHierarchy,
+	buildMemberOrganizationHierarchy,
 	countByLevel,
 	countOrganizationUsers,
 	findUserNode,
@@ -214,6 +215,7 @@ describe('buildPersonalHierarchy', () => {
 			username: 'ganapro',
 			email: 'admin@test.com',
 		});
+
 		expect(personal.orphan).toBe(false);
 		expect(personal.root.name).toBe('GANA PRO');
 		expect(personal.team.length).toBeGreaterThan(0);
@@ -300,4 +302,44 @@ describe('buildPersonalHierarchy', () => {
 		);
 	});
 
+});
+
+describe('buildMemberOrganizationHierarchy', () => {
+	it('mantiene GANA PRO como raíz y solo expone la ruta y la rama del usuario', () => {
+		const users = Array.from({ length: 15 }, (_, i) => user(`u${i}`));
+		const { root, memberNodeId } = buildMemberOrganizationHierarchy(users, { username: 'u0' });
+
+		expect(root.name).toBe('GANA PRO');
+		expect(root.children).toHaveLength(1);
+		expect(root.children[0]?.name).toBe('u0');
+		expect(root.children[0]?.children).toHaveLength(MAX_DIRECT_TEAM);
+		expect(memberNodeId).toBe(root.children[0]?.id);
+	});
+
+	it('conserva los patrocinadores, oculta ramas ajenas y mantiene descendientes del miembro', () => {
+		const users = Array.from({ length: 40 }, (_, i) => user(`u${i}`));
+		const fullTree = buildUserHierarchy(users);
+		const { root } = buildMemberOrganizationHierarchy(users, { username: 'u5' });
+
+		expect(root.name).toBe('GANA PRO');
+		expect(root.children).toHaveLength(1);
+		expect(root.children[0]?.name).toBe('u0');
+		expect(root.children[0]?.children).toHaveLength(1);
+		expect(root.children[0]?.children[0]?.name).toBe('u5');
+		expect(root.children[0]?.children[0]?.children).toEqual(
+			findUserNode(fullTree, { username: 'u5' })?.children
+		);
+		expect(names(root)).not.toContain('u1');
+	});
+
+	it('no revela el árbol a un usuario que aún no está en la hoja', () => {
+		const { root, memberNodeId } = buildMemberOrganizationHierarchy(
+			[user('ana'), user('beto')],
+			{ username: 'usuario-nuevo' }
+		);
+
+		expect(root.name).toBe('GANA PRO');
+		expect(root.children).toHaveLength(0);
+		expect(memberNodeId).toBeNull();
+	});
 });

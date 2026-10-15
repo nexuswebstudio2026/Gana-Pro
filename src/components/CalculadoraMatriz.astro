@@ -193,12 +193,13 @@ const romanFor = (index: number): string => ROMAN[index] ?? String(index + 1);
 	</div>
 
 	<p class="calc-footnote">
-		Metodología real de la constelación: cada puesto de la base aporta
+		Escenario matemático según las reglas actuales de la constelación: cada puesto de la base aporta
 		{fmt(RECARGA_INICIAL_AMOUNT)}, los niveles 2, 3 y 4 reenvían el
 		{Math.round(P2P_RATE.ascenso * 100)} % al patrocinador, y el Nivel {ASCENT_TOP_LEVEL} entrega el
 		{Math.round(PLATFORM_SHARE_TOP * 100)} % a GANA PRO más un
 		{Math.round(PLATFORM_TAX_RATE * 100)} % de impuesto. Necesitas las {MAX_DIRECT_TEAM} posiciones de tu
-		base activas y verificadas: con menos, no hay ascenso y se pierden los {fmt(RECARGA_INICIAL_AMOUNT)}.
+		base activas y verificadas: con menos, no hay ascenso y el aporte de {fmt(RECARGA_INICIAL_AMOUNT)} no se devuelve automáticamente.
+		Esta simulación no garantiza ingresos; depende de completar las posiciones y de que las operaciones sean aprobadas.
 	</p>
 
 	<a href="/register" class="gold-button calc-cta">Empezar mi ciclo</a>

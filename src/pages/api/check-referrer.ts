@@ -14,12 +14,9 @@ export const GET: APIRoute = async ({ url }) => {
 
 	const lookup = await lookupReferrer(ref);
 	if (lookup.status === 'found') {
-		const username = lookup.user.username;
 		return new Response(
 			JSON.stringify({
 				valid: true,
-				username,
-				ownCode: username,
 			}),
 			{
 				status: 200,

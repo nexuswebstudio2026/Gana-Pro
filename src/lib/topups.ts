@@ -25,7 +25,7 @@ const HEADERS = [
 	'ADMIN_NOTAS',
 ] as const;
 
-const RANGE = `${TOPUPS_TAB}!A1:I1000`;
+const RANGE = `${TOPUPS_TAB}!A:I`;
 
 export interface TopupRequest {
 	id: string;

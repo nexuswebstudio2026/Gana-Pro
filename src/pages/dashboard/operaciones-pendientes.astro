@@ -1,0 +1,30 @@
+---
+import AdminPageLayout from '../../components/AdminPageLayout.astro';
+import { isAdminRole } from '../../lib/auth';
+import { getGoogleSheetUsers } from '../../lib/sheets';
+import { listTopups, TOPUP_STATUS } from '../../lib/topups';
+import { listWithdrawals, WITHDRAWAL_STATUS } from '../../lib/withdrawals';
+import { listP2PPayments } from '../../lib/p2p-payments';
+import { P2P_STATUS } from '../../lib/p2p';
+import { DOCUMENT_STATUS } from '../../lib/testimonials';
+import { formatAppDateTime } from '../../lib/datetime';
+export const prerender = false;
+const session = Astro.locals.user!;
+const users = await getGoogleSheetUsers();
+if (!isAdminRole(users.find(u => u.username.toLowerCase() === session.username.toLowerCase())?.role || session.role)) return Astro.redirect('/dashboard', 303);
+const [topups, withdrawals, payments] = await Promise.all([listTopups(), listWithdrawals(), listP2PPayments()]);
+const queue = [
+ ...topups.filter(x => x.status === TOPUP_STATUS.pendiente).map(x => ({ kind:'Recarga', id:x.id, user:x.username, date:x.createdAt, amount:x.amount, href:'/dashboard/recargas', detail:x.receiptName || 'Comprobante pendiente de revisión' })),
+ ...withdrawals.filter(x => x.status === WITHDRAWAL_STATUS.pendiente).map(x => ({ kind:'Retiro', id:x.id, user:x.username, date:x.createdAt, amount:x.amount, href:'/dashboard/retiros', detail:`${x.walletType} · ${x.walletNumber}` })),
+ ...payments.filter(x => x.status === P2P_STATUS.pendiente).map(x => ({ kind:'Pago P2P', id:x.id, user:x.username, date:x.createdAt, amount:x.amount, href:'/dashboard/pagos-p2p', detail:x.concept })),
+ ...users.filter(x => x.documentLink && x.documentStatus !== DOCUMENT_STATUS.aprobado && x.documentStatus !== DOCUMENT_STATUS.rechazado).map(x => ({ kind:'Documento', id:x.username, user:x.username, date:x.registeredAt || '', amount:0, href:'/dashboard/usuarios-registrados', detail:'Documento de identidad por revisar' })),
+].sort((a,b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+const fmt = (n:number) => n ? `$${Math.round(n).toLocaleString('es-CO')}` : '—';
+---
+<AdminPageLayout session={session} isAdmin={true} title="Cola de operaciones" eyebrow="ADMINISTRACIÓN" description="Solicitudes que requieren revisión. Las decisiones se ejecutan en sus módulos seguros actuales.">
+ <section class="luxury-card panel">
+  <div class="heading"><div><h2>En espera de revisión</h2><p>{queue.length} operación(es) pendientes, ordenadas desde la más antigua.</p></div><a href="/dashboard/usuarios-registrados">Directorio de usuarios</a></div>
+  {queue.length ? <div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Usuario</th><th>Fecha</th><th>Monto</th><th>Detalle</th><th>Revisar</th></tr></thead><tbody>{queue.map(item => <tr><td>{item.kind}</td><td>{item.user}</td><td>{item.date ? formatAppDateTime(item.date) : '—'}</td><td>{fmt(item.amount)}</td><td>{item.detail}</td><td><a class="review" href={item.href}>Abrir módulo →</a></td></tr>)}</tbody></table></div> : <p class="empty">No hay operaciones pendientes.</p>}
+ </section>
+</AdminPageLayout>
+<style>.panel{padding:24px}.heading{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}.heading h2{margin:0 0 6px}.heading p,.empty{color:var(--text-secondary);margin:0}.heading a,.review{color:var(--gold-primary);font-weight:700}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--gold-border);font-size:13px}th{color:var(--text-secondary);font-size:11px;text-transform:uppercase}.empty{text-align:center;padding:30px}@media(max-width:600px){.panel{padding:16px}.heading{align-items:flex-start;flex-direction:column}}</style>

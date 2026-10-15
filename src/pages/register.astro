@@ -82,6 +82,38 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			</span>
 		</div>
 
+		<div id="email-verification" class="email-verification" hidden>
+			<div class="field">
+				<label for="email">Correo electrónico para verificar tu cuenta</label>
+				<input
+					type="email"
+					id="email"
+					name="email"
+					placeholder="inversionista@empresa.com"
+					required
+					autocomplete="email"
+				/>
+			</div>
+			<button type="button" id="send-email-code" class="gold-button btn-full">Enviar código a mi correo</button>
+			<div id="email-code-stage" hidden>
+				<div class="field">
+					<label for="email-code">Código de verificación</label>
+					<input
+						type="text"
+						id="email-code"
+						inputmode="numeric"
+						autocomplete="one-time-code"
+						pattern="[0-9]{6}"
+						maxlength="6"
+						placeholder="000000"
+					/>
+					<span class="field-hint">El código vence en 10 minutos. Tienes hasta cinco intentos.</span>
+				</div>
+				<button type="button" id="verify-email-code" class="gold-button btn-full">Verificar correo y continuar</button>
+			</div>
+			<span class="field-hint" id="email-hint" role="status" aria-live="polite">Primero confirma que puedes recibir mensajes en este correo.</span>
+		</div>
+
 		<div id="registration-details" hidden>
 		<fieldset id="registration-fields" aria-label="Datos del registro" disabled>
 		<div class="field">
@@ -100,18 +132,7 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		</div>
 
 		<div class="field">
-			<label for="email">Correo Electrónico Corporativo / Personal</label>
-			<input
-				type="email"
-				id="email"
-				name="email"
-				placeholder="inversionista@empresa.com"
-				required
-			/>
-		</div>
-
-		<div class="field">
-			<label for="password">Contraseña Cifrada (Mínimo 6 caracteres)</label>
+			<label for="password">Contraseña (mínimo 6 caracteres)</label>
 			<input
 				type="password"
 				id="password"
@@ -240,6 +261,17 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			<span class="field-hint">Solo números y los signos + ( ) - (de 7 a 15 dígitos).</span>
 		</div>
 
+		<div class="consent-group">
+			<label class="consent-option" for="acceptTerms">
+				<input type="checkbox" id="acceptTerms" name="acceptTerms" value="1" required />
+				<span>He leído y acepto los <a href="/terminos-y-condiciones" target="_blank" rel="noopener noreferrer">Términos y Condiciones</a>.</span>
+			</label>
+			<label class="consent-option" for="acceptPrivacy">
+				<input type="checkbox" id="acceptPrivacy" name="acceptPrivacy" value="1" required />
+				<span>He leído la <a href="/politicas-de-privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a> y autorizo el tratamiento de mis datos para gestionar mi cuenta, verificar operaciones y atender solicitudes.</span>
+			</label>
+		</div>
+
 		<button type="submit" class="gold-button btn-full">
 			<span>Registrar y Activar Membresía</span>
 			<span>→</span>
@@ -257,11 +289,20 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		const refHint = document.getElementById('ref-hint');
 		const lockContainer = document.getElementById('ref-container');
 		const verifyButton = document.getElementById('verify-ref') as HTMLButtonElement | null;
+		const emailVerification = document.getElementById('email-verification') as HTMLDivElement | null;
+		const emailInput = document.getElementById('email') as HTMLInputElement | null;
+		const emailHint = document.getElementById('email-hint');
+		const sendEmailButton = document.getElementById('send-email-code') as HTMLButtonElement | null;
+		const emailCodeStage = document.getElementById('email-code-stage') as HTMLDivElement | null;
+		const emailCodeInput = document.getElementById('email-code') as HTMLInputElement | null;
+		const verifyEmailButton = document.getElementById('verify-email-code') as HTMLButtonElement | null;
 		const details = document.getElementById('registration-details') as HTMLDivElement | null;
 		const registrationFields = document.getElementById('registration-fields') as HTMLFieldSetElement | null;
 		const registrationForm = refInput?.form;
 		let refVerified = false;
 		let verificationInProgress = false;
+		let emailVerified = false;
+		let emailVerificationInProgress = false;
 
 		const showVerificationError = (message: string) => {
 			if (refHint) {
@@ -298,16 +339,16 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			try {
 				const response = await fetch(`/api/check-referrer?ref=${encodeURIComponent(code)}`);
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
-				const result: { valid: boolean; username?: string; reason?: string } = await response.json();
+				const result: { valid: boolean; reason?: string } = await response.json();
 
-				if (result.valid && result.username) {
-					refInput.value = result.username;
+				if (result.valid) {
 					refInput.readOnly = true;
 					refInput.setAttribute('aria-readonly', 'true');
 					refInput.removeAttribute('aria-busy');
 					refVerified = true;
-					details.hidden = false;
-					registrationFields.disabled = false;
+					if (emailVerification) emailVerification.hidden = false;
+					details.hidden = true;
+					registrationFields.disabled = true;
 					verifyButton.hidden = true;
 
 					const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -334,22 +375,25 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 						linkMarker.value = '1';
 						registrationForm.appendChild(linkMarker);
 					}
-					refHint.textContent = 'Usuario verificado en Google Sheets. Completa el formulario para continuar.';
+					refHint.textContent = 'Usuario verificado. Ahora confirma tu correo electrónico para continuar.';
 					refHint.setAttribute('role', 'status');
-					details.scrollIntoView({ behavior: 'smooth', block: 'start' });
-					document.getElementById('username')?.focus({ preventScroll: true });
+					emailVerification?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					emailInput?.focus({ preventScroll: true });
 				} else if (result.reason === 'missing') {
 					refVerified = false;
+					emailVerification && (emailVerification.hidden = true);
 					details.hidden = true;
 					registrationFields.disabled = true;
 					showVerificationError(`El usuario «${code}» no está registrado en la base de datos.`);
 				} else if (result.reason === 'unavailable') {
 					refVerified = false;
+					emailVerification && (emailVerification.hidden = true);
 					details.hidden = true;
 					registrationFields.disabled = true;
 					showVerificationError('No se pudo consultar Google Sheets. Intenta verificar el usuario de nuevo.');
 				} else {
 					refVerified = false;
+					emailVerification && (emailVerification.hidden = true);
 					details.hidden = true;
 					registrationFields.disabled = true;
 					showVerificationError('No se pudo verificar el usuario en Google Sheets. Intenta de nuevo.');
@@ -357,6 +401,7 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			} catch (error) {
 				console.error('Error al verificar código de referido:', error);
 				refVerified = false;
+				emailVerification && (emailVerification.hidden = true);
 				details.hidden = true;
 				registrationFields.disabled = true;
 				showVerificationError('No se pudo conectar con Google Sheets. Intenta de nuevo.');
@@ -368,11 +413,82 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 			}
 		};
 
+		const showEmailMessage = (message: string, error = false) => {
+			if (!emailHint) return;
+			emailHint.textContent = message;
+			emailHint.setAttribute('role', error ? 'alert' : 'status');
+		};
+
+		sendEmailButton?.addEventListener('click', async () => {
+			if (!emailInput || !sendEmailButton || emailVerificationInProgress) return;
+			if (!emailInput.reportValidity()) return;
+			emailVerificationInProgress = true;
+			sendEmailButton.disabled = true;
+			sendEmailButton.textContent = 'Enviando código…';
+			showEmailMessage('Enviando un código a tu correo…');
+			try {
+				const response = await fetch('/api/register-email-verification', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body: new URLSearchParams({ action: 'send', email: emailInput.value }),
+				});
+				const result: { message?: string } = await response.json();
+				if (!response.ok) throw new Error(result.message || 'No se pudo enviar el código.');
+				if (emailCodeStage) emailCodeStage.hidden = false;
+				showEmailMessage(result.message || 'Revisa tu correo y escribe el código recibido.');
+				emailCodeInput?.focus();
+			} catch (error) {
+				showEmailMessage(error instanceof Error ? error.message : 'No se pudo enviar el código. Intenta de nuevo.', true);
+			} finally {
+				emailVerificationInProgress = false;
+				sendEmailButton.disabled = false;
+				sendEmailButton.textContent = 'Enviar código a mi correo';
+			}
+		});
+
+		verifyEmailButton?.addEventListener('click', async () => {
+			if (!emailInput || !emailCodeInput || !verifyEmailButton || !emailVerification || !details || !registrationFields || emailVerificationInProgress) return;
+			if (!/^\d{6}$/.test(emailCodeInput.value.trim())) {
+				showEmailMessage('Escribe el código de 6 dígitos que enviamos a tu correo.', true);
+				emailCodeInput.focus();
+				return;
+			}
+			emailVerificationInProgress = true;
+			verifyEmailButton.disabled = true;
+			verifyEmailButton.textContent = 'Verificando…';
+			try {
+				const response = await fetch('/api/register-email-verification', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					body: new URLSearchParams({ action: 'verify', code: emailCodeInput.value.trim() }),
+				});
+				const result: { message?: string } = await response.json();
+				if (!response.ok) throw new Error(result.message || 'No se pudo verificar el correo.');
+				emailVerified = true;
+				emailInput.readOnly = true;
+				if (emailCodeStage) emailCodeStage.hidden = true;
+				if (sendEmailButton) sendEmailButton.hidden = true;
+				emailVerification.setAttribute('data-verified', 'true');
+				registrationFields.disabled = false;
+				details.hidden = false;
+				showEmailMessage('Correo verificado. Completa tus datos para finalizar el registro.');
+				details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				document.getElementById('username')?.focus({ preventScroll: true });
+			} catch (error) {
+				showEmailMessage(error instanceof Error ? error.message : 'No se pudo verificar el correo.', true);
+			} finally {
+				emailVerificationInProgress = false;
+				verifyEmailButton.disabled = false;
+				verifyEmailButton.textContent = 'Verificar correo y continuar';
+			}
+		});
+
 		verifyButton?.addEventListener('click', verifyCode);
 		registrationForm?.addEventListener('submit', (event) => {
-			if (!refVerified) {
+			if (!refVerified || !emailVerified) {
 				event.preventDefault();
-				void verifyCode();
+				if (!refVerified) void verifyCode();
+				else showEmailMessage('Verifica tu correo electrónico antes de crear la cuenta.', true);
 			}
 		});
 	</script>
@@ -410,6 +526,21 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 	}
 
 	#registration-details[hidden] {
+		display: none;
+	}
+
+	.email-verification {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 16px;
+		border: 1px solid var(--gold-border);
+		border-radius: 14px;
+		background: rgba(212, 175, 55, 0.035);
+	}
+
+	#email-code-stage[hidden],
+	.email-verification[hidden] {
 		display: none;
 	}
 
@@ -501,6 +632,39 @@ const tipoDoc = Astro.url.searchParams.get('tipoDocumento') ?? '';
 		font-size: 11.5px;
 		color: var(--text-muted);
 		line-height: 1.45;
+	}
+
+	.consent-group {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 14px;
+		border: 1px solid var(--gold-border);
+		border-radius: 12px;
+		background: rgba(212, 175, 55, 0.04);
+	}
+
+	.consent-option {
+		display: grid;
+		grid-template-columns: 18px minmax(0, 1fr);
+		align-items: start;
+		gap: 10px;
+		font-size: 12px;
+		line-height: 1.55;
+		color: var(--text-secondary);
+	}
+
+	.consent-option input {
+		width: 16px;
+		height: 16px;
+		margin: 2px 0 0;
+		accent-color: var(--gold-primary);
+	}
+
+	.consent-option a {
+		color: var(--gold-primary);
+		font-weight: 700;
+		text-underline-offset: 3px;
 	}
 
 	/* Separador del bloque de contacto: agrupa los cinco campos nuevos

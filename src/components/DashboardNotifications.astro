@@ -1,0 +1,111 @@
+---
+interface Props { username: string; }
+const { username } = Astro.props;
+const storageKey = `gana-notifications:${username.trim().toLowerCase()}`;
+---
+
+<div class="notification-center" data-notification-center data-storage-key={storageKey}>
+	<button class="notification-trigger" type="button" aria-label="Notificaciones" aria-expanded="false" aria-controls="dashboard-notification-panel" data-notification-trigger>
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+		<span class="notification-count" data-notification-count hidden>0</span>
+	</button>
+	<section class="notification-panel" id="dashboard-notification-panel" data-notification-panel hidden aria-label="Notificaciones recientes">
+		<header class="notification-heading"><div><span>ACTUALIZACIONES</span><h2>Notificaciones</h2></div><button type="button" class="notification-read-all" data-notification-read-all>Marcar leídas</button></header>
+		<div class="notification-list" data-notification-list aria-live="polite"><p class="notification-empty">Cargando notificaciones…</p></div>
+	</section>
+</div>
+
+<style>
+	.notification-center{position:relative;display:inline-flex;align-items:center;flex:0 0 auto}.notification-trigger{position:relative;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--gold-border);border-radius:50%;background:var(--bg-primary);color:var(--text-primary);cursor:pointer;transition:border-color .18s ease,color .18s ease,background .18s ease}.notification-trigger:hover,.notification-trigger[aria-expanded="true"]{border-color:var(--gold-primary);color:var(--gold-primary);background:rgba(212,175,55,.08)}.notification-trigger svg{width:20px;height:20px}.notification-count{position:absolute;top:-5px;right:-5px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border:2px solid var(--bg-surface);border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;line-height:1}.notification-count[hidden]{display:none}.notification-panel{position:absolute;top:calc(100% + 12px);right:0;z-index:150;width:min(360px,calc(100vw - 28px));max-height:min(480px,calc(100vh - 100px));overflow:auto;border:1px solid var(--gold-border);border-radius:16px;background:var(--bg-surface);color:var(--text-primary);box-shadow:0 18px 55px rgba(0,0,0,.35);backdrop-filter:blur(20px)}.notification-panel[hidden]{display:none}.notification-heading{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--gold-border);background:var(--bg-surface)}.notification-heading span{color:var(--gold-primary);font-size:9px;font-weight:800;letter-spacing:.14em}.notification-heading h2{margin:3px 0 0;font-size:16px}.notification-read-all{border:0;background:transparent;color:var(--gold-primary);font:inherit;font-size:10px;font-weight:700;cursor:pointer}.notification-list{padding:7px}.notification-item{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:12px 10px;border-radius:11px;color:inherit;text-decoration:none;transition:background .15s ease}.notification-item:hover{background:rgba(212,175,55,.09)}.notification-item.is-unread{background:rgba(212,175,55,.055)}.notification-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(212,175,55,.13);color:var(--gold-primary);font-size:14px}.notification-copy{min-width:0}.notification-copy strong{display:block;font-size:12px}.notification-copy span{display:block;margin-top:3px;color:var(--text-secondary);font-size:11px;line-height:1.45}.notification-copy time{display:block;margin-top:5px;color:var(--text-secondary);font-size:9px;opacity:.8}.notification-empty{margin:0;padding:18px 12px;color:var(--text-secondary);font-size:12px;text-align:center}
+	@media(max-width:600px){.notification-panel{position:fixed;top:68px;right:12px;max-height:calc(100vh - 84px)}}
+</style>
+
+<script>
+	interface NotificationItem { id: string; title: string; detail: string; href: string; createdAt?: string; kind: 'update' | 'money' | 'account'; }
+	interface NotificationResponse { ok: boolean; releaseId: string; notifications: NotificationItem[]; }
+
+	document.querySelectorAll<HTMLElement>('[data-notification-center]').forEach((center) => {
+		const trigger = center.querySelector<HTMLButtonElement>('[data-notification-trigger]');
+		const panel = center.querySelector<HTMLElement>('[data-notification-panel]');
+		const list = center.querySelector<HTMLElement>('[data-notification-list]');
+		const count = center.querySelector<HTMLElement>('[data-notification-count]');
+		const storageKey = center.dataset.storageKey || 'gana-notifications';
+		const releaseKey = `${storageKey}:release`;
+		const readKey = `${storageKey}:read`;
+		let notifications: NotificationItem[] = [];
+
+		const getReadIds = (): Set<string> => {
+			try { return new Set(JSON.parse(localStorage.getItem(readKey) || '[]') as string[]); }
+			catch { return new Set(); }
+		};
+		const formatDate = (value?: string) => {
+			if (!value) return '';
+			const date = new Date(value);
+			return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat('es-CO', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+		};
+		const render = () => {
+			if (!list || !count) return;
+			const readIds = getReadIds();
+			const unread = notifications.filter((item) => !readIds.has(item.id)).length;
+			count.textContent = unread > 99 ? '99+' : String(unread);
+			count.hidden = unread === 0;
+			if (!notifications.length) {
+				list.innerHTML = '<p class="notification-empty">No tienes notificaciones nuevas.</p>';
+				return;
+			}
+			const iconFor = (kind: NotificationItem['kind']) => kind === 'money' ? '$' : kind === 'update' ? '↻' : '•';
+			list.innerHTML = notifications.map((item) => {
+				const unreadClass = readIds.has(item.id) ? '' : ' is-unread';
+				const date = formatDate(item.createdAt);
+				return `<a class="notification-item${unreadClass}" data-notification-link data-notification-id="${encodeURIComponent(item.id)}" href="${item.href}"><span class="notification-icon" aria-hidden="true">${iconFor(item.kind)}</span><span class="notification-copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail)}</span>${date ? `<time>${escapeHtml(date)}</time>` : ''}</span></a>`;
+			}).join('');
+		};
+		const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] || character);
+		const markRead = (ids: string[]) => {
+			const read = getReadIds();
+			ids.forEach((id) => read.add(id));
+			try { localStorage.setItem(readKey, JSON.stringify([...read].slice(-500))); } catch { /* storage puede estar desactivado */ }
+			render();
+		};
+		const load = async () => {
+			try {
+				const response = await fetch('/api/notifications', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+				if (!response.ok) throw new Error('No se pudieron cargar las notificaciones.');
+				const data = await response.json() as NotificationResponse;
+				if (!data.ok) throw new Error('No se pudieron cargar las notificaciones.');
+				if (data.releaseId) {
+					const previousRelease = localStorage.getItem(releaseKey);
+					if (previousRelease && previousRelease !== data.releaseId) {
+						notifications = [{ id: `app-update-${data.releaseId}`, title: 'GANA PRO se actualizó', detail: 'Hay una nueva versión del panel disponible.', href: '/dashboard', kind: 'update' }, ...notifications.filter((item) => item.kind === 'update' && item.id === `app-update-${data.releaseId}`)];
+					}
+					localStorage.setItem(releaseKey, data.releaseId);
+				}
+				const updateNotice = notifications.find((item) => item.kind === 'update');
+				notifications = [...(updateNotice ? [updateNotice] : []), ...data.notifications];
+				render();
+			} catch {
+				if (list && !notifications.length) list.innerHTML = '<p class="notification-empty">No se pudieron cargar las notificaciones.</p>';
+			}
+		};
+
+		trigger?.addEventListener('click', () => {
+			const open = trigger.getAttribute('aria-expanded') !== 'true';
+			trigger.setAttribute('aria-expanded', String(open));
+			if (panel) panel.hidden = !open;
+			if (open) void load();
+		});
+		center.querySelector('[data-notification-read-all]')?.addEventListener('click', () => markRead(notifications.map((item) => item.id)));
+		list?.addEventListener('click', (event) => {
+			const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('[data-notification-link]');
+			if (link) markRead([decodeURIComponent(link.dataset.notificationId || '')]);
+		});
+		document.addEventListener('click', (event) => {
+			if (!center.contains(event.target as Node)) { if (panel) panel.hidden = true; trigger?.setAttribute('aria-expanded', 'false'); }
+		});
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') { if (panel) panel.hidden = true; trigger?.setAttribute('aria-expanded', 'false'); }
+		});
+		void load();
+		window.setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 45_000);
+	});
+</script>

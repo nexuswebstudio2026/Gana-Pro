@@ -7,11 +7,11 @@
  * no pueden separarse.
  */
 import { isAdminRole } from '../../lib/auth';
-import { getSheetUserLevel, getUserBalance, getUserWallet, canWithdraw } from '../../lib/users';
-import { parseSheetBalance } from '../../lib/sheets';
+import { getSheetUserLevel, getUserBalance, getUserWallet, canWithdraw, toLevelNumber } from '../../lib/users';
+import { getGoogleSheetUsers, parseSheetBalance } from '../../lib/sheets';
 import { listWithdrawals } from '../../lib/withdrawals';
 import { listP2PPayments } from '../../lib/p2p-payments';
-import { P2P_CONCEPTS, P2P_CONCEPT_INFO, canSubmitConcept, conceptAmount } from '../../lib/p2p';
+import { P2P_CONCEPT, P2P_CONCEPTS, P2P_CONCEPT_INFO, canSubmitConcept, conceptAmount } from '../../lib/p2p';
 import { buildWalletSummary, sumApproved, sumPending } from '../../lib/wallet-summary';
 import { listMemberMoneyRequests } from '../../lib/member-money-requests';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
@@ -35,6 +35,37 @@ try {
 } catch (error) {
 	console.error('No se pudieron leer las solicitudes de retiro:', error);
 }
+
+let allP2P: Awaited<ReturnType<typeof listP2PPayments>> = [];
+let matrixRecipients: { username: string; label: string }[] = [];
+const senderMatrixLevel = toLevelNumber(level);
+const recipientMatrixLevel = senderMatrixLevel + 1;
+try {
+	allP2P = await listP2PPayments();
+	const users = await getGoogleSheetUsers();
+	const pendingCounts = new Map<string, number>();
+	for (const payment of allP2P) {
+		if (payment.concept !== P2P_CONCEPT.aporteMatriz || payment.senderLevel !== senderMatrixLevel || payment.status === 'Rechazado' || !payment.recipientUsername) continue;
+		const key = payment.recipientUsername.trim().toLowerCase();
+		pendingCounts.set(key, (pendingCounts.get(key) || 0) + 1);
+	}
+	matrixRecipients = users
+		.filter((user) => toLevelNumber(user.level || '1') === recipientMatrixLevel && !isAdminRole(user.role))
+		.filter((user) => (pendingCounts.get(user.username.trim().toLowerCase()) || 0) < 5)
+		.map((user) => ({ username: user.username, label: `${user.username} · Nivel ${recipientMatrixLevel} · ${5 - (pendingCounts.get(user.username.trim().toLowerCase()) || 0)} puestos` }));
+	// GANA PRO comienza en nivel 2 y avanza con cinco aportes aprobados de cada nivel.
+	const root = users.find((user) => isAdminRole(user.role));
+	const rootCount = pendingCounts.get(root?.username.trim().toLowerCase() || '') || 0;
+	if (root) {
+		const rootLevelOneCount = allP2P.filter((payment) => payment.concept === P2P_CONCEPT.aporteMatriz && payment.recipientUsername?.trim().toLowerCase() === root.username.trim().toLowerCase() && payment.senderLevel === 1 && payment.status === 'Aprobado').length;
+		const rootLevel = rootLevelOneCount < 5 ? 2 : Math.max(3, toLevelNumber(root.level || '3'));
+		if (rootLevel === recipientMatrixLevel && rootCount < 5) {
+			matrixRecipients.unshift({ username: root.username, label: `GanaPro · Nivel ${rootLevel} · ${5 - rootCount} puestos` });
+		}
+	}
+} catch (error) {
+	console.error('No se pudieron cargar los líderes de matriz:', error);
+}
 try {
 	p2p = await listP2PPayments(session.username);
 } catch (error) {
@@ -55,12 +86,18 @@ const summary = buildWalletSummary({
 	paidOut: sumApproved(ownWithdrawals),
 });
 
+const isAdmin = isAdminRole(session.role);
 const receiptConcepts = P2P_CONCEPTS.map((id) => {
 	const info = P2P_CONCEPT_INFO[id];
-	return { id, label: info.label, detail: info.detail, amount: conceptAmount(id, parseSheetBalance(balance)), enabled: canSubmitConcept(id, level) };
+	const enabled = id === P2P_CONCEPT.aporteMatriz
+		? !isAdmin && senderMatrixLevel >= 1 && senderMatrixLevel < 5 && matrixRecipients.length > 0
+		: canSubmitConcept(id, level);
+	return { id, label: info.label, detail: info.detail, amount: conceptAmount(id, parseSheetBalance(balance)), enabled };
 });
 
-const isAdmin = isAdminRole(session.role);
+const canContributeFromCurrentLevel = !isAdmin && senderMatrixLevel >= 1 && senderMatrixLevel < 5;
+const showMatrixContribution = canContributeFromCurrentLevel;
+const canMakeMatrixContributionNow = canContributeFromCurrentLevel && matrixRecipients.length > 0;
 const transferTo = Astro.url.searchParams.get('destino')?.trim() || '';
 let moneyRequests: Awaited<ReturnType<typeof listMemberMoneyRequests>> = [];
 try { moneyRequests = await listMemberMoneyRequests(session.username); }
@@ -109,13 +146,39 @@ const movements = [
 		moneyRequests={moneyRequests}
 		currentUsername={session.username}
 	/>
+	{showMatrixContribution && (
+		<section class="matrix-contribution" aria-labelledby="matrix-contribution-title">
+			<div>
+				<span class="matrix-contribution-kicker">Ascenso de nivel</span>
+				<h2 id="matrix-contribution-title">Elige a tu líder de nivel {recipientMatrixLevel}</h2>
+				<p>{canMakeMatrixContributionNow ? `Envía un aporte de $15.000. Al aprobarse el comprobante, quedarás en la línea de esa persona.` : `Por ahora no hay puestos disponibles en nivel ${recipientMatrixLevel}. Vuelve a consultar más tarde.`}</p>
+			</div>
+			{canMakeMatrixContributionNow && (
+				<label>
+					<span class="sr-only">Usuario de nivel {recipientMatrixLevel}</span>
+					<select data-matrix-target aria-label={`Elige un usuario de nivel ${recipientMatrixLevel}`}>
+						<option value="">Selecciona un usuario</option>
+						{matrixRecipients.map((recipient) => <option value={recipient.username}>{recipient.label}</option>)}
+					</select>
+				</label>
+			)}
+			{canMakeMatrixContributionNow ? <button type="button" class="gold-button" data-open-matrix>Enviar $15.000</button> : <span aria-live="polite">Sin cupos</span>}
+		</section>
+	)}
 	<section id="comprobantes" class="wallet-receipts" aria-label="Comprobantes de pago">
 		<header><span>Pagos y soporte</span><h2>Comprobantes de pago</h2><p>Adjunta y consulta los comprobantes asociados a tus pagos.</p></header>
-		<UploadReceiptModal concepts={receiptConcepts} payments={p2p} />
+		<UploadReceiptModal concepts={receiptConcepts} payments={p2p} matrixRecipients={matrixRecipients} />
 	</section>
 </AdminPageLayout>
 
 <style>
+	.matrix-contribution{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,auto) auto;align-items:center;gap:16px;margin-top:24px;padding:22px;border:1px solid var(--gold-border);border-radius:16px;background:var(--bg-surface)}
+	.matrix-contribution-kicker{color:var(--gold-primary);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+	.matrix-contribution h2{margin:6px 0;font-size:1.15rem}
+	.matrix-contribution p{margin:0;color:var(--text-secondary);font-size:13px;line-height:1.5}
+	.matrix-contribution select{width:100%;min-height:44px;padding:10px;border:1px solid var(--gold-border);border-radius:10px;background:var(--bg-surface);color:var(--text-primary);font:inherit}
+	.matrix-contribution button{white-space:nowrap}
 	.wallet-receipts{margin-top:24px;padding:24px;border:1px solid var(--gold-border);border-radius:16px;background:var(--bg-surface)}
 	.wallet-receipts header{margin-bottom:18px}.wallet-receipts header>span{color:var(--gold-primary);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.wallet-receipts h2{margin:6px 0;font-size:1.2rem}.wallet-receipts header p{margin:0;color:var(--text-secondary);font-size:13px}
+	@media(max-width:700px){.matrix-contribution{grid-template-columns:1fr}.matrix-contribution button{width:100%}}
 </style>

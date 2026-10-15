@@ -14,6 +14,7 @@ import {
 import { getUserBalance } from '../../../lib/users';
 import { creditOnFirstTopupApproved } from '../../../lib/referral-commissions';
 import type { User } from '../../../lib/types';
+import { safeRecordAdminAudit } from '../../../lib/admin-records';
 
 export const prerender = false;
 
@@ -111,14 +112,14 @@ export const POST: APIRoute = async (Astro) => {
 				);
 			}
 		}
-
 		const status: TopupStatus =
 			decision === 'aprobar' ? TOPUP_STATUS.aprobado : TOPUP_STATUS.rechazado;
 		const updated = await setTopupStatus(requestId, status, adminNotes);
 		if (!updated) return json({ ok: false, message: 'No se pudo guardar el estado.' }, 500);
+		await safeRecordAdminAudit({ admin: session.username, action: decision === 'aprobar' ? 'Aprobación de recarga' : 'Rechazo de recarga', entity: 'Recarga', reference: requestId, detail: `${request.username} · $${request.amount}${adminNotes ? ` · ${adminNotes}` : ''}` });
 
-		// Segunda comisión: si esta es la primera recarga aprobada del referido,
-		// su referente recibe $1.000. Solo aplica cuando se aprueba.
+		// Comisión única de referido: solo se genera al aprobar la recarga inicial
+		// exacta de $15.000. La función verifica el monto y evita un pago duplicado.
 		let commissionNote = '';
 		if (decision === 'aprobar') {
 			try {
@@ -127,7 +128,11 @@ export const POST: APIRoute = async (Astro) => {
 					const commission = await creditOnFirstTopupApproved(referred, request.id);
 					if (commission.credited) {
 						commissionNote = ` Comisión de $1.000 acreditada a ${commission.referrer}.`;
+					} else if (commission.reason && commission.reason !== 'Esta comisión ya estaba pagada.') {
+						commissionNote = ` No se acreditó la comisión: ${commission.reason}`;
 					}
+				} else {
+					commissionNote = ' No se encontró la cuenta del usuario para procesar su comisión de referido.';
 				}
 			} catch (commissionErr) {
 				// La recarga ya quedó aprobada: el fallo de la comisión no debe

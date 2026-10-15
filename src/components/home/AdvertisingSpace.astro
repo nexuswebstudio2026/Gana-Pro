@@ -1,0 +1,319 @@
+---
+import type { SponsoredAd } from '../../lib/advertising';
+
+interface Props {
+	ads: SponsoredAd[];
+	unavailable?: boolean;
+}
+
+const { ads, unavailable = false } = Astro.props;
+---
+
+<div class="advertising-layout">
+	<aside class="advertising-overlay" data-ad-overlay aria-label="Publicidad y contenido patrocinado">
+		<button class="advertising-close" type="button" data-ad-close aria-label="Cerrar publicidad">×</button>
+		{ads.length > 0 ? (
+			<div class="advertising-carousel" data-ad-carousel>
+				<div class="advertising-track" data-ad-track>
+					{ads.map((ad, index) => (
+						<article class="advertising-slide" data-ad-slide aria-label={`Anuncio ${index + 1} de ${ads.length}`}>
+							<div class="advertising-card">
+								{ad.imageUrl ? (
+									<img class="advertising-image" src={ad.imageUrl} alt={ad.title} loading={index === 0 ? 'eager' : 'lazy'} />
+								) : (
+									<div class="advertising-image advertising-image-fallback" aria-label={`Imagen no disponible: ${ad.title}`}>
+										<span>{ad.advertiser || 'GANA PRO'}</span>
+									</div>
+								)}
+								<div class="advertising-card-body">
+									<span class="advertising-badge">
+										{ad.category ? `Patrocinado · ${ad.category}` : 'Contenido patrocinado'}
+									</span>
+									{ad.advertiser && <p class="advertising-advertiser">{ad.advertiser}</p>}
+									<h2 class="advertising-ad-title">{ad.title}</h2>
+									<p class="advertising-copy">{ad.description}</p>
+									{ad.url && (
+										<a
+											class="advertising-link"
+											href={ad.url}
+											target={ad.url.startsWith('/') ? undefined : '_blank'}
+											rel={ad.url.startsWith('/') ? 'sponsored' : 'noopener noreferrer sponsored'}
+										>
+											Ver más
+										</a>
+									)}
+								</div>
+							</div>
+						</article>
+					))}
+				</div>
+				{ads.length > 1 && (
+					<div class="advertising-controls" aria-label="Controles del carrusel">
+						<button type="button" data-ad-previous aria-label="Ver anuncio anterior">‹</button>
+						<span class="advertising-position" data-ad-position aria-live="polite"></span>
+						<button type="button" data-ad-next aria-label="Ver anuncio siguiente">›</button>
+					</div>
+				)}
+			</div>
+		) : (
+			<div class="advertising-card advertising-empty">
+				<p>{unavailable ? 'Publicidad no disponible temporalmente.' : 'Anúnciate aquí.'}</p>
+				<a class="advertising-link" href="/publicidad">
+					{unavailable ? 'Más información' : 'Información para anunciantes'}
+				</a>
+			</div>
+		)}
+	</aside>
+	<div class="advertising-page-content">
+		<slot />
+	</div>
+</div>
+
+<script>
+	const adOverlay = document.querySelector<HTMLElement>('[data-ad-overlay]');
+	const adClose = adOverlay?.querySelector<HTMLButtonElement>('[data-ad-close]');
+	try {
+		if (sessionStorage.getItem('ganapro-ads-dismissed') === 'true' && adOverlay) {
+			adOverlay.hidden = true;
+		}
+	} catch (error) {
+		console.error('No se pudo leer la preferencia de publicidad:', error);
+	}
+	adClose?.addEventListener('click', () => {
+		if (adOverlay) adOverlay.hidden = true;
+		try {
+			sessionStorage.setItem('ganapro-ads-dismissed', 'true');
+		} catch (error) {
+			console.error('No se pudo guardar la preferencia de publicidad:', error);
+		}
+	});
+
+	document.querySelectorAll<HTMLElement>('[data-ad-carousel]').forEach((carousel) => {
+		const track = carousel.querySelector<HTMLElement>('[data-ad-track]');
+		const slides = Array.from(carousel.querySelectorAll<HTMLElement>('[data-ad-slide]'));
+		const previous = carousel.querySelector<HTMLButtonElement>('[data-ad-previous]');
+		const next = carousel.querySelector<HTMLButtonElement>('[data-ad-next]');
+		const position = carousel.querySelector<HTMLElement>('[data-ad-position]');
+		if (!track || slides.length === 0) return;
+
+		let activeIndex = Number(carousel.dataset.startIndex) % slides.length;
+		const updatePosition = () => {
+			if (position) position.textContent = `${activeIndex + 1} / ${slides.length}`;
+		};
+		const showSlide = (index: number) => {
+			activeIndex = (index + slides.length) % slides.length;
+			track.scrollTo({ left: slides[activeIndex].offsetLeft, behavior: 'smooth' });
+			updatePosition();
+		};
+
+		previous?.addEventListener('click', () => showSlide(activeIndex - 1));
+		next?.addEventListener('click', () => showSlide(activeIndex + 1));
+		track.addEventListener(
+			'scroll',
+			() => {
+				const nearest = slides.reduce(
+					(best, slide, index) =>
+						Math.abs(slide.offsetLeft - track.scrollLeft) <
+						Math.abs(slides[best].offsetLeft - track.scrollLeft)
+							? index
+							: best,
+					0
+				);
+				activeIndex = nearest;
+				updatePosition();
+			},
+			{ passive: true }
+		);
+		updatePosition();
+		if (slides.length > 1) showSlide(activeIndex);
+	});
+</script>
+
+<style>
+	.advertising-layout {
+		display: block;
+		width: 100%;
+		min-width: 0;
+		flex: 1 0 auto;
+	}
+
+	.advertising-page-content {
+		min-width: 0;
+	}
+
+	.advertising-overlay {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		z-index: 95;
+		width: min(600px, calc(100vw - 32px));
+		max-height: calc(100dvh - 150px);
+		overflow: auto;
+		transform: translate(-50%, -50%);
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
+		border-radius: 16px;
+		background: var(--bg-primary, #020712);
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+	}
+
+	.advertising-overlay[hidden] {
+		display: none;
+	}
+
+	.advertising-close {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		z-index: 2;
+		display: grid;
+		width: 36px;
+		height: 36px;
+		place-items: center;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
+		border-radius: 50%;
+		background: rgba(2, 7, 18, 0.8);
+		color: #fff;
+		font-size: 1.5rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.advertising-card {
+		overflow: hidden;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
+		border-radius: 14px;
+		background: var(--bg-card);
+		box-shadow: var(--card-shadow);
+	}
+
+	.advertising-track {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scroll-behavior: smooth;
+		scrollbar-width: none;
+	}
+
+	.advertising-track::-webkit-scrollbar { display: none; }
+
+	.advertising-slide {
+		flex: 0 0 100%;
+		min-width: 0;
+		scroll-snap-align: start;
+	}
+
+	.advertising-image {
+		display: block;
+		width: 100%;
+		max-height: min(34vh, 260px);
+		height: auto;
+		aspect-ratio: 16 / 9;
+		object-fit: contain;
+		background: var(--bg-secondary);
+	}
+
+	.advertising-image-fallback {
+		display: grid;
+		place-items: center;
+		padding: 24px;
+		color: var(--gold-primary);
+		font-family: var(--font-serif);
+		font-size: 1.1rem;
+		text-align: center;
+	}
+
+	.advertising-card-body {
+		padding: 12px;
+	}
+
+	.advertising-badge {
+		display: block;
+		color: var(--gold-primary, #d4af37);
+		font-size: 0.62rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.advertising-advertiser {
+		margin-top: 3px;
+		color: var(--text-muted, #94a3b8);
+		font-size: 0.68rem;
+	}
+
+	.advertising-ad-title {
+		margin: 8px 0;
+		font-size: 0.9rem;
+		line-height: 1.35;
+	}
+
+	.advertising-copy {
+		margin-bottom: 10px;
+		color: var(--text-secondary, #cbd5e1);
+		font-size: 0.75rem;
+		line-height: 1.5;
+	}
+
+	.advertising-link {
+		display: inline-flex;
+		min-height: 36px;
+		align-items: center;
+		justify-content: center;
+		padding: 0 12px;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
+		border-radius: 999px;
+		background: linear-gradient(135deg, #d4af37, #f3e5ab);
+		color: #030712;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-decoration: none;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.advertising-link:hover {
+		transform: translateY(-1px);
+		box-shadow: var(--gold-glow);
+	}
+
+	.advertising-controls {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		margin-top: 10px;
+	}
+
+	.advertising-controls > button {
+		width: 32px;
+		height: 32px;
+		border: 1px solid var(--gold-border, rgba(212, 175, 55, 0.45));
+		border-radius: 50%;
+		background: var(--bg-card);
+		color: var(--gold-primary, #d4af37);
+		font-size: 1.4rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.advertising-position {
+		color: var(--text-muted, #94a3b8);
+		font-size: 0.7rem;
+	}
+
+	.advertising-empty {
+		padding: 14px;
+		color: var(--text-secondary, #cbd5e1);
+		text-align: center;
+	}
+
+	.advertising-empty p {
+		margin-bottom: 10px;
+	}
+
+	@media (max-width: 520px) {
+		.advertising-overlay {
+			width: calc(100vw - 24px);
+			max-height: calc(100dvh - 120px);
+		}
+	}
+</style>

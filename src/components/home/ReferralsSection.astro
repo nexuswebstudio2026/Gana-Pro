@@ -8,6 +8,7 @@
  * (`.data-table`), así que las dos comparaciones de la portada se leen igual.
  */
 import { COMMISSION_PER_REFERRAL } from '../../lib/referrals';
+import { RECARGA_INICIAL_AMOUNT } from '../../lib/p2p';
 
 const fmt = (value: number) => `$${value.toLocaleString('es-CO')}`;
 
@@ -29,8 +30,8 @@ const steps = [
 	},
 	{
 		step: 'IV',
-		title: `Recibe ${fmt(COMMISSION_PER_REFERRAL)} por cada referido`,
-		body: 'La comisión es un pago único: se genera al confirmarse el registro y suma esa cantidad a tu acumulado. No se repite cada mes aunque tu referido siga activo, y no depende de que complete su propio grupo.',
+		title: `Recibe ${fmt(COMMISSION_PER_REFERRAL)} al activarse el referido`,
+		body: `El registro no genera comisión. Recibes un único pago de ${fmt(COMMISSION_PER_REFERRAL)} cuando se aprueba la recarga inicial de ${fmt(RECARGA_INICIAL_AMOUNT)} del referido.`,
 	},
 ];
 
@@ -38,8 +39,8 @@ const steps = [
 const comparison = [
 	{ criterion: 'Requisito', constellation: '5 posiciones completas', referrals: 'Ningún requisito previo' },
 	{ criterion: 'Aporte', constellation: '$15.000 por posición', referrals: 'Ninguno' },
-	{ criterion: 'Comisión', constellation: '50 % / 65 % según el nivel', referrals: '$1.000 únicos por referido' },
-	{ criterion: 'Velocidad', constellation: 'Lenta: exige 5 confirmaciones', referrals: 'Inmediata al registro' },
+	{ criterion: 'Comisión', constellation: '50 % / 65 % según el nivel', referrals: `$1.000 al aprobar la recarga inicial de ${fmt(RECARGA_INICIAL_AMOUNT)}` },
+	{ criterion: 'Activación', constellation: 'Exige 5 confirmaciones', referrals: `Recarga aprobada de ${fmt(RECARGA_INICIAL_AMOUNT)}` },
 	{ criterion: 'Techo', constellation: 'Nivel 5 de la constelación', referrals: 'Sin tope de nivel' },
 ];
 ---
@@ -54,16 +55,16 @@ const comparison = [
 			<p class="section-subtitle">
 				Mientras la Constelación funciona llenando posiciones hacia abajo, tu código de referido
 				trabaja en horizontal. Ganas <strong class="accent">{fmt(COMMISSION_PER_REFERRAL)}</strong> una
-				sola vez por cada persona que se registre con tu código, sin aportar capital y sin necesidad
-				de completar ningún grupo.
+				sola vez cuando cada persona activa su cuenta con la recarga inicial aprobada de
+				<strong class="accent">{fmt(RECARGA_INICIAL_AMOUNT)}</strong>. El registro por sí solo no genera comisión.
 			</p>
 		</header>
 
 		<div class="card panel">
 			<h3 class="panel-title font-cinzel">Cómo funciona tu código de referido</h3>
 			<p class="panel-intro">
-				No hay aportes que hacer ni grupos que completar. Tu función se limita a compartir tu
-				enlace y registrar a quienes decidan usar tu código.
+				Comparte tu enlace para vincular a las personas que lo usen. La comisión se acredita cuando
+				aprueban su recarga inicial de {fmt(RECARGA_INICIAL_AMOUNT)}.
 			</p>
 
 			<ol class="cycle">
@@ -79,9 +80,9 @@ const comparison = [
 			</ol>
 
 			<p class="cycle-note">
-				La diferencia esencial: en la Constelación <strong class="accent">no cobras nada hasta
-				llenar tus 5 posiciones</strong>. En Referidos <strong class="accent">cada registro cuenta por
-				sí solo</strong>, sin condiciones de grupo. Por eso es la vía recomendada para empezar.
+				En la Constelación la comisión depende de llenar tus 5 posiciones. En Referidos recibes
+				<strong class="accent">{fmt(COMMISSION_PER_REFERRAL)} cuando el usuario invitado completa y obtiene
+				aprobación de su recarga inicial</strong>; el registro por sí solo no genera un pago.
 			</p>
 		</div>
 

@@ -10,10 +10,12 @@
  * que no se puede saltar desde el navegador, y este endpoint mueve plata.
  */
 import type { APIRoute } from 'astro';
-import { getSheetUserLevel, getUserBalance } from '../../../lib/users';
-import { parseSheetBalance } from '../../../lib/sheets';
+import { getSheetUserLevel, getUserBalance, toLevelNumber } from '../../../lib/users';
+import { getGoogleSheetUsers, parseSheetBalance } from '../../../lib/sheets';
+import { isAdminRole } from '../../../lib/auth';
 import { saveFile } from '../../../lib/image-storage';
 import {
+	P2P_CONCEPT,
 	P2P_CONCEPT_INFO,
 	P2P_CONCEPTS,
 	canSubmitConcept,
@@ -138,6 +140,50 @@ export const POST: APIRoute = async (Astro) => {
 			);
 		}
 
+		let recipientUsername = '';
+	let senderLevel = 0;
+		if (concept === P2P_CONCEPT.aporteMatriz) {
+			senderLevel = toLevelNumber(level);
+			if (isAdminRole(session.role) || senderLevel < 1 || senderLevel >= 5) {
+				return json({ ok: false, message: 'No puedes enviar aportes desde tu nivel actual.' }, 403);
+			}
+			recipientUsername = String(formData.get('recipient') ?? '').trim();
+			if (!recipientUsername) return json({ ok: false, message: 'Elige un usuario de nivel 2.' }, 400);
+
+			const users = await getGoogleSheetUsers();
+			const recipient = users.find((user) => user.username.trim().toLowerCase() === recipientUsername.toLowerCase());
+			if (!recipient) return json({ ok: false, message: 'No se encontró el usuario seleccionado.' }, 404);
+			const recipientIsRoot = isAdminRole(recipient.role);
+			const allPayments = await listP2PPayments();
+			const rootLevelOneCount = allPayments.filter((payment) =>
+				payment.concept === P2P_CONCEPT.aporteMatriz &&
+				payment.recipientUsername?.trim().toLowerCase() === recipientUsername.toLowerCase() &&
+				payment.senderLevel === 1 && payment.status === 'Aprobado'
+			).length;
+			const recipientLevel = recipientIsRoot
+				? rootLevelOneCount < 5 ? 2 : Math.max(3, toLevelNumber(recipient.level || '3'))
+				: toLevelNumber(recipient.level || '1');
+			const inbound = allPayments.filter((payment) =>
+				payment.concept === P2P_CONCEPT.aporteMatriz &&
+				payment.recipientUsername?.trim().toLowerCase() === recipientUsername.toLowerCase() &&
+				payment.senderLevel === senderLevel &&
+				payment.status !== 'Rechazado'
+			);
+			if (recipientLevel !== senderLevel + 1) return json({ ok: false, message: 'El usuario ya no está disponible para tu nivel.' }, 409);
+			if (inbound.length >= 5) return json({ ok: false, message: 'Ese usuario ya tiene ocupados sus cinco puestos.' }, 409);
+
+			const ownPayments = await listP2PPayments(session.username);
+			if (ownPayments.some((payment) => payment.concept === P2P_CONCEPT.aporteMatriz && payment.senderLevel === senderLevel && payment.status !== 'Rechazado')) {
+				return json({ ok: false, message: 'Ya tienes un aporte pendiente o aprobado en este nivel.' }, 409);
+			}
+			const reservedBalance = ownPayments
+				.filter((payment) => payment.status === 'Pendiente' && payment.concept !== P2P_CONCEPT.recargaInicial)
+				.reduce((sum, payment) => sum + payment.amount, 0);
+			if (balance - reservedBalance < amount) {
+				return json({ ok: false, message: `Necesitas tener ${fmt(amount)} disponibles para enviar este aporte.` }, 400);
+			}
+		}
+
 		const upload = file as File;
 		const buffer = Buffer.from(await upload.arrayBuffer());
 		const safeUser = session.username.replace(/[^a-zA-Z0-9_-]/g, '') || 'user';
@@ -154,6 +200,8 @@ export const POST: APIRoute = async (Astro) => {
 			email: session.email,
 			concept,
 			amount,
+			recipientUsername,
+			senderLevel,
 			receiptUrl: stored.url,
 			receiptName: upload.name || `comprobante.${ext}`,
 			reference: normalizeReceiptReference(formData.get('reference')),

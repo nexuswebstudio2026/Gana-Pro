@@ -80,7 +80,7 @@ const reason = !canWithdrawLevel
 
 	{reason && <p class="wallet-blocked" id="wallet-reason">{reason}</p>}
 	{transferTo && <section class="wallet-transfer" id="enviar-dinero"><div><span class="wallet-label">Transferencia interna</span><h3>Enviar saldo a {transferTo}</h3><p>Este envío solo se autoriza si el destinatario es tu líder registrado.</p></div><form data-transfer-form><input type="hidden" name="to" value={transferTo}/><label>Monto<input name="amount" type="number" min="1" max={String(summary.available)} step="1" required/></label><button type="submit" class="gold-button wallet-btn">Enviar dinero</button><p data-transfer-feedback role="status" aria-live="polite"></p></form></section>}
-	<section class="wallet-movements" aria-labelledby="money-requests-title"><div class="wallet-section-heading"><div><span class="wallet-label">Red directa</span><h3 id="money-requests-title">Solicitudes de dinero</h3></div></div>{moneyRequests.length === 0 ? <p class="wallet-empty">No tienes solicitudes de dinero pendientes o enviadas.</p> : <div class="wallet-table-wrap"><table class="wallet-table"><thead><tr><th>Fecha</th><th>Solicita</th><th>Destinatario</th><th>Monto</th><th>Estado / acción</th></tr></thead><tbody>{moneyRequests.map((request) => <tr><td>{request.createdAt ? new Date(request.createdAt).toLocaleDateString('es-CO') : '—'}</td><td>{request.requester}</td><td>{request.recipient}</td><td class="movement-amount">{fmt(request.amount)}</td><td>{request.status === 'Pendiente' && request.recipient.toLowerCase() === currentUsername.toLowerCase() ? <button class="wallet-pay-button" type="button" data-pay-request={request.id}>Pagar y enviar</button> : <span class="movement-status">{request.status}</span>}</td></tr>)}</tbody></table></div>}</section>
+	<section class="wallet-movements" id="solicitudes-dinero" aria-labelledby="money-requests-title"><div class="wallet-section-heading"><div><span class="wallet-label">Red directa</span><h3 id="money-requests-title">Solicitudes de dinero</h3></div></div>{moneyRequests.length === 0 ? <p class="wallet-empty">No tienes solicitudes de dinero pendientes o enviadas.</p> : <div class="wallet-table-wrap"><table class="wallet-table"><thead><tr><th>Fecha</th><th>Solicita</th><th>Destinatario</th><th>Monto</th><th>Estado / acción</th></tr></thead><tbody>{moneyRequests.map((request) => <tr><td>{request.createdAt ? new Date(request.createdAt).toLocaleDateString('es-CO') : '—'}</td><td>{request.requester}</td><td>{request.recipient}</td><td class="movement-amount">{fmt(request.amount)}</td><td>{request.status === 'Pendiente' && request.recipient.toLowerCase() === currentUsername.toLowerCase() ? <button class="wallet-pay-button" type="button" data-pay-request={request.id}>Pagar y enviar</button> : <span class="movement-status">{request.status}</span>}</td></tr>)}</tbody></table></div>}</section>
 
 	<section class="wallet-movements" aria-labelledby="wallet-movements-title">
 		<div class="wallet-section-heading"><div><span class="wallet-label">Historial financiero</span><h3 id="wallet-movements-title">Envíos, retiros y recibidos</h3></div><span class="movement-count">{movements.length} movimiento{movements.length === 1 ? '' : 's'}</span></div>
@@ -383,12 +383,6 @@ const reason = !canWithdrawLevel
 			if (result.ok) window.location.reload(); else button.disabled = false;
 		} catch { window.alert('No se pudo completar el pago.'); button.disabled = false; }
 	}));
-	document.querySelectorAll<HTMLButtonElement>('[data-pay-request]').forEach((button) => button.addEventListener('click', async () => {
-		button.disabled = true;
-		try { const response = await fetch('/api/member-money-requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', id: button.dataset.payRequest }) }); const result = await response.json() as { ok: boolean; message: string }; window.alert(result.message); if (result.ok) window.location.reload(); }
-		catch { window.alert('No se pudo completar el pago.'); button.disabled = false; }
-	}));
-
 	const fmt = (value: number) => `$${Math.round(value).toLocaleString('es-CO')}`;
 
 	openBtn?.addEventListener('click', () => modal?.showModal());

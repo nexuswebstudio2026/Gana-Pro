@@ -13,6 +13,7 @@ import {
 	MAX_DOCUMENT_BYTES,
 } from '../../../lib/testimonials';
 import { ImageStorageNotConfiguredError } from '../../../lib/image-storage';
+import { safeRecordAdminAudit } from '../../../lib/admin-records';
 
 export const prerender = false;
 
@@ -115,6 +116,7 @@ export const POST: APIRoute = async (Astro) => {
 						'(se esperaban las columnas NIT, Escaneado RUT y Enlace RUT).'
 				);
 			}
+			await safeRecordAdminAudit({ admin: session.username, action: 'Carga de documento', entity: 'Usuario', reference: username, detail: `RUT cargado${nit ? ` · NIT ${nit}` : ''}.` });
 			return done(
 				`RUT cargado para ${username}${nit ? ` · NIT ${nit}` : ''}.`
 			);
@@ -134,6 +136,7 @@ export const POST: APIRoute = async (Astro) => {
 			if (!updated) {
 				return fail(`No se encontró la fila de ${username} en la hoja de usuarios.`);
 			}
+			await safeRecordAdminAudit({ admin: session.username, action: 'Actualización de NIT', entity: 'Usuario', reference: username, detail: 'Se actualizó el identificador tributario del usuario.' });
 			return done(`NIT de ${username} actualizado a ${nit}.`);
 		}
 
@@ -149,6 +152,7 @@ export const POST: APIRoute = async (Astro) => {
 		if (!updated) {
 			return fail(`No se encontró el registro de ${username}.`);
 		}
+		await safeRecordAdminAudit({ admin: session.username, action: 'Revisión de documento', entity: 'Usuario', reference: username, detail: `Estado actualizado a ${status}.` });
 
 		// La comisión del alta ya se pagó al registrarse (ver `api/register.ts`).
 		// Aquí solo se marca el estado: volver a pagarla desde la aprobación haría

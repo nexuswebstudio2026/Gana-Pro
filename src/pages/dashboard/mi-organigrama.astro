@@ -1,61 +1,52 @@
 ---
 import { isAdminRole } from '../../lib/auth';
 import { getGoogleSheetUsers } from '../../lib/sheets';
-import { buildPersonalHierarchy } from '../../lib/user-hierarchy';
-import { toLevelNumber } from '../../lib/users';
-import { listTopups, TOPUP_STATUS } from '../../lib/topups';
-import { buildMatrixView } from '../../lib/matrix';
+import {
+	buildUserHierarchy,
+	buildMemberOrganizationHierarchy,
+} from '../../lib/user-hierarchy';
 import AdminPageLayout from '../../components/AdminPageLayout.astro';
-import MatrizStatus from '../../components/dashboard/MatrizStatus.astro';
+import OrgChartPanel from '../../components/dashboard/OrgChartPanel.astro';
 import type { User } from '../../lib/types';
+import '../../styles/org-chart.css';
+import '../../styles/org-focus.css';
+import '../../styles/org-tree.css';
 
 export const prerender = false;
 
-// El middleware ya resolvió la sesión y comprobó que hay una válida.
 const session = Astro.locals.user!;
-
-let sheetUsers: User[] = [];
+const isAdmin = isAdminRole(session.role);
+let users: User[] = [];
 let loadFailed = false;
-let level = '1';
+
 try {
-	sheetUsers = await getGoogleSheetUsers();
-	const own = sheetUsers.find((user) => user.username?.trim().toLowerCase() === session.username.trim().toLowerCase() || user.email?.trim().toLowerCase() === session.email.trim().toLowerCase());
-	level = own?.level?.trim() || '1';
+	users = await getGoogleSheetUsers();
 } catch (error) {
 	loadFailed = true;
 	console.error('Error al cargar el organigrama personal:', error);
 }
 
-// El usuario conectado es la raíz de su propio organigrama.
-const personal = buildPersonalHierarchy(sheetUsers, {
-	username: session.username,
-	email: session.email,
-});
-
-const topupsByUser: Record<string, string> = {};
-if (!loadFailed) {
-	try {
-		for (const topup of await listTopups()) {
-			const key = String(topup.username ?? '').trim().toLowerCase();
-			if (key && !topupsByUser[key]) topupsByUser[key] = topup.status === TOPUP_STATUS.aprobado ? 'Aprobado' : String(topup.status || '');
-		}
-	} catch (error) { console.error('No se pudieron leer las recargas de la matriz:', error); }
-}
-const view = buildMatrixView({
-	self: { name: personal.root.name, level },
-	upline: personal.upline ? { name: personal.upline.name, level: personal.upline.level } : null,
-	downline: personal.team, topupsByUser, level: toLevelNumber(level),
-});
-
-const isAdmin = isAdminRole(session.role);
+const memberView = isAdmin
+	? null
+	: buildMemberOrganizationHierarchy(users, { username: session.username, email: session.email });
+const hierarchy = isAdmin ? buildUserHierarchy(users) : memberView!.root;
+const focusNodeId = isAdmin ? hierarchy.id : memberView?.memberNodeId || hierarchy.id;
+const emptyMessage = !isAdmin && !memberView?.memberNodeId
+	? 'Tu cuenta todavía no aparece en la estructura de usuarios.'
+	: undefined;
 ---
 
 <AdminPageLayout
 	session={session}
 	isAdmin={isAdmin}
-	title="Mi organigrama"
-	eyebrow="Configuración · Usuario"
-	description="Consulta los cinco usuarios que aparecen en tu rama dentro de la estructura de GANA PRO."
+	title="Organigrama"
+	eyebrow="Mi organización"
+	description="Consulta tu equipo directo y explora las ramas de usuarios que dependen de cada persona."
 >
-	<MatrizStatus view={view} loadFailed={loadFailed} leaderUsername={personal.upline?.name ?? ''} />
+	<OrgChartPanel
+		hierarchy={hierarchy}
+		loadFailed={loadFailed}
+		focusNodeId={focusNodeId}
+		emptyMessage={emptyMessage}
+	/>
 </AdminPageLayout>

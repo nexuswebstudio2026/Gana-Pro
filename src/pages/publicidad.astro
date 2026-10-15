@@ -1,0 +1,69 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { getEnvValue } from '../lib/sheets';
+import { whatsappLink } from '../lib/account-profile';
+
+const supportNumber = getEnvValue('SUPPORT_WHATSAPP')?.trim();
+const supportUrl = whatsappLink(supportNumber);
+const inquiryMessage = encodeURIComponent(
+	'Hola, quiero consultar opciones de publicidad en GANA PRO.'
+);
+---
+
+<LegalLayout
+	title="Publicidad y contenido patrocinado"
+	description="Información para anunciantes sobre los espacios publicitarios de GANA PRO y cómo identificamos el contenido patrocinado."
+>
+	<h2>Espacios para anunciantes</h2>
+	<p>
+		GANA PRO ofrece espacios laterales para anuncios en las páginas públicas del sitio.
+		En pantallas amplias aparecen a los lados del contenido central; se ocultan en
+		pantallas pequeñas para mantener la lectura cómoda. Allí pueden presentarse
+		propuestas comerciales, académicas y políticas, sujetas a revisión y disponibilidad.
+	</p>
+
+	<h2>Cómo publicar un anuncio</h2>
+	<p>
+		El contenido se gestiona en la pestaña <strong>Publicidad</strong> de la hoja de
+		cálculo conectada al sitio. Al abrir por primera vez esta sección después del
+		despliegue, el sistema crea la pestaña con estos encabezados:
+		<strong>TÍTULO, IMAGEN URL, DESCRIPCIÓN, URL, CATEGORÍA, ANUNCIANTE, ESTADO y ORDEN</strong>.
+	</p>
+	<ul>
+		<li>Escribe una fila por anuncio y pega enlaces públicos HTTPS para la imagen y el destino.</li>
+		<li>Completa título, descripción e imagen; los anuncios con estado <strong>PUBLICAR</strong> aparecerán en el carrusel.</li>
+		<li>Usa ORDEN para controlar la posición; el valor más bajo aparece primero.</li>
+		<li>Para retirar un anuncio, cambia ESTADO a <strong>PAUSADO</strong> o borra ese valor.</li>
+	</ul>
+	<p>
+		Si la hoja aún conserva el encabezado anterior <strong>LOGO URL</strong>, el sistema
+		lo cambia a <strong>IMAGEN URL</strong> sin alterar las imágenes guardadas.
+	</p>
+
+	<h2>Transparencia</h2>
+	<ul>
+		<li>Los anuncios y contenidos patrocinados se distinguirán del contenido propio de GANA PRO.</li>
+		<li>La publicación de un anuncio no implica que GANA PRO lo respalde ni garantice los resultados que anuncie.</li>
+		<li>Los anuncios políticos deberán identificar claramente su carácter patrocinado y al anunciante.</li>
+		<li>No se aceptarán anuncios engañosos, ilegales o que prometan rendimientos financieros garantizados.</li>
+	</ul>
+
+	<h2>Consultar disponibilidad</h2>
+	{supportUrl ? (
+		<p>
+			<a
+				class="gold-button"
+				href={`${supportUrl}?text=${inquiryMessage}`}
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				Consultar por WhatsApp
+			</a>
+		</p>
+	) : (
+		<p>
+			El contacto para consultas publicitarias no está configurado todavía. La información
+			de contacto estará disponible aquí cuando se habilite el canal correspondiente.
+		</p>
+	)}
+</LegalLayout>

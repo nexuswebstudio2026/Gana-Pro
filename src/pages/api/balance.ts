@@ -15,6 +15,20 @@ import {
 
 export const prerender = false;
 
+/** Saldo autoritativo de Google Sheets para refrescar el chip del panel. */
+export const GET: APIRoute = async ({ locals }) => {
+	const session = locals.user;
+	if (!session) return json({ ok: false, message: 'Sesión no válida.' }, 401);
+
+	try {
+		const balance = await getUserBalance(session.username, session.email);
+		return json({ ok: balance !== null, message: balance === null ? 'No se encontró el saldo en Google Sheets.' : '', balance: balance === null ? null : parseSheetBalance(balance) }, balance === null ? 404 : 200);
+	} catch (error) {
+		console.error('No se pudo actualizar el saldo del panel:', error);
+		return json({ ok: false, message: 'No se pudo consultar el saldo.' }, 500);
+	}
+};
+
 /** Monto máximo permitido por operación, para no escribir cifras absurdas. */
 const MAX_AMOUNT = 100_000_000;
 
@@ -174,7 +188,7 @@ export const POST: APIRoute = async (Astro) => {
 	}
 };
 
-function json(payload: { ok: boolean; message: string }, status = 200) {
+function json(payload: { ok: boolean; message: string; [key: string]: unknown }, status = 200) {
 	return new Response(JSON.stringify(payload), {
 		status,
 		headers: { 'Content-Type': 'application/json' },

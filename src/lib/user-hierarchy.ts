@@ -1,4 +1,5 @@
 import type { User } from './types';
+import { isAdminRole } from './auth';
 
 export interface OrganizationNode {
 	id: string;
@@ -90,22 +91,48 @@ export function buildUserHierarchy(users: User[]): OrganizationNode {
 		children: [],
 	};
 
-	const orderedUsers = users.filter((user) => !isRootUser(user));
-	const queue: OrganizationNode[] = [root];
-	let nextUserIndex = 0;
+	const orderedUsers = users.filter((user) => !isRootUser(user) && !isAdminRole(user.role));
 	let position = 2;
+	const nodes = orderedUsers.map((user) => createNode(user, position++, 0));
+	const byName = new Map(nodes.map((node) => [normalize(node.name), node]));
+	const byEmail = new Map(nodes.filter((node) => node.email).map((node) => [normalize(node.email), node]));
+	const reachable = new Set<OrganizationNode>([root]);
+	const assigned = new Set<OrganizationNode>();
+	const rootNames = ROOT_ALIASES;
 
-	while (nextUserIndex < orderedUsers.length) {
-		const parent = queue.shift();
-		if (!parent) break;
-
-		for (let childIndex = 0; childIndex < MAX_DIRECT_TEAM && nextUserIndex < orderedUsers.length; childIndex++) {
-			const child = createNode(orderedUsers[nextUserIndex], position, parent.depth + 1);
-			position++;
-			nextUserIndex++;
-			parent.children.push(child);
-			queue.push(child);
+	// Si el usuario eligió líder al hacer su aporte, conservamos esa posición.
+	// Se resuelven primero las relaciones cuyo padre ya está conectado a la raíz.
+	let progressed = true;
+	while (progressed) {
+		progressed = false;
+		for (let i = 0; i < orderedUsers.length; i++) {
+			const user = orderedUsers[i];
+			const node = nodes[i];
+			if (assigned.has(node)) continue;
+			const chosenParent = normalize(user.matrixParent);
+			if (!chosenParent) continue;
+			const parent = rootNames.has(chosenParent) ? root : byName.get(chosenParent) ?? byEmail.get(chosenParent);
+			if (!parent || !reachable.has(parent) || parent.children.length >= MAX_DIRECT_TEAM) continue;
+			parent.children.push(node);
+			node.depth = parent.depth + 1;
+			reachable.add(node);
+			assigned.add(node);
+			progressed = true;
 		}
+	}
+
+	// Los usuarios sin líder explícito (o con un líder que ya completó sus cinco
+	// puestos) conservan el llenado por orden de Google Sheets.
+	const queue: OrganizationNode[] = [root, ...nodes.filter((node) => reachable.has(node))];
+	for (const node of nodes) {
+		if (assigned.has(node)) continue;
+		while (queue.length && queue[0].children.length >= MAX_DIRECT_TEAM) queue.shift();
+		const parent = queue[0];
+		if (!parent) break;
+		parent.children.push(node);
+		node.depth = parent.depth + 1;
+		assigned.add(node);
+		queue.push(node);
 	}
 
 	return root;
@@ -286,4 +313,30 @@ export function buildPersonalHierarchy(
 	};
 }
 
+/**
+ * Organigrama visible para un miembro: conserva GANA PRO como raíz y muestra
+ * solo la ruta de patrocinadores que llega hasta el miembro, más toda su rama.
+ * Así mantiene el contexto de la organización sin exponer ramas ajenas.
+ */
+export function buildMemberOrganizationHierarchy(
+	users: User[],
+	identity: UserIdentity
+): { root: OrganizationNode; memberNodeId: string | null } {
+	const globalRoot = buildUserHierarchy(users);
+	const member = findUserNode(globalRoot, identity);
+	if (!member) return { root: { ...globalRoot, children: [] }, memberNodeId: null };
 
+	const includePath = (node: OrganizationNode): OrganizationNode | null => {
+		if (node.id === member.id) return node;
+		for (const child of node.children) {
+			const pathChild = includePath(child);
+			if (pathChild) return { ...node, children: [pathChild] };
+		}
+		return null;
+	};
+
+	return {
+		root: includePath(globalRoot) ?? globalRoot,
+		memberNodeId: member.id,
+	};
+}

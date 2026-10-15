@@ -31,6 +31,8 @@ export interface User {
 	walletNumber?: string;
 	balance?: string;
 	level?: string;
+	/** Usuario elegido como líder directo de la matriz. */
+	matrixParent?: string;
 	referralCode?: string;
 	ownCode?: string;
 	documentStatus?: string;
@@ -43,6 +45,10 @@ export interface User {
 	/** Enlace al archivo del RUT. */
 	rutLink?: string;
 	registeredAt?: string;
+	/** Fecha ISO en que aceptó los términos al registrarse. */
+	termsAcceptedAt?: string;
+	/** Fecha ISO en que autorizó el tratamiento de datos al registrarse. */
+	privacyAcceptedAt?: string;
 	/** Dirección de residencia. */
 	address?: string;
 	/** Barrio de residencia. */
@@ -53,4 +59,6 @@ export interface User {
 	phone?: string;
 	/** Contacto de WhatsApp. */
 	whatsapp?: string;
+	/** Enlace de Google Maps con la última ubicación compartida. */
+	locationUrl?: string;
 }

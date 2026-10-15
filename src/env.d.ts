@@ -1,5 +1,9 @@
 /// <reference types="astro/client" />
 
+interface ImportMetaEnv {
+	readonly APP_VERSION: string;
+}
+
 declare namespace App {
 	interface Locals {
 		/**
