@@ -1,65 +1,72 @@
 ---
-// UpdatePopup.astro
-// Popup que aparece en cada visita mostrando el último commit del repositorio.
-// Los datos se cargan de /api/update-info via fetch del lado cliente para no
-// bloquear el SSR y para aprovechar el caché HTTP de la respuesta JSON.
+// UpdatePopup.astro — Estilo Imperio Lux
+// Popup que aparece en cada visita con el último commit de GitHub.
 ---
 
 <div id="update-popup-overlay" class="up-overlay" role="dialog" aria-modal="true" aria-labelledby="up-title" hidden>
   <div class="up-card">
-    <!-- Decoraciones de fondo -->
-    <div class="up-bg-glow"></div>
-    <div class="up-bg-grid"></div>
 
-    <!-- Header -->
-    <div class="up-header">
-      <div class="up-badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="16 18 22 12 16 6"/>
-          <polyline points="8 6 2 12 8 18"/>
-        </svg>
-        Nueva Actualización
-      </div>
-      <button id="update-popup-close" class="up-close-btn" aria-label="Cerrar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+    <!-- Close button -->
+    <button id="update-popup-close" class="up-close" aria-label="Cerrar">×</button>
+
+    <!-- Icon box -->
+    <div class="up-icon-box">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l1.09 3.26L16.5 4l-2 2.91L18 8.5l-3.41.5L14 12l-1.09-3.26L9.5 10l2-2.91L8 5.5l3.41-.5z"/>
+        <path d="M19 14l.72 2.17L22 17l-2.28.83L19 20l-.72-2.17L16 17l2.28-.83z"/>
+        <path d="M5 6l.5 1.5L7 8l-1.5.5L5 10l-.5-1.5L3 8l1.5-.5z"/>
+      </svg>
     </div>
+
+    <!-- Label -->
+    <p class="up-label">NOVEDADES DE GANA PRO</p>
 
     <!-- Title -->
-    <h2 id="up-title" class="up-title">🚀 GANA PRO se actualiza</h2>
+    <h2 id="up-title" class="up-title">El sitio se ha<br/>actualizado</h2>
 
-    <!-- Commit info skeleton / content -->
-    <div id="up-content" class="up-content">
-      <div class="up-skeleton">
-        <div class="up-skeleton-line" style="width: 75%"></div>
-        <div class="up-skeleton-line" style="width: 45%"></div>
+    <!-- Description -->
+    <p class="up-description">
+      Ya está disponible la versión más reciente publicada desde GitHub.<br/>
+      Recarga la página para cargar los últimos cambios.
+    </p>
+
+    <!-- Version card -->
+    <div class="up-version-card" id="up-version-card">
+      <div class="up-version-card-inner">
+        <span class="up-version-label">VERSIÓN PUBLICADA</span>
+        <div class="up-version-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color:#d4af37;">
+            <circle cx="12" cy="12" r="3"/>
+            <line x1="1" y1="12" x2="9" y2="12"/>
+            <line x1="15" y1="12" x2="23" y2="12"/>
+          </svg>
+          <span class="up-version-name" id="up-version-name">
+            <!-- filled by JS -->
+            <span class="up-version-skeleton"></span>
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- Hash badge -->
-    <div class="up-meta" id="up-meta" hidden>
-      <span class="up-hash" id="up-hash"></span>
-      <span class="up-date" id="up-date"></span>
-    </div>
+    <!-- Meta: hash + date -->
+    <p class="up-meta" id="up-meta" hidden></p>
 
-    <!-- Footer CTA -->
-    <div class="up-footer">
-      <button id="update-popup-ok" class="up-ok-btn">
-        <span>¡Entendido!</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Buttons -->
+    <div class="up-actions">
+      <button id="update-popup-skip" class="up-btn-ghost">Continuar</button>
+      <button id="update-popup-ok" class="up-btn-gold">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
+        Entendido
       </button>
-      <p class="up-note">La plataforma sigue mejorando para ti.</p>
     </div>
+
   </div>
 </div>
 
 <style>
-  /* ─── Overlay ─────────────────────────────────────────────────────────── */
+  /* ── Overlay ─────────────────────────────────────────────────── */
   .up-overlay {
     position: fixed;
     inset: 0;
@@ -67,389 +74,276 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
-    background: rgba(2, 6, 23, 0.72);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    padding: 1.25rem;
+    background: rgba(2, 6, 23, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     opacity: 0;
-    transition: opacity 0.35s ease;
+    transition: opacity 0.3s ease;
   }
+  .up-overlay[hidden] { display: none !important; }
+  .up-overlay.visible { opacity: 1; }
 
-  .up-overlay[hidden] {
-    display: none !important;
-  }
-
-  .up-overlay.visible {
-    opacity: 1;
-  }
-
-  /* ─── Card ─────────────────────────────────────────────────────────────── */
+  /* ── Card ─────────────────────────────────────────────────────── */
   .up-card {
     position: relative;
     width: 100%;
-    max-width: 480px;
-    background: rgba(9, 21, 51, 0.92);
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    border-radius: 24px;
-    padding: 2rem 2rem 1.75rem;
+    max-width: 460px;
+    background: #0d1629;
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    border-radius: 20px;
+    padding: 2.25rem 2rem 1.75rem;
     box-shadow:
-      0 32px 64px rgba(0, 0, 0, 0.65),
-      0 0 0 1px rgba(212, 175, 55, 0.08),
-      0 0 60px rgba(212, 175, 55, 0.08) inset;
-    transform: translateY(24px) scale(0.96);
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
-    overflow: hidden;
+      0 40px 80px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.04);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
   }
-
   .up-overlay.visible .up-card {
     transform: translateY(0) scale(1);
   }
 
-  /* ─── Decorative background ─────────────────────────────────────────── */
-  .up-bg-glow {
+  /* ── Close ────────────────────────────────────────────────────── */
+  .up-close {
     position: absolute;
-    top: -60px;
-    right: -60px;
-    width: 240px;
-    height: 240px;
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.18) 0%, transparent 65%);
-    pointer-events: none;
-  }
-
-  .up-bg-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
-    pointer-events: none;
-  }
-
-  /* ─── Header ─────────────────────────────────────────────────────────── */
-  .up-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
-    position: relative;
-    z-index: 1;
-  }
-
-  .up-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    background: rgba(212, 175, 55, 0.12);
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    border-radius: 100px;
-    color: #d4af37;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .up-close-btn {
+    top: 1.1rem;
+    right: 1.1rem;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.5);
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.35);
+    font-size: 1.4rem;
+    line-height: 1;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .up-close:hover {
+    color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.07);
   }
 
-  .up-close-btn:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #ef4444;
-    transform: rotate(90deg);
-  }
-
-  /* ─── Title ──────────────────────────────────────────────────────────── */
-  .up-title {
-    font-family: 'Cinzel', serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #fff2a3 0%, #d4af37 50%, #e6a817 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-    line-height: 1.3;
-  }
-
-  /* ─── Content ────────────────────────────────────────────────────────── */
-  .up-content {
-    position: relative;
-    z-index: 1;
-    margin-bottom: 1rem;
-  }
-
-  .up-commit-message {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.9);
-    font-weight: 500;
-    line-height: 1.5;
-    padding: 1rem 1.25rem;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    border-left: 3px solid #d4af37;
+  /* ── Icon box ─────────────────────────────────────────────────── */
+  .up-icon-box {
+    width: 60px;
+    height: 60px;
+    background: #141e36;
+    border: 1px solid rgba(212,175,55,0.22);
+    border-radius: 14px;
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .up-commit-icon {
-    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
     color: #d4af37;
-    margin-top: 2px;
+    margin-bottom: 1.4rem;
+    box-shadow: 0 4px 20px rgba(212,175,55,0.1);
   }
 
-  /* ─── Skeleton loader ────────────────────────────────────────────────── */
-  .up-skeleton {
+  /* ── Label ────────────────────────────────────────────────────── */
+  .up-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c9993a;
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── Title ────────────────────────────────────────────────────── */
+  .up-title {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 0.9rem;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Description ──────────────────────────────────────────────── */
+  .up-description {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.65;
+    margin-bottom: 1.4rem;
+  }
+
+  /* ── Version card ─────────────────────────────────────────────── */
+  .up-version-card {
+    background: #111827;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .up-version-card-inner {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 1rem 1.25rem;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
+    gap: 0.45rem;
+  }
+  .up-version-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+  .up-version-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .up-version-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
   }
 
-  .up-skeleton-line {
+  /* skeleton */
+  .up-version-skeleton {
+    display: inline-block;
+    width: 180px;
     height: 14px;
+    border-radius: 6px;
     background: linear-gradient(90deg,
       rgba(255,255,255,0.06) 25%,
-      rgba(212,175,55,0.12) 50%,
+      rgba(212,175,55,0.1) 50%,
       rgba(255,255,255,0.06) 75%
     );
     background-size: 200% 100%;
-    border-radius: 8px;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.4s infinite;
+    vertical-align: middle;
   }
-
   @keyframes shimmer {
-    0% { background-position: 200% center; }
+    0%   { background-position: 200% center; }
     100% { background-position: -200% center; }
   }
 
-  /* ─── Meta (hash + date) ─────────────────────────────────────────────── */
+  /* ── Meta ─────────────────────────────────────────────────────── */
   .up-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1.25rem;
-    position: relative;
-    z-index: 1;
-  }
-
-  .up-hash {
-    font-family: 'Courier New', monospace;
     font-size: 0.7rem;
-    color: rgba(212, 175, 55, 0.8);
-    background: rgba(212, 175, 55, 0.08);
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    padding: 2px 8px;
-    border-radius: 6px;
-  }
-
-  .up-date {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.4);
-  }
-
-  /* ─── Footer ─────────────────────────────────────────────────────────── */
-  .up-footer {
-    position: relative;
-    z-index: 1;
+    color: rgba(255,255,255,0.25);
+    margin-bottom: 1.5rem;
     display: flex;
-    flex-direction: column;
+    gap: 8px;
     align-items: center;
-    gap: 0.6rem;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    padding-top: 1.25rem;
+  }
+  .up-meta span.hash {
+    font-family: 'Courier New', monospace;
+    color: rgba(212,175,55,0.55);
+    background: rgba(212,175,55,0.07);
+    padding: 1px 6px;
+    border-radius: 4px;
   }
 
-  .up-ok-btn {
+  /* ── Actions ──────────────────────────────────────────────────── */
+  .up-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .up-btn-ghost {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .up-btn-ghost:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+  }
+
+  .up-btn-gold {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 0.65rem 2rem;
-    background: linear-gradient(135deg, #d4af37 0%, #fff099 35%, #b5831d 70%, #fbd14b 100%);
-    color: #030712;
+    gap: 7px;
+    background: #c9993a;
+    color: #fff;
     border: none;
-    border-radius: 100px;
+    border-radius: 10px;
+    padding: 0.6rem 1.35rem;
     font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.35);
-    letter-spacing: 0.02em;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 18px rgba(201,153,58,0.35);
   }
-
-  .up-ok-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(212, 175, 55, 0.55);
-    filter: brightness(1.08);
+  .up-btn-gold:hover {
+    background: #d4af37;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 26px rgba(212,175,55,0.45);
   }
+  .up-btn-gold:active { transform: translateY(0); }
 
-  .up-ok-btn:active {
-    transform: translateY(0);
-  }
-
-  .up-note {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.3);
-    text-align: center;
-  }
-
-  /* ─── Light theme ────────────────────────────────────────────────────── */
+  /* ── Light theme ──────────────────────────────────────────────── */
   :global([data-theme="light"]) .up-card {
-    background: rgba(255, 252, 240, 0.97);
-    border-color: rgba(184, 134, 11, 0.4);
-    box-shadow:
-      0 32px 64px rgba(0,0,0,0.2),
-      0 0 60px rgba(212,175,55,0.06) inset;
+    background: #f9f6ef;
+    border-color: rgba(184,134,11,0.25);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.18);
   }
-
-  :global([data-theme="light"]) .up-overlay {
-    background: rgba(2, 6, 23, 0.55);
+  :global([data-theme="light"]) .up-title { color: #0a1128; }
+  :global([data-theme="light"]) .up-description { color: rgba(10,17,40,0.5); }
+  :global([data-theme="light"]) .up-version-card {
+    background: #eee9da;
+    border-color: rgba(0,0,0,0.07);
   }
-
-  :global([data-theme="light"]) .up-title {
-    background: linear-gradient(135deg, #a47618 0%, #d4af37 50%, #85581a 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
-
-  :global([data-theme="light"]) .up-commit-message {
-    color: rgba(10, 17, 40, 0.9);
-    background: rgba(0,0,0,0.03);
-    border-color: rgba(0,0,0,0.08);
-  }
-
-  :global([data-theme="light"]) .up-note {
-    color: rgba(10,17,40,0.4);
-  }
-
-  :global([data-theme="light"]) .up-date {
-    color: rgba(10,17,40,0.5);
-  }
-
-  :global([data-theme="light"]) .up-skeleton {
-    background: rgba(0,0,0,0.03);
-    border-color: rgba(0,0,0,0.08);
-  }
-
-  :global([data-theme="light"]) .up-close-btn {
-    background: rgba(0,0,0,0.05);
-    border-color: rgba(0,0,0,0.1);
-    color: rgba(0,0,0,0.4);
-  }
-
-  :global([data-theme="light"]) .up-bg-grid {
-    background-image:
-      linear-gradient(rgba(184,134,11,0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(184,134,11,0.06) 1px, transparent 1px);
-  }
+  :global([data-theme="light"]) .up-version-name { color: #0a1128; }
+  :global([data-theme="light"]) .up-close { color: rgba(0,0,0,0.3); }
+  :global([data-theme="light"]) .up-close:hover { background: rgba(0,0,0,0.07); color: #0a1128; }
+  :global([data-theme="light"]) .up-icon-box { background: #ede8d8; }
+  :global([data-theme="light"]) .up-btn-ghost { color: rgba(10,17,40,0.5); }
+  :global([data-theme="light"]) .up-btn-ghost:hover { background: rgba(0,0,0,0.05); color: #0a1128; }
+  :global([data-theme="light"]) .up-meta { color: rgba(10,17,40,0.3); }
 </style>
 
 <script>
   (async () => {
-    const overlay = document.getElementById('update-popup-overlay') as HTMLElement;
+    const overlay  = document.getElementById('update-popup-overlay') as HTMLElement;
     const closeBtn = document.getElementById('update-popup-close') as HTMLButtonElement;
-    const okBtn = document.getElementById('update-popup-ok') as HTMLButtonElement;
-    const contentEl = document.getElementById('up-content') as HTMLElement;
-    const metaEl = document.getElementById('up-meta') as HTMLElement;
-    const hashEl = document.getElementById('up-hash') as HTMLElement;
-    const dateEl = document.getElementById('up-date') as HTMLElement;
+    const skipBtn  = document.getElementById('update-popup-skip') as HTMLButtonElement;
+    const okBtn    = document.getElementById('update-popup-ok') as HTMLButtonElement;
+    const versionNameEl = document.getElementById('up-version-name') as HTMLElement;
+    const metaEl   = document.getElementById('up-meta') as HTMLElement;
 
-    function showPopup() {
+    function open() {
       overlay.hidden = false;
-      // Trigger animation on next frame
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => overlay.classList.add('visible'));
-      });
+      requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
     }
-
-    function closePopup() {
+    function close() {
       overlay.classList.remove('visible');
-      setTimeout(() => { overlay.hidden = true; }, 350);
+      setTimeout(() => { overlay.hidden = true; }, 320);
     }
 
-    closeBtn.addEventListener('click', closePopup);
-    okBtn.addEventListener('click', closePopup);
+    closeBtn.addEventListener('click', close);
+    skipBtn.addEventListener('click', close);
+    okBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) close(); });
 
-    // Close on overlay click (outside the card)
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closePopup();
-    });
+    open();
 
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !overlay.hidden) closePopup();
-    });
-
-    // Show popup immediately on load
-    showPopup();
-
-    // Fetch update info asynchronously
+    // Fetch commit data
     try {
       const resp = await fetch('/api/update-info');
-      if (!resp.ok) throw new Error('API error');
-      const data = await resp.json() as {
-        hash: string;
-        message: string;
-        author: string;
-        date: string;
-      };
+      if (!resp.ok) throw new Error('err');
+      const data = await resp.json() as { hash: string; message: string; date: string };
 
-      // Replace skeleton with real content
-      contentEl.innerHTML = `
-        <div class="up-commit-message">
-          <svg class="up-commit-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="4"/>
-            <line x1="1.05" y1="12" x2="7" y2="12"/>
-            <line x1="17.01" y1="12" x2="22.96" y2="12"/>
-          </svg>
-          <span>${escapeHtml(data.message)}</span>
-        </div>
-      `;
-
-      hashEl.textContent = `#${data.hash}`;
-      dateEl.textContent = data.date;
+      versionNameEl.textContent = `GANA PRO — ${data.message}`;
+      metaEl.innerHTML = `<span class="hash">#${data.hash}</span><span>${data.date}</span>`;
       metaEl.hidden = false;
     } catch {
-      // If fetch fails, show a generic message
-      contentEl.innerHTML = `
-        <div class="up-commit-message">
-          <svg class="up-commit-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="4"/>
-            <line x1="1.05" y1="12" x2="7" y2="12"/>
-            <line x1="17.01" y1="12" x2="22.96" y2="12"/>
-          </svg>
-          <span>Mejoras y correcciones en la plataforma.</span>
-        </div>
-      `;
-    }
-
-    function escapeHtml(str: string): string {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      versionNameEl.textContent = 'GANA PRO — Última actualización';
     }
   })();
 </script>
