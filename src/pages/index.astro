@@ -38,7 +38,6 @@ import ConstellationSection from '../components/home/ConstellationSection.astro'
 import ReferralsSection from '../components/home/ReferralsSection.astro';
 import ServicesSection from '../components/home/ServicesSection.astro';
 import CtaSection from '../components/home/CtaSection.astro';
-import VersionUpdatePopup from '../components/home/VersionUpdatePopup.astro';
 
 import { validateSession } from '../lib/session';
 
@@ -57,7 +56,6 @@ const session = validateSession(Astro.cookies.get('auth_session')?.value);
 	<Navbar />
 
 	<main class="main-content">
-	<VersionUpdatePopup />
 		<HeroSection />
 
 		{/*

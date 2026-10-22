@@ -25,6 +25,7 @@ const PUBLIC_PATHS: readonly string[] = [
 	'/api/check-referrer',
 	'/api/forgot-password',
 	'/api/location-consent',
+	'/api/update-info',
 ];
 
 /** Normaliza la ruta: sin barra final, para comparar contra la lista pública. */
