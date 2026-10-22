@@ -31,7 +31,6 @@ import HeroSection from '../components/HeroSection.astro';
 import ActivityFeed from '../components/ActivityFeed.astro';
 import TestimonialsSection from '../components/TestimonialsSection.astro';
 import FaqSection from '../components/FaqSection.astro';
-
 import FigureBand from '../components/home/FigureBand.astro';
 import WaysSection from '../components/home/WaysSection.astro';
 import HowItWorksSection from '../components/home/HowItWorksSection.astro';
@@ -39,6 +38,7 @@ import ConstellationSection from '../components/home/ConstellationSection.astro'
 import ReferralsSection from '../components/home/ReferralsSection.astro';
 import ServicesSection from '../components/home/ServicesSection.astro';
 import CtaSection from '../components/home/CtaSection.astro';
+import VersionUpdatePopup from '../components/home/VersionUpdatePopup.astro';
 
 import { validateSession } from '../lib/session';
 
@@ -57,6 +57,7 @@ const session = validateSession(Astro.cookies.get('auth_session')?.value);
 	<Navbar />
 
 	<main class="main-content">
+	<VersionUpdatePopup />
 		<HeroSection />
 
 		{/*

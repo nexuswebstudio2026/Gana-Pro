@@ -38,7 +38,8 @@ try {
 }
 
 const isAdmin = isAdminRole(userDetail?.role || session.role);
-const accountRole = userDetail?.role || session.role || 'Usuario';
+const accountRole = (userDetail?.role || session.role || '').trim().toLowerCase();
+const userTypeLabel = accountRole === 'admin' ? 'Administrador' : 'Usuario normal';
 const documentLabel = [userDetail?.documentType, userDetail?.documentNumber]
 	.filter((value) => (value || '').trim())
 	.join(': ');
@@ -88,6 +89,7 @@ const successMessage =
 		<header class="account-heading">
 			<div>
 				<h2 id="account-title">Datos de la cuenta</h2>
+\t<p class="account-role">{userTypeLabel}</p>
 				<p>Información personal y de acceso asociada a tu perfil.</p>
 			</div>
 		</header>

@@ -20,6 +20,7 @@ import Navbar from '../components/Navbar.astro';
 import PanelHeader from '../components/PanelHeader.astro';
 import Footer from '../components/Footer.astro';
 import AccessConfidential from '../components/AccessConfidential.astro';
+import UpdatePopup from '../components/UpdatePopup.astro';
 import { validateSession } from '../lib/session';
 
 // SSR: decide la barra con la cookie de sesión en cada visita.
@@ -77,6 +78,7 @@ const session = validateSession(Astro.cookies.get('auth_session')?.value);
 		</main>
 		<Footer />
 		<AccessConfidential subject={session?.username} />
+		<UpdatePopup />
 	</body>
 </html>
 

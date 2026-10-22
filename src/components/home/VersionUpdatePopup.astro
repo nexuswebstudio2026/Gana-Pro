@@ -1,0 +1,65 @@
+---
+export interface VersionUpdatePopupProps {
+	versionTitle?: string;
+}
+const { versionTitle } = Astro.props;
+---
+
+<!-- Versión actual - muestra título del commit o mensaje por defecto -->
+<div id="version-popup" class="version-popup" aria-live="polite">
+  <div class="version-popup-content">
+    <h3 class="version-popup-title">🎉 Nueva Versión Disponible</h3>
+    <p class="version-popup-message">Versión {{versionTitle}} disponible</p>
+    <p class="version-popup-message-fallback">Acaba de lanzarse la última versión actualizada de GANA PRO.</p>
+    <button class="version-popup-close" aria-label="Cerrar">✕</button>
+  </div>
+</div>
+
+<style>
+  .version-popup {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7); z-index: 9999;
+    display: flex; justify-content: center; align-items: center;
+  }
+
+  .version-popup-content {
+    background: var(--bg-card);
+    border: 1px solid var(--bg-card-border);
+    border-radius: 20px;
+    padding: 24px; max-width: 400px;
+    text-align: center; position: relative;
+    animation: popupIn 0.3s ease; box-shadow: var(--card-shadow);
+  }
+
+  @keyframes popupIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .version-popup-title {
+    font-size: 1.5rem; font-weight: 800; margin-bottom: 12px; color: var(--text-primary);
+  }
+
+  .version-popup-message {
+    font-size: 1rem; color: var(--text-secondary); margin-bottom: 20px;
+  }
+
+  .version-popup-message-fallback {
+    font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; display: none;
+  }
+
+  .version-popup-close {
+    position: absolute; top: 8px; right: 8px;
+    background: transparent; border: none;
+    width: 28px; height: 28px; font-size: 1.5rem;
+    color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0;
+  }
+
+  .version-popup-close:hover,
+  .version-popup-close:focus { color: var(--text-primary); }
+
+  .version-popup-close:focus-visible {
+    outline: 2px solid var(--gold-primary); outline-offset: 2px;
+  }
+</style>
